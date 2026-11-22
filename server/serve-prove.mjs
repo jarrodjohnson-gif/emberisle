@@ -10,9 +10,14 @@ import WebSocket from "ws";
 import { hostUrl } from "../src/lib/net/table.ts";
 
 const hosts = [];
-process.on("exit", () => hosts.forEach((h) => h.kill()));
-for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const temp = mkdtempSync(path.join(tmpdir(), "emberisle-dist-"));
+process.on("exit", () => {
+  for (const h of hosts) {
+    if (h.exitCode === null && h.signalCode === null) h.kill("SIGKILL");
+  }
+  rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 let finishing = false;
 async function done(code) {
   if (finishing) return;
@@ -22,7 +27,7 @@ async function done(code) {
     h.once("exit", resolve);
     if (!h.killed) h.kill();
   })));
-  rmSync(temp, { recursive: true, force: true });
+  rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   process.exit(code);
 }
 function fail(why) {
@@ -38,7 +43,7 @@ async function start(dist) {
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
     // #369: a short lobby hold so a stranger's table drops within the proof, and a store small enough to fill.
-    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms"), LOBBY_HOLD_MS: "300", AVATAR_MAX: "2", AVATAR_STORE_BYTES: "1000" },
+    env: { ...process.env, PORT: "0", DIST: dist, ROOMS_DIR: path.join(temp, "rooms"), RESULTS_DIR: `${path.join(temp, "rooms")}/results`, LOBBY_HOLD_MS: "300", AVATAR_MAX: "2", AVATAR_STORE_BYTES: "1000" },
   });
   hosts.push(host);
   return new Promise((resolve) =>

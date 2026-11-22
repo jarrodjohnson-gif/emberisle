@@ -3,7 +3,7 @@
 // and award changes use the HUD status banner, trade offers/outcomes use this region, and the win uses
 // WinScreen's dialog, so none of those are repeated here.
 import { useEffect, useState } from "react";
-import { offerLine } from "@/components/game/TradeToast";
+import { offerLine } from "@/components/game/offer-line";
 import { useGame } from "@/lib/game/store";
 
 export function Announcer() {

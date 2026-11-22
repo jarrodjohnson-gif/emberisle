@@ -1,0 +1,33 @@
+/* #748 design mock: the compact score list. capture.mjs adds this to the real win screen. Game tokens only. */
+[data-testid="win-table-wrap"].r748 > table { display: none; }
+[data-testid="win-table-wrap"].r748 { overflow-x: hidden; overflow-y: auto; }
+.r748-hint { margin: 0 0 4px; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--color-muted); }
+.r748-list { list-style: none; margin: 0; padding: 0; text-align: left; }
+.r748-item + .r748-item { border-top: 1px solid var(--color-border); }
+.r748-h { margin: 0; font: inherit; }
+.r748-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 6px 0 8px;
+  border: 0; border-radius: 12px; background: none; color: var(--color-fg); cursor: pointer; text-align: left;
+  font-size: var(--text-body); line-height: var(--text-body--line-height); font-weight: 500;
+}
+.r748-row:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+.r748-row > [aria-hidden] { flex: none; width: 12px; height: 12px; }
+.r748-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r748-row[aria-expanded="true"] .r748-name { white-space: normal; padding: 11px 0; }
+.r748-total { flex: none; font-size: 20px; line-height: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.r748-total small { margin-left: 4px; font-size: var(--text-caption); font-weight: 500; color: var(--color-muted); }
+.r748-chev { flex: none; width: 20px; height: 20px; color: var(--color-muted); }
+.r748-row[aria-expanded="true"] .r748-chev { transform: rotate(180deg); }
+.r748-detail { padding: 0 8px 10px 30px; }
+.r748-detail dl {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 2px 0; max-width: 360px; margin: 0;
+  font-size: 13px; line-height: 20px; color: var(--color-muted);
+}
+.r748-detail dd { margin: 0; padding-left: 16px; text-align: right; font-variant-numeric: tabular-nums; }
+.r748-detail .r748-pts { color: var(--color-fg); font-weight: 600; }
+.r748-detail .r748-sum { border-top: 1px solid var(--color-border); padding-top: 2px; color: var(--color-fg); font-weight: 600; }
+.r748-detail p { margin: 4px 0 0; font-size: var(--text-caption); line-height: var(--text-caption--line-height); color: var(--color-muted); }
+/* Alternative B for short sideways phones: two rows, then a More button. */
+.r748-list.r748-few > .r748-item:nth-child(n + 3) { display: none; }
+.r748-more { flex: none; width: 100%; margin-top: 4px; }
+@media (max-height: 480px) { .r748-hint { display: none; } }

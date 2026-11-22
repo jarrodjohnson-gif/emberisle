@@ -1,0 +1,29 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 1280x720 title: opaque white surface
++ actual - expected
+
+  [
+    255,
++   249,
++   240,
+    255,
+-   255,
+-   255
+  ]
+
+    at surface (file:///workspace/emberisle/scripts/.chrome-negative.mjs:34:10)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at process.processImmediate (node:internal/timers:502:9)
+    at async file:///workspace/emberisle/scripts/.chrome-negative.mjs:63:7 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [ 255, 249, 240, 255 ],
+  expected: [ 255, 255, 255, 255 ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

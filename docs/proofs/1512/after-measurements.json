@@ -1,0 +1,190 @@
+[
+  {
+    "tag": "430x932",
+    "errors": [],
+    "text": "25 left",
+    "font": "12px",
+    "lineHeight": "12px",
+    "tileH": 52,
+    "tileScroll": 50,
+    "tileClient": 50,
+    "textOutside": false,
+    "grid": {
+      "x": 16,
+      "y": 792,
+      "w": 398,
+      "h": 52
+    },
+    "badges": [
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-stronghold"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-card"
+      }
+    ],
+    "phone": true,
+    "portrait": true,
+    "clip": {
+      "x": 12,
+      "y": 784,
+      "width": 406,
+      "height": 68
+    }
+  },
+  {
+    "tag": "390x844",
+    "errors": [],
+    "text": "25 left",
+    "font": "12px",
+    "lineHeight": "12px",
+    "tileH": 52,
+    "tileScroll": 50,
+    "tileClient": 50,
+    "textOutside": false,
+    "grid": {
+      "x": 16,
+      "y": 704,
+      "w": 358,
+      "h": 52
+    },
+    "badges": [
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-stronghold"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-card"
+      }
+    ],
+    "phone": true,
+    "portrait": true,
+    "clip": {
+      "x": 12,
+      "y": 696,
+      "width": 366,
+      "height": 68
+    }
+  },
+  {
+    "tag": "844x390",
+    "errors": [],
+    "text": "25 left",
+    "font": "12px",
+    "lineHeight": "12px",
+    "tileH": 52,
+    "tileScroll": 50,
+    "tileClient": 50,
+    "textOutside": false,
+    "grid": {
+      "x": 16,
+      "y": 242,
+      "w": 252,
+      "h": 52
+    },
+    "badges": [
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-stronghold"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-card"
+      }
+    ],
+    "phone": true,
+    "portrait": false,
+    "clip": {
+      "x": 12,
+      "y": 234,
+      "width": 260,
+      "height": 68
+    }
+  },
+  {
+    "tag": "320x568",
+    "errors": [],
+    "text": "25 left",
+    "font": "12px",
+    "lineHeight": "12px",
+    "tileH": 52,
+    "tileScroll": 50,
+    "tileClient": 50,
+    "textOutside": false,
+    "grid": {
+      "x": 16,
+      "y": 428,
+      "w": 288,
+      "h": 52
+    },
+    "badges": [
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-stronghold"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "15px",
+        "tile": "build-card"
+      },
+      {
+        "text": "−1",
+        "font": "9px",
+        "tile": "build-card"
+      }
+    ],
+    "phone": true,
+    "portrait": true,
+    "clip": {
+      "x": 12,
+      "y": 420,
+      "width": 296,
+      "height": 68
+    }
+  }
+]

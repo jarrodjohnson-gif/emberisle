@@ -1,0 +1,11 @@
+$ npm --prefix server run needs-prove
+
+> needs-prove
+> node --import ./register.mjs needs-prove.mjs
+
+ok needs validation and shared local/host expiry rules
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+needs server prove ok

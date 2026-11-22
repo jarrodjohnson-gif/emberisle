@@ -1,0 +1,3 @@
+CONTROL: delaying Hud mount by 2500ms
+4:24:06 AM [vite] (client) [Unhandled error] SyntaxError: The requested module '/node_modules/.vite/deps/react.js' does not provide an export named 'createElement'
+

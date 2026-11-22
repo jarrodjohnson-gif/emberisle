@@ -5,13 +5,13 @@ import { once } from "node:events";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-render-recovery-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, GRACE_MS: "300000" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, GRACE_MS: "300000" },
 });
 process.on("exit", () => {
   host.kill("SIGKILL");
@@ -30,7 +30,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: Number(proc
 await vite.listen();
 const port = vite.httpServer.address().port;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let other;

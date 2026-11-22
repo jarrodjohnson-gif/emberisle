@@ -158,10 +158,43 @@ on its corner, and measures their meshes on screen: the path is 34.0 x 11.7 px, 
 corner 28 px across (the 24 px touch slop or more). No zoom bias: any zoom past the fit pushes a
 dock or a pine out of the hole, and the pick reach, not the piece's drawn size, is the tap target.
 
+## Budget
+
+Draw call measurements per rAF tick (idle board averaging 12 fps across 60 Hz rAF):
+
+| Viewport | Pixel Ratio | View | SSAO | Draw calls / rAF tick |
+|---|---|---|---|---|
+| 1280x720 | 1 | Overhead | Off | 36.8 |
+| 1280x720 | 1 | Free | Off | 35.0 |
+| 1280x720 | 1 | Free | Half | 68.2 |
+| 1920x1080 | 1 | Overhead | Off | 37.0 |
+| 1920x1080 | 1 | Free | Off | 34.5 |
+| 1920x1080 | 1 | Free | Half | 37.9 |
+
+The table reports measured draw calls per rAF tick.
+When motionless, the board loop idles at 12 fps (PR #341, issue #331).
+Per-frame numbers while animating are an estimate of about five times.
+Estimated rendered frame costs are ~185 overhead and ~341 SSAO.
+Hex Jelly scenes batched terrain and dropped draw calls from ~480 to under 60 (PR #618, PR #624, issue #599).
+
+Ceilings for future scene and piece work (in per-tick units):
+- Overhead play view: maximum 50 draw calls per rAF tick (estimated ~250 per rendered frame).
+- Free and diorama views with SSAO: maximum 75 draw calls per rAF tick (estimated ~375 per rendered frame).
+
+Ceiling rationale:
+- Overhead measures 37.0 calls per tick.
+- The 50 ceiling provides 35% headroom for animations and highlights.
+- Free view with SSAO measures up to 68.2 calls per tick.
+- The 75 ceiling provides 10% headroom for SSAO and multi-mesh terrain blocks.
+
+Frame time:
+Real-GPU frame times cannot be measured in headless CI.
+Headless CI runs on SwiftShader CPU rasterization at a fixed 60 Hz timer.
+Physical GPU frame time measurement is tracked in follow-up issue #1558.
+
 ## Open
 
-- **Budget and frame time**: draw calls in the overhead play view are about 480 a frame (docs/research/mobile-frame-time.md);
-  a real-GPU frame time from Jarrod's PC and a budget line are #464.
+- **Budget and frame time** (#464): draw-call ceilings documented above; real-GPU frame time is tracked in #1558.
 - **The phone hole** (#422, done as HUD work): on a sideways phone the bottom stack is a full-height left column (20 rem,
   at most 48 vw so it stays a rail), so the hole is the same in every phase. Main phase, hand shown: 844x390 went from a
   101x85 px island and a 7.1 px token to 270x227 and 19 px (adjacent corners 28 px apart); 667x375 from 101x85 and 7.1 px

@@ -1,0 +1,18 @@
+/* #1411 design mock: who wants to play again. capture.mjs adds this to the real win screen. Game tokens only. */
+.pa-tag {
+  flex: none; display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 7px;
+  border: 1px solid var(--color-accent); border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--color-sea) 10%, var(--color-surface)); color: var(--color-accent-ink);
+  font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600; white-space: nowrap;
+}
+.pa-tag svg { width: 12px; height: 12px; }
+.pa-tag.pa-away { border-color: var(--color-border); background: var(--color-bg); color: var(--color-muted); }
+/* Desktop table: the tag sits under the name, so the table gets no wider. */
+td > .pa-tag { display: flex; width: fit-content; margin: 2px 0 0 18px; }
+.pa-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pa-count {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0 0;
+  font-size: var(--text-caption); line-height: var(--text-caption--line-height); font-weight: 600; color: var(--color-accent-ink);
+}
+.pa-count svg { width: 14px; height: 14px; }
+.pa-want svg { width: 16px; height: 16px; margin-right: 4px; }

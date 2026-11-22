@@ -1,0 +1,21 @@
+
+> lobby-layout-prove
+> node scripts/lobby-layout-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 390x844 shrinks/grows to 320: complete code visible without ellipsis {"code":"WWWW","font":21.9355,"textLeft":25,"textRight":109.796875,"left":25,"right":85.59375,"focus":true,"buttons":[{"text":"Copied","font":12,"width":59.03125,"height":44,"left":9,"right":9},{"text":"Copy link","font":12,"width":73.03125,"height":44,"left":9,"right":9},{"text":"Invite","font":12,"width":53.34375,"height":44,"left":9,"right":9}]}
+    at codeFits (file:///tmp/sol-1176-adopt/one-shot-observer/scripts/lobby-layout-prove.mjs:199:10)
+    at async supportedCodeFits (file:///tmp/sol-1176-adopt/one-shot-observer/scripts/lobby-layout-prove.mjs:235:5)
+    at async file:///tmp/sol-1176-adopt/one-shot-observer/scripts/lobby-layout-prove.mjs:278:24 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

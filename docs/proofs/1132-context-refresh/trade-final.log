@@ -1,0 +1,27 @@
+
+> trade-prove
+> node scripts/trade-prove.mjs
+
+#425: Host a table -> /audio/click_001.wav once
+table KANZ: setup done, seq 15
+Tide gives 1 clay, wants 1 timber; Pine says no, Ember says yes
+#425: Escape on the trade panel -> /audio/back_001.wav once
+#378: Enter on Trade -> dialog "Trade", focus on "Close"; 14 Tabs + 3 Shift+Tabs stayed inside (8 stops); Escape -> focus on Trade
+#609/#1107: offer of clay for timber heard as ["sb_only_wood.mp3@1"] on the other seats and ["sb_only_wood.mp3@1"] on the asker
+toast on Ember and Pine: "Tide offers 1 brick for 1 wood"; asker sees "Waiting…"
+#366: Ember and Pine see an alertdialog named "Tide offers 1 brick for 1 wood", focus untouched, countdown aria-hidden
+Pine declined: asker sees "Pine declined", offer still open for Ember
+#609: trade_yes plays in full for the asker and taker, at half volume for the bystander
+Ember took it: 1 clay -> Ember, 1 timber -> Tide, hands and goods counts agree on all 3 tabs
+#366: "Tide offers 1 wood for 2 brick": Yes on Ember and Pine is aria-disabled, focusable, described by "Need … more brick"
+#366: Enter on Ember's aria-disabled Yes sent nothing; Escape in Pine's toast answered No
+#609: trade_no plays for the asker only
+#366: Ember's polite line said only "5 seconds left"
+second offer ran out after 20 s left on the clock: hands unchanged, toast closed on all 3 tabs
+#1107: trade clips follow precedence, reach all seats, plain chime excludes the asker, and corn_no needs every explicit No
+#1132 please-sheep: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade
+#1132 please-grain: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade
+#1132 please-brick: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade
+#1132 please-wood: native board@0.2 with Memes muted; active gain follows context; host soundboard@0.4 with board muted; board mute silences trade
+#1132: native context instances stay independent; actual store lifecycle clears repeat keys, ordinary pushes keep them
+trade prove ok

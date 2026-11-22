@@ -1,0 +1,31 @@
+import {createRequire} from 'node:module';
+import {spawn} from 'node:child_process';
+import {mkdtempSync,readFileSync,writeFileSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const root=process.env.FRACTIONAL_ROOT||'/workspace/emberisle/work/p1181-sol',require=createRequire(root+'/package.json');
+const {chromium}=require('playwright'),{createServer}=await import(require.resolve('vite'));
+const host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:root+'/server',env:{...process.env,PORT:'0',ROOMS_DIR:mkdtempSync(path.join(tmpdir(),'emberisle-fonts-'))}});
+const port=await new Promise((resolve,reject)=>{host.on('error',reject);host.on('exit',code=>reject(Error('host exit'+code)));host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});});
+const vite=await createServer({root,server:{host:'127.0.0.1',port:0},logLevel:'error'});await vite.listen();
+const source=readFileSync(root+'/scripts/lobby-layout-prove.mjs','utf8');const start=source.indexOf('async function codeFits('),end=source.indexOf('\nasync function supportedCodeFits',start);assert.ok(start>0&&end>start);
+const fitResults=[];const codeFits=vm.runInNewContext(source.slice(start,end)+'\ncodeFits;',{assert,fitResults,console,setTimeout,clearTimeout});
+const results=[];let browser;
+try{
+ browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ const context=await browser.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,deviceScaleFactor:1,reducedMotion:'reduce'});
+ await context.addInitScript(()=>{localStorage.setItem('emberisle-name','Jarrod');localStorage.setItem('emberisle-jelly','lite');Object.defineProperty(navigator,'clipboard',{value:{writeText:async()=>{}}});});
+ const page=await context.newPage();await page.goto(`http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${port}`);await page.waitForFunction(()=>!!window.__emberisle);await page.evaluate(()=>window.__emberisle.getState().hostTable());await page.getByTestId('lobby-card').waitFor();await page.evaluate(()=>window.__emberisle.setState({code:'ZZZZ'}));
+ const session=await context.newCDPSession(page);await session.send('DOM.enable');await session.send('CSS.enable');
+ for(const [name,family]of [['DejaVu Sans','"DejaVu Sans", sans-serif']]){
+  await page.getByRole('button',{name:'Copy',exact:true}).waitFor();
+  await page.evaluate(family=>{document.getElementById('font-matrix')?.remove();if(family){const style=document.createElement('style');style.id='font-matrix';style.textContent=`.lobby-header p, .lobby-copy-controls button { font-family: ${family} !important; }`;document.head.append(style);}},family);
+  await page.evaluate(()=>document.fonts.ready);await page.evaluate(()=>window.__emberisle.setState({code:'APWG'}));await page.waitForFunction(()=>document.querySelector('[data-testid="table-code"]').textContent==='APWG');await page.getByRole('button',{name:'Copy',exact:true}).focus();await page.evaluate(()=>{window.__codeFocus=document.activeElement;});
+  let error=null;try{await codeFits(page,`390x844 ${name} APWG ready`);}catch(e){error={name:e.name,message:e.message};}
+  const {root:doc}=await session.send('DOM.getDocument');const {nodeId}=await session.send('DOM.querySelector',{nodeId:doc.nodeId,selector:'[data-testid="table-code"]'});const fonts=await session.send('CSS.getPlatformFontsForNode',{nodeId});
+  const result={name,family,error,fonts:fonts.fonts,measurement:fitResults.at(-1)?.label.includes(name)?fitResults.at(-1):null};results.push(result);console.log('FONT_MATRIX',JSON.stringify(result));
+ }
+ await session.detach();writeFileSync(process.env.FRACTIONAL_OUT||'/tmp/sol-1181-owner/fractional-triggered-after.json',JSON.stringify({browser:browser.version(),source:root+'; current codeFits extracted verbatim; controlled font installed before ZZZZ→APWG state transition',results},null,2));
+}finally{await browser?.close();await vite.close();host.kill();}

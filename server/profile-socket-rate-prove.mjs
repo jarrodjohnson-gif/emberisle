@@ -12,7 +12,7 @@ const dir = mkdtempSync(path.join(tmpdir(), "emberisle-profile-socket-"));
 const sockets = new Set();
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(dir, "rooms"), PROFILES_DIR: path.join(dir, "profiles"), PROFILES_DEV: "1" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(dir, "rooms"), RESULTS_DIR: `${path.join(dir, "rooms")}/results`, PROFILES_DIR: path.join(dir, "profiles"), PROFILES_DEV: "1" },
 });
 let stderr = "";
 host.stderr.on("data", (d) => { stderr += d; });

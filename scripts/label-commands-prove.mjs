@@ -442,4 +442,95 @@ await prove('each command in KNOWN appears in the workflow if: guard', async () 
     );
   }
 });
+await prove('indented examples cannot command or reserve', async () => {
+  for (const indent of ['    ', '\t']) {
+    const s = fixture([comment(1, indent + '/claim\nclaimed: Example, 2026-10-16'), claim(2, 'Real')]);
+    await s.run(1);
+    assert.equal(s.has(1, '+1'), false);
+    assert.equal(s.has(1, '-1'), false);
+    await s.run(2);
+    winner(s, 2);
+    const metadata = fixture([comment(1, '/claim\n' + indent + 'claimed: Example, 2026-10-16'), claim(2, 'Real')]);
+    await metadata.run(2);
+    winner(metadata, 2);
+  }
+});
+await prove('list fences hide examples and preserve later real commands', async () => {
+  for (const [prefix, fence] of [['- ', '```'], ['1. ', '~~~'], ['123. ', '````'], ['- - ', '```']]) {
+    const indent = ' '.repeat(prefix.length);
+    const body = prefix + fence + '\n' + indent + '/claim\n' + indent +
+      'claimed: Example, 2026-10-16\n' + indent + fence + '\n/claim\nclaimed: Real, 2026-10-16';
+    const s = fixture([comment(1, body), claim(2, 'Real'), claim(3, 'Other')]);
+    await s.run(3);
+    winner(s, 1, [3]);
+    await s.run(2);
+    winner(s, 2);
+    const dedented = fixture([comment(1, prefix + fence + '\n' + indent + '/claim\n/claim\nclaimed: Real, 2026-10-16'), claim(2, 'Real')]);
+    await dedented.run(2);
+    winner(dedented, 1);
+    winner(dedented, 2);
+  }
+});
+await prove('list examples cannot release claims or attach PR authority', async () => {
+  for (const lines of [['paused: A, 2026-10-16'], ['/unclaim', 'released: A, 2026-10-16'], ['/in-review', 'pr: #700']]) {
+    const block = '- ````\n' + lines.map(line => '  ' + line).join('\n') + '\n  ```\n  ````';
+    const s = fixture([claim(1, 'A'), comment(2, block), claim(5, 'Other')], {
+      prs: { 700: { number: 700, body: 'Refs #694', user: { login: owner }, closed_at: minute(4) } },
+    });
+    await s.run(2);
+    assert.equal(s.has(2, '+1'), false);
+    assert.equal(s.has(2, '-1'), false);
+    await s.run(5);
+    winner(s, 1, [5]);
+    assert.equal(s.calls.length, 0);
+  }
+});
+await prove('invalid backtick info strings do not swallow commands', async () => {
+  const s = fixture([comment(1, '```bad`info\n/claim\nclaimed: Real, 2026-10-16'), claim(2, 'Real')]);
+  await s.run(2);
+  winner(s, 1);
+  winner(s, 2);
+  const tilde = fixture([comment(1, '~~~valid`info\n/claim\nclaimed: Example, 2026-10-16\n~~~\n/claim\nclaimed: Real, 2026-10-16'), claim(2, 'Real')]);
+  await tilde.run(2);
+  winner(tilde, 1);
+  winner(tilde, 2);
+});
+await prove('only outside metadata supplies a real command identity', async () => {
+  for (const example of ['    claimed: Fake, 2026-10-16\n    files: fake',
+    '- ````\n  claimed: Fake, 2026-10-16\n  files: fake\n  ~~~~\n  ```\n  /claim\n  claimed: Intruder, 2026-10-16\n  ````']) {
+    const s = fixture([comment(1, '/claim\n' + example + '\nclaimed: Real, 2026-10-16\nfiles: real'), claim(2, 'Real'), claim(3, 'Other')]);
+    await s.run(3);
+    winner(s, 1, [3]);
+    await s.run(2);
+    winner(s, 2);
+  }
+  const adjacent = fixture([comment(1, 'Paragraph immediately before\n    /claim\nclaimed: Fake, 2026-10-16'), claim(2, 'Real')]);
+  await adjacent.run(1);
+  assert.equal(adjacent.has(1, '+1'), false);
+  assert.equal(adjacent.has(1, '-1'), false);
+  await adjacent.run(2);
+  winner(adjacent, 2);
+});
+await prove('continuation-line list fences cannot expose commands', async () => {
+  for (const [prefix, indent] of [['- ', 2], ['1. ', 3], ['- - ', 4]]) {
+    const pad = ' '.repeat(indent);
+    const body = prefix + 'Example\n' + pad + '  ```\n' + pad + '/claim\n' +
+      pad + 'claimed: Intruder, 2026-10-16\n' + pad + '  ```\nAfter the example';
+    const s = fixture([comment(1, body), claim(2, 'Real')]);
+    await s.run(1);
+    assert.equal(s.has(1, '+1'), false);
+    assert.equal(s.has(1, '-1'), false);
+    await s.run(2);
+    winner(s, 2);
+    for (const closer of [pad + '  ```\n', '']) {
+      const real = fixture([comment(1, prefix + 'Example\n' + pad + '  ```\n' + pad +
+        '/claim\n' + pad + 'claimed: Fake, 2026-10-16\n' + closer +
+        '/claim\nclaimed: Real, 2026-10-16'), claim(2, 'Real'), claim(3, 'Other')]);
+      await real.run(3);
+      winner(real, 1, [3]);
+      await real.run(2);
+      winner(real, 2);
+    }
+  }
+});
 console.log(`PASS ${checks} workflow proof groups`);

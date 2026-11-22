@@ -1,0 +1,17 @@
+CONTROL: delaying Hud mount by 2500ms
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+CONTROL pre-gain { seq: 20, hands: 0, lines: 0 }
+CONTROL final { seq: 21, hands: 5, lines: 0, counts: [ '2', '0', '0', '0', '0' ] }
+390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-testid="resource-flash"]') to be visible[22m
+
+    at reconnect (/workspace/work/1518/scripts/.1518-control.mjs:874:16)
+    at async file:///workspace/work/1518/scripts/.1518-control.mjs:909:38 {
+  log: [
+    `  - waiting for locator('[data-testid="resource-flash"]') to be visible`
+  ],
+  name: 'TimeoutError'
+}
+ok   zero console errors []
+turn-gain-prove: 1 failed

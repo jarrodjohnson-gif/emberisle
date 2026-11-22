@@ -9,7 +9,7 @@ import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 // The rule (#673): 5 reloads, with the median inside BUDGET.
 // HARD is only an outlier cap, twice BUDGET.
@@ -30,7 +30,7 @@ if (!existsSync(`${DIST}index.html`)) {
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR },
+  env: { ...process.env, PORT: "0", DIST, ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => {
   host.kill("SIGKILL");
@@ -44,7 +44,6 @@ const hostPort = await new Promise((resolve) =>
   }),
 );
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

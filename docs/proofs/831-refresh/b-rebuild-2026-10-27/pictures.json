@@ -1,0 +1,1645 @@
+{
+  "browser": "153.0.8010.12",
+  "fixtureSeed": 13,
+  "records": [
+    {
+      "width": 390,
+      "height": 844,
+      "state": "initial",
+      "file": "390x844-table-initial.png",
+      "quote": "Choose one kind on each side for a bank or dock exchange.",
+      "rendered": {
+        "landReady": true,
+        "renders": 5,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank",
+      "disabled": true,
+      "sha256": "ed8766555a11ee190634059b678f647e806b5947cfd235491f911e5e84e64e3b",
+      "geometry": {
+        "panel": {
+          "x": 12,
+          "y": 205,
+          "w": 366,
+          "h": 627,
+          "bottom": 832,
+          "right": 378
+        },
+        "goods": {
+          "x": 13,
+          "y": 259,
+          "w": 364,
+          "h": 349,
+          "bottom": 608,
+          "right": 377
+        },
+        "goodsScrollHeight": 349,
+        "footer": {
+          "x": 13,
+          "y": 608,
+          "w": 364,
+          "h": 223,
+          "bottom": 831,
+          "right": 377
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 321,
+            "y": 210,
+            "w": 44,
+            "h": 44,
+            "bottom": 254,
+            "right": 365
+          },
+          {
+            "label": "More Wood to give",
+            "x": 26,
+            "y": 345,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 445,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 95.59375,
+            "y": 345,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 445,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 165.1875,
+            "y": 345,
+            "w": 59.609375,
+            "h": 100,
+            "bottom": 445,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 234.796875,
+            "y": 345,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 445,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 304.390625,
+            "y": 345,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 445,
+            "right": 363.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 26,
+            "y": 491,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 591,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 95.59375,
+            "y": 491,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 591,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 165.1875,
+            "y": 491,
+            "w": 59.609375,
+            "h": 100,
+            "bottom": 591,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 234.796875,
+            "y": 491,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 591,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 304.390625,
+            "y": 491,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 591,
+            "right": 363.984375
+          },
+          {
+            "label": "Bank",
+            "x": 288.90625,
+            "y": 637,
+            "w": 67.09375,
+            "h": 44,
+            "bottom": 681,
+            "right": 356
+          },
+          {
+            "label": "Ask the table",
+            "x": 25,
+            "y": 777,
+            "w": 340,
+            "h": 44,
+            "bottom": 821,
+            "right": 365
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "affordable",
+      "file": "390x844-table-affordable.png",
+      "quote": "Bank 4:1: give 4 wood, get 1 stone now.",
+      "rendered": {
+        "landReady": true,
+        "renders": 9,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": false,
+      "sha256": "62b931267aa1deea20ec1287ef176972029da5a6d3c52229771241878f6241a7",
+      "geometry": {
+        "panel": {
+          "x": 12,
+          "y": 119,
+          "w": 366,
+          "h": 713,
+          "bottom": 832,
+          "right": 378
+        },
+        "goods": {
+          "x": 13,
+          "y": 173,
+          "w": 364,
+          "h": 453,
+          "bottom": 626,
+          "right": 377
+        },
+        "goodsScrollHeight": 453,
+        "footer": {
+          "x": 13,
+          "y": 626,
+          "w": 364,
+          "h": 205,
+          "bottom": 831,
+          "right": 377
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 321,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168,
+            "right": 365
+          },
+          {
+            "label": "More Wood to give",
+            "x": 26,
+            "y": 259,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 359,
+            "right": 85.59375
+          },
+          {
+            "label": "Fewer Wood to give",
+            "x": 26,
+            "y": 367,
+            "w": 59.59375,
+            "h": 44,
+            "bottom": 411,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 95.59375,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 165.1875,
+            "y": 259,
+            "w": 59.609375,
+            "h": 152,
+            "bottom": 411,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 234.796875,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 304.390625,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 363.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 26,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 95.59375,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 165.1875,
+            "y": 457,
+            "w": 59.609375,
+            "h": 152,
+            "bottom": 609,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 234.796875,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 304.390625,
+            "y": 457,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 557,
+            "right": 363.984375
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 304.390625,
+            "y": 565,
+            "w": 59.59375,
+            "h": 44,
+            "bottom": 609,
+            "right": 363.984375
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 265.5,
+            "y": 646,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 690,
+            "right": 356
+          },
+          {
+            "label": "Ask the table",
+            "x": 25,
+            "y": 777,
+            "w": 340,
+            "h": 44,
+            "bottom": 821,
+            "right": 365
+          }
+        ]
+      }
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "state": "disabled",
+      "file": "390x844-table-disabled.png",
+      "quote": "Need 4 brick for the bank.",
+      "rendered": {
+        "landReady": true,
+        "renders": 12,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": true,
+      "sha256": "2401b4ad200f822e70b84a3397246383ae05185367690da9e49aac9dbddd4358",
+      "geometry": {
+        "panel": {
+          "x": 12,
+          "y": 119,
+          "w": 366,
+          "h": 713,
+          "bottom": 832,
+          "right": 378
+        },
+        "goods": {
+          "x": 13,
+          "y": 173,
+          "w": 364,
+          "h": 453,
+          "bottom": 626,
+          "right": 377
+        },
+        "goodsScrollHeight": 453,
+        "footer": {
+          "x": 13,
+          "y": 626,
+          "w": 364,
+          "h": 205,
+          "bottom": 831,
+          "right": 377
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 321,
+            "y": 124,
+            "w": 44,
+            "h": 44,
+            "bottom": 168,
+            "right": 365
+          },
+          {
+            "label": "More Wood to give",
+            "x": 26,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 95.59375,
+            "y": 259,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 359,
+            "right": 155.1875
+          },
+          {
+            "label": "Fewer Brick to give",
+            "x": 95.59375,
+            "y": 367,
+            "w": 59.59375,
+            "h": 44,
+            "bottom": 411,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 165.1875,
+            "y": 259,
+            "w": 59.609375,
+            "h": 152,
+            "bottom": 411,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 234.796875,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 304.390625,
+            "y": 259,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 411,
+            "right": 363.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 26,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 85.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 95.59375,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 155.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 165.1875,
+            "y": 457,
+            "w": 59.609375,
+            "h": 152,
+            "bottom": 609,
+            "right": 224.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 234.796875,
+            "y": 457,
+            "w": 59.59375,
+            "h": 152,
+            "bottom": 609,
+            "right": 294.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 304.390625,
+            "y": 457,
+            "w": 59.59375,
+            "h": 100,
+            "bottom": 557,
+            "right": 363.984375
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 304.390625,
+            "y": 565,
+            "w": 59.59375,
+            "h": 44,
+            "bottom": 609,
+            "right": 363.984375
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 265.5,
+            "y": 646,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 690,
+            "right": 356
+          },
+          {
+            "label": "Ask the table",
+            "x": 25,
+            "y": 777,
+            "w": 340,
+            "h": 44,
+            "bottom": 821,
+            "right": 365
+          }
+        ]
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": "initial",
+      "file": "844x390-table-initial.png",
+      "quote": "Choose one kind on each side for a bank or dock exchange.",
+      "rendered": {
+        "landReady": true,
+        "renders": 8,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank",
+      "disabled": true,
+      "sha256": "68b66c20a28fd1b269fd485ec9252623ca12b9fc236743e82b97707dcb3f6329",
+      "geometry": {
+        "panel": {
+          "x": 102,
+          "y": 8,
+          "w": 640,
+          "h": 374,
+          "bottom": 382,
+          "right": 742
+        },
+        "goods": {
+          "x": 103,
+          "y": 54,
+          "w": 638,
+          "h": 244,
+          "bottom": 298,
+          "right": 741
+        },
+        "goodsScrollHeight": 244,
+        "footer": {
+          "x": 103,
+          "y": 298,
+          "w": 638,
+          "h": 83,
+          "bottom": 381,
+          "right": 741
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 683,
+            "y": 9,
+            "w": 44,
+            "h": 44,
+            "bottom": 53,
+            "right": 727
+          },
+          {
+            "label": "More Wood to give",
+            "x": 118,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 241.59375,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 365.1875,
+            "y": 83,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 171,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 488.796875,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 612.390625,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 725.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 118,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 241.59375,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 365.1875,
+            "y": 205,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 293,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 488.796875,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 612.390625,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 725.984375
+          },
+          {
+            "label": "Bank",
+            "x": 341.90625,
+            "y": 318,
+            "w": 67.09375,
+            "h": 44,
+            "bottom": 362,
+            "right": 409
+          },
+          {
+            "label": "Ask the table",
+            "x": 426,
+            "y": 329,
+            "w": 301,
+            "h": 44,
+            "bottom": 373,
+            "right": 727
+          }
+        ]
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": "affordable",
+      "file": "844x390-table-affordable.png",
+      "quote": "Bank 4:1: give 4 wood, get 1 stone now.",
+      "rendered": {
+        "landReady": true,
+        "renders": 11,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": false,
+      "sha256": "869d6d38d253151da036a91964121cf1b9f38a3d644be3ed5ec1001f9f445483",
+      "geometry": {
+        "panel": {
+          "x": 102,
+          "y": 8,
+          "w": 640,
+          "h": 374,
+          "bottom": 382,
+          "right": 742
+        },
+        "goods": {
+          "x": 103,
+          "y": 54,
+          "w": 638,
+          "h": 244,
+          "bottom": 298,
+          "right": 741
+        },
+        "goodsScrollHeight": 244,
+        "footer": {
+          "x": 103,
+          "y": 298,
+          "w": 638,
+          "h": 83,
+          "bottom": 381,
+          "right": 741
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 683,
+            "y": 9,
+            "w": 44,
+            "h": 44,
+            "bottom": 53,
+            "right": 727
+          },
+          {
+            "label": "More Wood to give",
+            "x": 118,
+            "y": 83,
+            "w": 61.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 179.59375
+          },
+          {
+            "label": "Fewer Wood to give",
+            "x": 187.59375,
+            "y": 83,
+            "w": 44,
+            "h": 88,
+            "bottom": 171,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 241.59375,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 365.1875,
+            "y": 83,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 171,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 488.796875,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 612.390625,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 725.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 118,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 241.59375,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 365.1875,
+            "y": 205,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 293,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 488.796875,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 612.390625,
+            "y": 205,
+            "w": 61.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 673.984375
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 681.984375,
+            "y": 205,
+            "w": 44,
+            "h": 88,
+            "bottom": 293,
+            "right": 725.984375
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 318.5,
+            "y": 318,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 362,
+            "right": 409
+          },
+          {
+            "label": "Ask the table",
+            "x": 426,
+            "y": 329,
+            "w": 301,
+            "h": 44,
+            "bottom": 373,
+            "right": 727
+          }
+        ]
+      }
+    },
+    {
+      "width": 844,
+      "height": 390,
+      "state": "disabled",
+      "file": "844x390-table-disabled.png",
+      "quote": "Need 4 brick for the bank.",
+      "rendered": {
+        "landReady": true,
+        "renders": 15,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": true,
+      "sha256": "e5d58beddd8515c4579f270ad48944b32d0ff9f315f808ab827ee2eb7467cd49",
+      "geometry": {
+        "panel": {
+          "x": 102,
+          "y": 8,
+          "w": 640,
+          "h": 374,
+          "bottom": 382,
+          "right": 742
+        },
+        "goods": {
+          "x": 103,
+          "y": 54,
+          "w": 638,
+          "h": 244,
+          "bottom": 298,
+          "right": 741
+        },
+        "goodsScrollHeight": 244,
+        "footer": {
+          "x": 103,
+          "y": 298,
+          "w": 638,
+          "h": 83,
+          "bottom": 381,
+          "right": 741
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 683,
+            "y": 9,
+            "w": 44,
+            "h": 44,
+            "bottom": 53,
+            "right": 727
+          },
+          {
+            "label": "More Wood to give",
+            "x": 118,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to give",
+            "x": 241.59375,
+            "y": 83,
+            "w": 61.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 303.1875
+          },
+          {
+            "label": "Fewer Brick to give",
+            "x": 311.1875,
+            "y": 83,
+            "w": 44,
+            "h": 88,
+            "bottom": 171,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 365.1875,
+            "y": 83,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 171,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 488.796875,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to give",
+            "x": 612.390625,
+            "y": 83,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 171,
+            "right": 725.984375
+          },
+          {
+            "label": "More Wood to want",
+            "x": 118,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 231.59375
+          },
+          {
+            "label": "More Brick to want",
+            "x": 241.59375,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 355.1875
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 365.1875,
+            "y": 205,
+            "w": 113.609375,
+            "h": 88,
+            "bottom": 293,
+            "right": 478.796875
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 488.796875,
+            "y": 205,
+            "w": 113.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 602.390625
+          },
+          {
+            "label": "More Stone to want",
+            "x": 612.390625,
+            "y": 205,
+            "w": 61.59375,
+            "h": 88,
+            "bottom": 293,
+            "right": 673.984375
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 681.984375,
+            "y": 205,
+            "w": 44,
+            "h": 88,
+            "bottom": 293,
+            "right": 725.984375
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 318.5,
+            "y": 318,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 362,
+            "right": 409
+          },
+          {
+            "label": "Ask the table",
+            "x": 426,
+            "y": 329,
+            "w": 301,
+            "h": 44,
+            "bottom": 373,
+            "right": 727
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "state": "initial",
+      "file": "1280x720-table-initial.png",
+      "quote": "Choose one kind on each side for a bank or dock exchange.",
+      "rendered": {
+        "landReady": true,
+        "renders": 5,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank",
+      "disabled": true,
+      "sha256": "c98e4738e46a5f59251c4427c34301944b026f32e7f2e7876da7a362071e7a08",
+      "geometry": {
+        "panel": {
+          "x": 320,
+          "y": 60.25,
+          "w": 640,
+          "h": 599.5,
+          "bottom": 659.75,
+          "right": 960
+        },
+        "goods": {
+          "x": 321,
+          "y": 122.25,
+          "w": 638,
+          "h": 327.5,
+          "bottom": 449.75,
+          "right": 959
+        },
+        "goodsScrollHeight": 328,
+        "footer": {
+          "x": 321,
+          "y": 449.75,
+          "w": 638,
+          "h": 209,
+          "bottom": 658.75,
+          "right": 959
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 899,
+            "y": 69.25,
+            "w": 44,
+            "h": 44,
+            "bottom": 113.25,
+            "right": 943
+          },
+          {
+            "label": "More Wood to give",
+            "x": 338,
+            "y": 190.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 290.75,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to give",
+            "x": 460.796875,
+            "y": 190.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 290.75,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 583.59375,
+            "y": 190.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 290.75,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 706.390625,
+            "y": 190.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 290.75,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to give",
+            "x": 829.1875,
+            "y": 190.75,
+            "w": 112.8125,
+            "h": 100,
+            "bottom": 290.75,
+            "right": 942
+          },
+          {
+            "label": "More Wood to want",
+            "x": 338,
+            "y": 336.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 436.75,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to want",
+            "x": 460.796875,
+            "y": 336.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 436.75,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 583.59375,
+            "y": 336.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 436.75,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 706.390625,
+            "y": 336.75,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 436.75,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to want",
+            "x": 829.1875,
+            "y": 336.75,
+            "w": 112.8125,
+            "h": 100,
+            "bottom": 436.75,
+            "right": 942
+          },
+          {
+            "label": "Bank",
+            "x": 866.90625,
+            "y": 471.75,
+            "w": 67.09375,
+            "h": 44,
+            "bottom": 515.75,
+            "right": 934
+          },
+          {
+            "label": "Ask the table",
+            "x": 337,
+            "y": 602.75,
+            "w": 606,
+            "h": 44,
+            "bottom": 646.75,
+            "right": 943
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "state": "affordable",
+      "file": "1280x720-table-affordable.png",
+      "quote": "Bank 4:1: give 4 wood, get 1 stone now.",
+      "rendered": {
+        "landReady": true,
+        "renders": 8,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": false,
+      "sha256": "d94cb88fbe36e9ef01de6c4ae6d590dbf862c56cccf59f1dcefa942b707fe88b",
+      "geometry": {
+        "panel": {
+          "x": 320,
+          "y": 12,
+          "w": 640,
+          "h": 696,
+          "bottom": 708,
+          "right": 960
+        },
+        "goods": {
+          "x": 321,
+          "y": 74,
+          "w": 638,
+          "h": 424,
+          "bottom": 498,
+          "right": 959
+        },
+        "goodsScrollHeight": 432,
+        "footer": {
+          "x": 321,
+          "y": 498,
+          "w": 638,
+          "h": 209,
+          "bottom": 707,
+          "right": 959
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 899,
+            "y": 21,
+            "w": 44,
+            "h": 44,
+            "bottom": 65,
+            "right": 943
+          },
+          {
+            "label": "More Wood to give",
+            "x": 338,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 242.5,
+            "right": 450.796875
+          },
+          {
+            "label": "Fewer Wood to give",
+            "x": 338,
+            "y": 250.5,
+            "w": 112.796875,
+            "h": 44,
+            "bottom": 294.5,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to give",
+            "x": 460.796875,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 583.59375,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 706.390625,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to give",
+            "x": 829.1875,
+            "y": 142.5,
+            "w": 112.8125,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 942
+          },
+          {
+            "label": "More Wood to want",
+            "x": 338,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to want",
+            "x": 460.796875,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 583.59375,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 706.390625,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to want",
+            "x": 829.1875,
+            "y": 340.5,
+            "w": 112.8125,
+            "h": 100,
+            "bottom": 440.5,
+            "right": 942
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 829.1875,
+            "y": 448.5,
+            "w": 112.8125,
+            "h": 44,
+            "bottom": 492.5,
+            "right": 942
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 843.5,
+            "y": 520,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 564,
+            "right": 934
+          },
+          {
+            "label": "Ask the table",
+            "x": 337,
+            "y": 651,
+            "w": 606,
+            "h": 44,
+            "bottom": 695,
+            "right": 943
+          }
+        ]
+      }
+    },
+    {
+      "width": 1280,
+      "height": 720,
+      "state": "disabled",
+      "file": "1280x720-table-disabled.png",
+      "quote": "Need 4 brick for the bank.",
+      "rendered": {
+        "landReady": true,
+        "renders": 11,
+        "terrain": {
+          "ready": true,
+          "lite": true,
+          "drawCalls": 8,
+          "triangles": 32832,
+          "kinds": 6,
+          "batches": 0,
+          "bakes": 8,
+          "sprites": 0
+        }
+      },
+      "bankLabel": "Bank 4:1",
+      "disabled": true,
+      "sha256": "ffa5c6289edb23bee072a39052b3c77279092d23f1e11ee18869e048eed909e2",
+      "geometry": {
+        "panel": {
+          "x": 320,
+          "y": 12,
+          "w": 640,
+          "h": 696,
+          "bottom": 708,
+          "right": 960
+        },
+        "goods": {
+          "x": 321,
+          "y": 74,
+          "w": 638,
+          "h": 424,
+          "bottom": 498,
+          "right": 959
+        },
+        "goodsScrollHeight": 432,
+        "footer": {
+          "x": 321,
+          "y": 498,
+          "w": 638,
+          "h": 209,
+          "bottom": 707,
+          "right": 959
+        },
+        "buttons": [
+          {
+            "label": "Close",
+            "x": 899,
+            "y": 21,
+            "w": 44,
+            "h": 44,
+            "bottom": 65,
+            "right": 943
+          },
+          {
+            "label": "More Wood to give",
+            "x": 338,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to give",
+            "x": 460.796875,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 100,
+            "bottom": 242.5,
+            "right": 573.59375
+          },
+          {
+            "label": "Fewer Brick to give",
+            "x": 460.796875,
+            "y": 250.5,
+            "w": 112.796875,
+            "h": 44,
+            "bottom": 294.5,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to give",
+            "x": 583.59375,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to give",
+            "x": 706.390625,
+            "y": 142.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to give",
+            "x": 829.1875,
+            "y": 142.5,
+            "w": 112.8125,
+            "h": 152,
+            "bottom": 294.5,
+            "right": 942
+          },
+          {
+            "label": "More Wood to want",
+            "x": 338,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 450.796875
+          },
+          {
+            "label": "More Brick to want",
+            "x": 460.796875,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 573.59375
+          },
+          {
+            "label": "More Sheep to want",
+            "x": 583.59375,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 696.390625
+          },
+          {
+            "label": "More Wheat to want",
+            "x": 706.390625,
+            "y": 340.5,
+            "w": 112.796875,
+            "h": 152,
+            "bottom": 492.5,
+            "right": 819.1875
+          },
+          {
+            "label": "More Stone to want",
+            "x": 829.1875,
+            "y": 340.5,
+            "w": 112.8125,
+            "h": 100,
+            "bottom": 440.5,
+            "right": 942
+          },
+          {
+            "label": "Fewer Stone to want",
+            "x": 829.1875,
+            "y": 448.5,
+            "w": 112.8125,
+            "h": 44,
+            "bottom": 492.5,
+            "right": 942
+          },
+          {
+            "label": "Bank 4:1",
+            "x": 843.5,
+            "y": 520,
+            "w": 90.5,
+            "h": 44,
+            "bottom": 564,
+            "right": 934
+          },
+          {
+            "label": "Ask the table",
+            "x": 337,
+            "y": 651,
+            "w": 606,
+            "h": 44,
+            "bottom": 695,
+            "right": 943
+          }
+        ]
+      }
+    }
+  ],
+  "errors": []
+}

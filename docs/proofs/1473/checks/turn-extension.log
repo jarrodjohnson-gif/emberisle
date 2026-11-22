@@ -1,0 +1,17 @@
+
+> turn-extension-prove
+> node --import ./server/register.mjs scripts/turn-extension-prove.mjs
+
+header timed player, vote hidden, chat closed: {"issues":[],"bottom":224,"instruction":"Build, trade, or end your turn"}
+header timed player, vote hidden, chat open: {"issues":[],"bottom":224,"instruction":"Build, trade, or end your turn"}
+fit phone ballot hidden: {"overflow":[],"corners":[],"hole":{"top":103,"right":12,"bottom":360,"left":12},"live":{"top":103,"right":12,"bottom":232,"left":12}}
+phone ballot hidden: {"left":123.359375,"right":378,"top":660,"bottom":704,"width":390,"height":844,"gap":4,"buttons":[{"width":254.640625,"height":44,"hit":true}]}
+header timed player, vote shown, chat closed: {"issues":[],"bottom":224,"instruction":"Build, trade, or end your turn"}
+header timed player, vote shown, chat open: {"issues":[],"bottom":224,"instruction":"Build, trade, or end your turn"}
+fit 0: {"overflow":[],"corners":[],"hole":{"top":68,"right":312,"bottom":226,"left":216},"live":{"top":68,"right":12,"bottom":224,"left":216}}
+fit 1: {"overflow":[],"corners":[],"hole":{"top":103,"right":12,"bottom":360,"left":12},"live":{"top":103,"right":12,"bottom":232,"left":12}}
+phone ballot shown: {"left":123.359375,"right":378,"top":660,"bottom":704,"width":390,"height":844,"gap":4,"buttons":[{"width":45.125,"height":44,"hit":true},{"width":47.828125,"height":44,"hit":true}]}
+header desktop voter, chat closed: {"issues":[],"bottom":160,"instruction":"Wait for Ember to build or trade"}
+header desktop voter, chat open: {"issues":[],"bottom":160,"instruction":"Wait for Ember to build or trade"}
+desktop voter: {"overflow":[],"bottom":160,"declared":226}
+PASS turn-extension-prove: two tabs, 1280x720 and 390x844; connected electorate, target excluded, 44px unobscured vote controls, phone safe area, 4px row gap and board fit with ballot hidden/shown, desktop voter fit; one countdown owner, full desktop instruction and unobscured header with chat open/closed, timed-player fit with vote shown/hidden; exact +60000ms, normal later action window/reload retention, once per turn, next-turn requester auto-yes, cancelled-vote recovery and No result; zero page errors

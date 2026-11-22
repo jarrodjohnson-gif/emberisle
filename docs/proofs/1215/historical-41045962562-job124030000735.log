@@ -1,0 +1,168 @@
+﻿2026-10-30T11:08:59.9462466Z Current runner version: '2.338.0'
+2026-10-30T11:08:59.9483446Z ##[group]Runner Image Provisioner
+2026-10-30T11:08:59.9484149Z Hosted Compute Agent
+2026-10-30T11:08:59.9484660Z Version: 20261021.618
+2026-10-30T11:08:59.9485251Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-30T11:08:59.9485870Z Build Date: 2026-10-21T00:45:21Z
+2026-10-30T11:08:59.9486520Z Worker ID: {d2db8885-9683-4dee-b2f1-2031130ff593}
+2026-10-30T11:08:59.9487131Z Region: centralus
+2026-10-30T11:08:59.9487588Z Cloud: Azure
+2026-10-30T11:08:59.9488098Z ##[endgroup]
+2026-10-30T11:08:59.9489821Z ##[group]Operating System
+2026-10-30T11:08:59.9490412Z Ubuntu
+2026-10-30T11:08:59.9490908Z 24.04.5
+2026-10-30T11:08:59.9491349Z LTS
+2026-10-30T11:08:59.9491835Z ##[endgroup]
+2026-10-30T11:08:59.9492314Z ##[group]Runner Image
+2026-10-30T11:08:59.9492881Z Image: ubuntu-24.04
+2026-10-30T11:08:59.9493401Z Version: 20261025.353.1
+2026-10-30T11:08:59.9494466Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-30T11:08:59.9495693Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-30T11:08:59.9496539Z ##[endgroup]
+2026-10-30T11:08:59.9497683Z ##[group]GITHUB_TOKEN Permissions
+2026-10-30T11:08:59.9499546Z Checks: read
+2026-10-30T11:08:59.9500070Z Contents: read
+2026-10-30T11:08:59.9500552Z Issues: write
+2026-10-30T11:08:59.9501067Z Metadata: read
+2026-10-30T11:08:59.9501579Z PullRequests: read
+2026-10-30T11:08:59.9502041Z ##[endgroup]
+2026-10-30T11:08:59.9503817Z Secret source: Actions
+2026-10-30T11:08:59.9504592Z Cache mode: write
+2026-10-30T11:08:59.9505296Z Prepare workflow directory
+2026-10-30T11:08:59.9804759Z Prepare all required actions
+2026-10-30T11:08:59.9842601Z Getting action download info
+2026-10-30T11:09:00.2301660Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-30T11:09:00.3352602Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-30T11:09:00.5348467Z Complete job name: board
+2026-10-30T11:09:00.6070303Z ##[group]Run actions/checkout@v4
+2026-10-30T11:09:00.6070960Z with:
+2026-10-30T11:09:00.6071296Z   ref: main
+2026-10-30T11:09:00.6071647Z   persist-credentials: false
+2026-10-30T11:09:00.6072083Z   sparse-checkout: scripts/desk-board.mjs
+2026-10-30T11:09:00.6072553Z   sparse-checkout-cone-mode: false
+2026-10-30T11:09:00.6073006Z   repository: jarrodjohnson-gif/emberisle
+2026-10-30T11:09:00.6076120Z   token: ***
+2026-10-30T11:09:00.6076490Z   ssh-strict: true
+2026-10-30T11:09:00.6076842Z   ssh-user: git
+2026-10-30T11:09:00.6077180Z   clean: true
+2026-10-30T11:09:00.6077518Z   fetch-depth: 1
+2026-10-30T11:09:00.6077861Z   fetch-tags: false
+2026-10-30T11:09:00.6078218Z   show-progress: true
+2026-10-30T11:09:00.6078570Z   lfs: false
+2026-10-30T11:09:00.6079035Z   submodules: false
+2026-10-30T11:09:00.6079397Z   set-safe-directory: true
+2026-10-30T11:09:00.6079803Z   allow-unsafe-pr-checkout: false
+2026-10-30T11:09:00.6080421Z ##[endgroup]
+2026-10-30T11:09:00.8086741Z Syncing repository: jarrodjohnson-gif/emberisle
+2026-10-30T11:09:00.8088493Z ##[group]Getting Git version info
+2026-10-30T11:09:00.8089653Z Working directory is '/home/runner/work/emberisle/emberisle'
+2026-10-30T11:09:00.8091098Z [command]/usr/bin/git version
+2026-10-30T11:09:00.8170145Z git version 2.56.0
+2026-10-30T11:09:00.8205687Z ##[endgroup]
+2026-10-30T11:09:00.8217329Z Temporarily overriding HOME='/home/runner/work/_temp/ec0a3213-bfdc-4c34-a0c6-e1ae613dac3c' before making global git config changes
+2026-10-30T11:09:00.8224034Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-30T11:09:00.8240046Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-30T11:09:00.8263702Z Deleting the contents of '/home/runner/work/emberisle/emberisle'
+2026-10-30T11:09:00.8268803Z ##[group]Initializing the repository
+2026-10-30T11:09:00.8284099Z [command]/usr/bin/git init /home/runner/work/emberisle/emberisle
+2026-10-30T11:09:00.8357211Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-30T11:09:00.8362122Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-30T11:09:00.8363312Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-30T11:09:00.8364253Z hint: call:
+2026-10-30T11:09:00.8364788Z hint:
+2026-10-30T11:09:00.8365417Z hint: 	git config --global init.defaultBranch <name>
+2026-10-30T11:09:00.8366119Z hint:
+2026-10-30T11:09:00.8366920Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-30T11:09:00.8368046Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-30T11:09:00.8369128Z hint:
+2026-10-30T11:09:00.8369609Z hint: 	git branch -m <name>
+2026-10-30T11:09:00.8370183Z hint:
+2026-10-30T11:09:00.8370882Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-30T11:09:00.8372379Z Initialized empty Git repository in /home/runner/work/emberisle/emberisle/.git/
+2026-10-30T11:09:00.8385177Z [command]/usr/bin/git remote add origin https://github.com/jarrodjohnson-gif/emberisle
+2026-10-30T11:09:00.8432527Z ##[endgroup]
+2026-10-30T11:09:00.8433659Z ##[group]Disabling automatic garbage collection
+2026-10-30T11:09:00.8435513Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-30T11:09:00.8465934Z ##[endgroup]
+2026-10-30T11:09:00.8467008Z ##[group]Setting up auth
+2026-10-30T11:09:00.8473145Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T11:09:00.8505699Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T11:09:00.8836740Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T11:09:00.8878534Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T11:09:00.9084199Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T11:09:00.9122467Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T11:09:00.9335115Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-30T11:09:00.9377192Z ##[endgroup]
+2026-10-30T11:09:00.9378103Z ##[group]Fetching the repository
+2026-10-30T11:09:00.9387052Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --filter=blob:none --depth=1 origin +refs/heads/main*:refs/remotes/origin/main* +refs/tags/main*:refs/tags/main*
+2026-10-30T11:09:01.3583549Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-10-30T11:09:01.3585131Z  * [new branch]      main       -> origin/main
+2026-10-30T11:09:01.3588088Z ##[endgroup]
+2026-10-30T11:09:01.3589585Z ##[group]Determining the checkout info
+2026-10-30T11:09:01.3590757Z [command]/usr/bin/git branch --list --remote origin/main
+2026-10-30T11:09:01.3621292Z   origin/main
+2026-10-30T11:09:01.3624789Z ##[endgroup]
+2026-10-30T11:09:01.3626117Z ##[group]Setting up sparse checkout
+2026-10-30T11:09:01.3627683Z [command]/usr/bin/git config core.sparseCheckout true
+2026-10-30T11:09:01.3667222Z [command]/usr/bin/git rev-parse --git-path info/sparse-checkout
+2026-10-30T11:09:01.3696324Z .git/info/sparse-checkout
+2026-10-30T11:09:01.3702289Z ##[endgroup]
+2026-10-30T11:09:01.3703859Z ##[group]Checking out the ref
+2026-10-30T11:09:01.3706449Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-30T11:09:01.6667812Z Switched to a new branch 'main'
+2026-10-30T11:09:01.6673532Z branch 'main' set up to track 'origin/main'.
+2026-10-30T11:09:01.6677882Z ##[endgroup]
+2026-10-30T11:09:01.6719600Z [command]/usr/bin/git log -1 --format=%H
+2026-10-30T11:09:01.6747617Z 2e1635ca9516c42204a99765d7dc709a7b68dfdb
+2026-10-30T11:09:01.6756070Z ##[group]Removing auth
+2026-10-30T11:09:01.6758782Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T11:09:01.6793107Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T11:09:01.6999160Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T11:09:01.7028433Z http.https://github.com/.extraheader
+2026-10-30T11:09:01.7035798Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-30T11:09:01.7072378Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T11:09:01.7273690Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T11:09:01.7309934Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T11:09:01.7509527Z ##[endgroup]
+2026-10-30T11:09:01.7813743Z ##[group]Run actions/setup-node@v4
+2026-10-30T11:09:01.7814663Z with:
+2026-10-30T11:09:01.7815424Z   node-version: 22
+2026-10-30T11:09:01.7816134Z   always-auth: false
+2026-10-30T11:09:01.7816879Z   check-latest: false
+2026-10-30T11:09:01.7824224Z   token: ***
+2026-10-30T11:09:01.7824923Z ##[endgroup]
+2026-10-30T11:09:01.9091827Z Found in cache @ /opt/hostedtoolcache/node/22.23.4/x64
+2026-10-30T11:09:01.9096591Z (node:2226) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-30T11:09:01.9100073Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-30T11:09:01.9102956Z ##[group]Environment details
+2026-10-30T11:09:02.2140661Z node: v22.23.4
+2026-10-30T11:09:02.2140911Z npm: 10.9.9
+2026-10-30T11:09:02.2141172Z yarn: 1.22.22
+2026-10-30T11:09:02.2141833Z ##[endgroup]
+2026-10-30T11:09:02.2277793Z ##[group]Run node scripts/desk-board.mjs
+2026-10-30T11:09:02.2278133Z [36;1mnode scripts/desk-board.mjs[0m
+2026-10-30T11:09:02.2303991Z shell: /usr/bin/bash -e {0}
+2026-10-30T11:09:02.2304215Z env:
+2026-10-30T11:09:02.2306232Z   GH_TOKEN: ***
+2026-10-30T11:09:02.2306455Z   GITHUB_REPOSITORY: jarrodjohnson-gif/emberisle
+2026-10-30T11:09:02.2306701Z ##[endgroup]
+2026-10-30T11:10:31.3077081Z gh: Resource not accessible by integration (HTTP 403)
+2026-10-30T11:10:31.3077749Z Command failed: gh api repos/jarrodjohnson-gif/emberisle/issues/699/comments -X POST --input -
+2026-10-30T11:10:31.3078247Z gh: Resource not accessible by integration (HTTP 403)
+2026-10-30T11:10:31.3078471Z 
+2026-10-30T11:10:31.3143766Z ##[error]Process completed with exit code 1.
+2026-10-30T11:10:31.3264898Z Post job cleanup.
+2026-10-30T11:10:31.3990562Z [command]/usr/bin/git version
+2026-10-30T11:10:31.4027223Z git version 2.56.0
+2026-10-30T11:10:31.4061221Z Temporarily overriding HOME='/home/runner/work/_temp/df8e1f6b-a0f9-4679-ba7e-647decd7ba37' before making global git config changes
+2026-10-30T11:10:31.4062061Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-30T11:10:31.4067598Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-30T11:10:31.4100203Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-30T11:10:31.4131496Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-30T11:10:31.4347712Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-30T11:10:31.4380129Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-30T11:10:31.4626963Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-30T11:10:31.4664676Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-30T11:10:31.5031250Z Cleaning up orphan processes
+2026-10-30T11:10:31.5345202Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-node@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

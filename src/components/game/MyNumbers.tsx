@@ -10,7 +10,7 @@ export const MY_NUMBER_GLOW_MS = 1200;
 // "My numbers" (#643, the owner: "showing what numbers you currently have settlements on"): each number the seat's outposts and
 // strongholds touch, with one good per paying building (a stronghold twice), most likely first; ties by the lower number.
 // From the public board only, so it is the same for every seat that looks.
-export function myNumbers(state: GameState, playerId: string): { n: number; goods: Resource[] }[] {
+function myNumbers(state: GameState, playerId: string): { n: number; goods: Resource[] }[] {
   const hexes = new Map(state.hexes.map((h) => [h.id, h]));
   const by = new Map<number, Resource[]>();
   for (const v of state.vertices) {
@@ -39,15 +39,18 @@ export function MyNumbers({ state, playerId }: { state: GameState; playerId: str
   const sum = state.dice ? state.dice[0] + state.dice[1] : 0;
   // The lit number and the roll that lit it: the same number twice running remounts its chip, so the glow plays again.
   const [lit, setLit] = useState<{ n: number; roll: number } | null>(null);
-  const seen = useRef(rolls);
+  const seen = useRef({ rolls, playerId });
   useEffect(() => {
-    if (rolls === seen.current) return;
-    seen.current = rolls;
-    if (!sum) return;
-    setLit({ n: sum, roll: rolls });
+    const was = seen.current;
+    seen.current = { rolls, playerId };
+    if (rolls !== was.rolls) setLit(sum ? { n: sum, roll: rolls } : null);
+    else if (playerId !== was.playerId) setLit(null);
+  }, [rolls, sum, playerId]);
+  useEffect(() => {
+    if (!lit) return;
     const t = setTimeout(() => setLit(null), MY_NUMBER_GLOW_MS);
     return () => clearTimeout(t);
-  }, [rolls, sum]);
+  }, [lit]);
   if (!list.length) return null;
   return (
     <ul data-testid="my-numbers" aria-label="Your numbers" className="my-numbers flex h-5 min-w-0 max-w-[62%] shrink-0 items-center gap-1 overflow-x-auto">

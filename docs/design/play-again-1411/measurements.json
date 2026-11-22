@@ -1,0 +1,3329 @@
+{
+  "browser": "153.0.8010.12",
+  "runs": [
+    {
+      "size": "430x932",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 373,
+          "scrollHeight": 372,
+          "clientHeight": 372,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          66,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 351,
+          "scrollHeight": 350,
+          "clientHeight": 350,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 364,
+          "clientWidth": 364
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "390x844",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 327,
+          "scrollHeight": 394,
+          "clientHeight": 326,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          88,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 3,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 303,
+          "scrollHeight": 372,
+          "clientHeight": 302,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          66,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 3,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 1,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": null,
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "awayA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 324,
+          "clientWidth": 324
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Away"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "2 of 3 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "375x812",
+      "group": "phone",
+      "before": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 243,
+          "scrollHeight": 394,
+          "clientHeight": 242,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          88,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 219,
+          "scrollHeight": 372,
+          "clientHeight": 218,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          66,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 1,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": null,
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 3,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 309,
+          "clientWidth": 309
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 2,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 3,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "820x1180",
+      "group": "ipad",
+      "before": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 351,
+          "scrollHeight": 350,
+          "clientHeight": 350,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 351,
+          "scrollHeight": 350,
+          "clientHeight": 350,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "932x430",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 262,
+          "scrollHeight": 322,
+          "clientHeight": 261,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 238,
+          "scrollHeight": 322,
+          "clientHeight": 237,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "844x390",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 222,
+          "scrollHeight": 322,
+          "clientHeight": 221,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 198,
+          "scrollHeight": 322,
+          "clientHeight": 197,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "812x375",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 207,
+          "scrollHeight": 322,
+          "clientHeight": 206,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 183,
+          "scrollHeight": 322,
+          "clientHeight": 182,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 638,
+          "clientWidth": 638
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "667x375-insets",
+      "group": "sideways",
+      "before": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 146,
+          "scrollHeight": 179,
+          "clientHeight": 145,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 3,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 146,
+          "scrollHeight": 322,
+          "clientHeight": 145,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 122,
+          "scrollHeight": 179,
+          "clientHeight": 121,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 2,
+        "totalsInView": 2,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 122,
+          "scrollHeight": 322,
+          "clientHeight": 121,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 1,
+        "totalsInView": 1,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 180,
+          "scrollHeight": 179,
+          "clientHeight": 179,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 158,
+          "scrollHeight": 179,
+          "clientHeight": 157,
+          "scrollWidth": 545,
+          "clientWidth": 545
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": true,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 3,
+        "totalsInView": 3,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 2,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "1180x820",
+      "group": "ipad",
+      "before": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 351,
+          "scrollHeight": 350,
+          "clientHeight": 350,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 351,
+          "scrollHeight": 350,
+          "clientHeight": 350,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 208,
+          "scrollHeight": 207,
+          "clientHeight": 207,
+          "scrollWidth": 622,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": false,
+        "downScroll": false,
+        "rowHeights": [
+          44,
+          44,
+          44,
+          44
+        ],
+        "rowsInView": 4,
+        "totalsInView": 4,
+        "totalsCutRight": 0,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    },
+    {
+      "size": "1280x720",
+      "group": "desktop",
+      "before": {
+        "wrap": {
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "a": {
+        "wrap": {
+          "h": 267,
+          "scrollHeight": 267,
+          "clientHeight": 267,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          61,
+          37,
+          61,
+          61
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "aOpen": {
+        "wrap": {
+          "h": 291,
+          "scrollHeight": 291,
+          "clientHeight": 291,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          61,
+          61,
+          61,
+          61
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [
+          "p0: Play again",
+          "p2: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": false
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "b": {
+        "wrap": {
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "bOpen": {
+        "wrap": {
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "4 of 4 want another game",
+          "visible": true
+        },
+        "waiting": "Waiting for Bartholomew Featherstonehaugh to start another.",
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "React",
+          "Look around",
+          "I'll play again (pressed)",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostBefore": {
+        "wrap": {
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": null,
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostA": {
+        "wrap": {
+          "h": 267,
+          "scrollHeight": 267,
+          "clientHeight": 267,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          61,
+          37,
+          61,
+          61
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [
+          "p0: Play again",
+          "p1: Play again",
+          "p3: Play again"
+        ],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": false
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      },
+      "hostB": {
+        "wrap": {
+          "h": 195,
+          "scrollHeight": 195,
+          "clientHeight": 195,
+          "scrollWidth": 689,
+          "clientWidth": 622
+        },
+        "panelScrolls": false,
+        "pageScrolled": 0,
+        "sidewaysScroll": true,
+        "downScroll": false,
+        "rowHeights": [
+          37,
+          37,
+          37,
+          37
+        ],
+        "rowsInView": 0,
+        "totalsInView": 0,
+        "totalsCutRight": 4,
+        "tags": [],
+        "tagsCut": 0,
+        "namesCut": 0,
+        "count": {
+          "text": "3 of 4 want another game",
+          "visible": true
+        },
+        "waiting": null,
+        "actionLines": 1,
+        "buttonsInView": true,
+        "buttons": [
+          "7",
+          "10",
+          "React",
+          "Look around",
+          "Play again",
+          "Back to menu"
+        ],
+        "shortButtons": []
+      }
+    }
+  ],
+  "errors": []
+}

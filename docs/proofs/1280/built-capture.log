@@ -1,0 +1,16 @@
+built captures 320 568 {
+  src: 'http://127.0.0.1:43739/images/sandwich-stacker-logo.png',
+  natural: [ 240, 210 ]
+}
+built captures 390 844 {
+  src: 'http://127.0.0.1:43739/images/sandwich-stacker-logo.png',
+  natural: [ 240, 210 ]
+}
+built captures 844 390 {
+  src: 'http://127.0.0.1:43739/images/sandwich-stacker-logo.png',
+  natural: [ 240, 210 ]
+}
+built captures 1280 720 {
+  src: 'http://127.0.0.1:43739/images/sandwich-stacker-logo.png',
+  natural: [ 240, 210 ]
+}

@@ -26,7 +26,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 function start() {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, SAVE_MS: String(SAVE_MS), OPEN_CAP: String(OPEN_CAP), OPEN_REFILL_MS: String(OPEN_REFILL_MS), OPEN_IP_CAP: String(IP_CAP), OPEN_IP_MS: String(IP_MS), ROOM_MAX: String(ROOM_MAX) },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, SAVE_MS: String(SAVE_MS), OPEN_CAP: String(OPEN_CAP), OPEN_REFILL_MS: String(OPEN_REFILL_MS), OPEN_IP_CAP: String(IP_CAP), OPEN_IP_MS: String(IP_MS), ROOM_MAX: String(ROOM_MAX) },
   });
   host.stderr.on("data", (d) => process.stderr.write(d));
   let out = "";

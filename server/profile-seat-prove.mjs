@@ -46,7 +46,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startHost() {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR, PROFILES_DEV: "", GRACE_MS: String(GRACE), HOLD_MS: String(HOLD), LOBBY_HOLD_MS: "30000", TURN_MS: "600000", SAVE_MS: "50", ACT_CAP: "1000", ACT_RATE: "1000", RENAME_MS: "0" },
   });
   const h = { proc, log: "" };
   hosts.add(h);
@@ -647,7 +647,10 @@ const rosterCases = [
   ["eligibility type", (r) => { r.eligible = "true"; }],
   ["player array", (r) => { r.players = null; }],
   ["player count", (r) => { r.players.pop(); }],
-  ["player order", (r) => { [r.players[0], r.players[1]] = [r.players[1], r.players[0]]; }],
+  // #1650: rows match the game's players by pid, in any order (a roll-off reorders the players), and each pid once.
+  ["player order", (r) => { [r.players[0], r.players[1]] = [r.players[1], r.players[0]]; }, true],
+  ["player twice", (r) => { r.players[1].pid = r.players[0].pid; }],
+  ["player stray", (r) => { r.players[0].pid = "p99"; }],
   ["seat type", (r) => { r.players[0].seat = null; }],
   ["profile UUID", (r) => { r.players[0].profileId = "not-a-uuid"; }],
   ["name type", (r) => { r.players[0].name = 42; }],

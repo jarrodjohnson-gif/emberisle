@@ -4,10 +4,10 @@
 // Reads VITE_PORT so it can run beside another local Vite process. Zero console errors.
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8095;
@@ -15,7 +15,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-react-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill());
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => process.exit(130));
@@ -29,9 +29,7 @@ const hostPort = await new Promise((resolve, reject) => {
 });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-});
+const browser = await chromium.launch();
 
 const errors = [];
 const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;

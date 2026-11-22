@@ -1,0 +1,809 @@
+{
+  "browser": "153.0.8010.12",
+  "deviceScaleFactor": 1,
+  "errors": [],
+  "samples": [
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "document": [
+        390,
+        844
+      ],
+      "dots": [
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            141,
+            224.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            257,
+            224.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            141,
+            248.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            257,
+            248.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            141,
+            272.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            257,
+            272.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            141,
+            296.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            257,
+            296.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            141,
+            511.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            257,
+            511.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            141,
+            535.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            257,
+            535.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            141,
+            559.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            257,
+            559.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            141,
+            583.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            257,
+            583.5625,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        }
+      ],
+      "currentTurns": [
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        },
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        }
+      ]
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "document": [
+        844,
+        390
+      ],
+      "dots": [
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            155,
+            132.875,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            285,
+            132.875,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            155,
+            152.875,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            285,
+            152.875,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            155,
+            172.875,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            285,
+            172.875,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            155,
+            192.875,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            285,
+            192.875,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            567,
+            132.875,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            697,
+            132.875,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            567,
+            152.875,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            697,
+            152.875,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            567,
+            172.875,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            697,
+            172.875,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            567,
+            192.875,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            697,
+            192.875,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        }
+      ],
+      "currentTurns": [
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        },
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        }
+      ]
+    },
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "document": [
+        1280,
+        720
+      ],
+      "dots": [
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            233,
+            161.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            433,
+            161.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            233,
+            185.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            433,
+            185.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            233,
+            209.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            433,
+            209.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "current",
+          "rect": [
+            233,
+            233.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "white",
+          "kind": "proposed",
+          "rect": [
+            433,
+            233.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            855,
+            161.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Ember",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            1055,
+            161.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(226, 61, 46)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Ember"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            855,
+            185.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Tide",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            1055,
+            185.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(45, 110, 232)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Tide"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            855,
+            209.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Dune",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            1055,
+            209.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(243, 236, 217)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Dune"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "current",
+          "rect": [
+            855,
+            233.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "none",
+          "ariaHidden": "true",
+          "name": "Pine"
+        },
+        {
+          "seat": "Pine",
+          "surface": "mist",
+          "kind": "proposed",
+          "rect": [
+            1055,
+            233.78125,
+            12,
+            12
+          ],
+          "fill": "rgb(138, 79, 211)",
+          "shadow": "rgb(120, 131, 122) 0px 0px 0px 1.5px inset",
+          "ariaHidden": "true",
+          "name": "Pine"
+        }
+      ],
+      "currentTurns": [
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        },
+        {
+          "outline": "rgb(38, 61, 60) solid 2px",
+          "offset": "2px",
+          "width": 12
+        }
+      ]
+    }
+  ],
+  "contrast": {
+    "#ffffff": 3.9428016446127825,
+    "#f3f6f5": 3.625830172916382
+  },
+  "sourceSha256": "5a01d7d75588e6b7601a401a51002dacae7c5b8882329b646893ea3c345cfb20",
+  "screenshotsSha256": {
+    "390x844.png": "50f02b1dab46e9fd5dd5292a0bccac6f2b6e78ec0d00c1984b76d60224d51641",
+    "844x390.png": "a61f7866c547180ef4928a61a8ef22b9e38cd1906bfed487337f8a0fb322f393",
+    "1280x720.png": "c3b0885273e2a25793d52f5df84baf6dfc56350275570f74686a63365352feec"
+  }
+}

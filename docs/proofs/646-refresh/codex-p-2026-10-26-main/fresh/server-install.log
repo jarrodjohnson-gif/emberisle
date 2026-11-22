@@ -1,0 +1,3 @@
+$ npm --prefix server ci
+
+added 1 package in 212ms

@@ -1,0 +1,3 @@
+PASS fulfilled diagnostic rethrows exact original assertion
+PASS rejected diagnostic rethrows exact original assertion
+PASS timed-out diagnostic rethrows exact original assertion

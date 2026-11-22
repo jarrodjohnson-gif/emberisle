@@ -1,7 +1,10 @@
+import type { LandAppearance, LandStats, VisibilityContext } from "@/lib/scene/land-appearance";
+import type { CreateLook } from "@/lib/scene/appearance-controller";
 import * as THREE from "three";
+import { hashStr } from "@/lib/utils";
 import { type Terrain } from "@/lib/game/types";
-import { setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
-import { BLOCK_H } from "@/lib/scene/jelly-dims";
+import { rng32, setBoardDetail, tileSteps, type Tile } from "@/lib/scene/hex-jelly";
+import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim as setDim } from "@/lib/scene/jelly-dims";
 
 // The jelly board (#599, docs/design/hex-jelly-prompt.md): the six Hex Jelly scenes on the game board.
 //
@@ -16,17 +19,23 @@ import { BLOCK_H } from "@/lib/scene/jelly-dims";
 // - the wayfarer's dulling.
 // The sprites (glows, fog and steam puffs) are camera-facing quads in two instanced draws, one added, one blended.
 
+// Per-hex variety (#639): one tile per terrain kind, each hex turned by a safe multiple of 60° (hill stays behind the eye).
 // The board's lattice: a hex fills about a fifth of the screen, where 12 rings are as smooth as the studio's 64.
 const RINGS = 12;
 // Times the scenes are sampled at to find what moves: anything whose matrix, visibility, instances or material changes.
 const SAMPLES = [0.37, 1.91, 3.53, 5.2];
 const ROLL_S = 2.4;
 const TAP_S = 0.9;
-// #826: the owner chose plain black for a blocked hex (skip waste in robber()).
-const DULL = new THREE.Color(0, 0, 0);
+// #826: blocked-hex dimming amount (0.75 = 75% blend to black).
+export { ROBBER_HEX_DIM, robberHexDim };
+const DULL = new THREE.Color(1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM, 1 - ROBBER_HEX_DIM);
+export function setRobberHexDim(dim: number) {
+  setDim(dim);
+  DULL.setRGB(1 - dim, 1 - dim, 1 - dim);
+}
 
 export type JellyHex = { id: string; terrain: Terrain; x: number; z: number; y: number };
-export type JellyStats = { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
+export type JellyStats = LandStats & { lite: boolean; drawCalls: number; triangles: number; kinds: number; batches: number; bakes: number; sprites: number };
 export type OcclusionHit = { point: { x: number; y: number; z: number }; kind: Terrain; seed: number };
 
 type Batch = {
@@ -39,6 +48,7 @@ type Batch = {
 type Hx = {
   id: string;
   T: THREE.Matrix4;
+  rot: number;
   rollAt: number;
   tapAt: number;
   dull: number;
@@ -289,9 +299,7 @@ function hexPatch(m: THREE.Material, u: HexU) {
         vHexTint = uHexT[ int( aHex + 0.5 ) ];`,
       );
     sh.fragmentShader = "varying vec3 vHexTint;\n" + sh.fragmentShader
-      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;")
-      // Plain black also removes the lit/specular/emissive remainder; unblocked hexes are unchanged.
-      .replace("#include <fog_fragment>", "#include <fog_fragment>\ngl_FragColor.rgb *= min(1.0, max(vHexTint.r, max(vHexTint.g, vHexTint.b)));");
+      .replace("#include <color_fragment>", "#include <color_fragment>\n\tdiffuseColor.rgb *= vHexTint;");
   };
   m.customProgramCacheKey = () => `${key}|hex`;
 }
@@ -347,7 +355,8 @@ class SpriteBatch {
   }
 }
 
-export class JellyBoard {
+export class JellyBoard implements LandAppearance {
+  private holdAge = () => false;
   readonly group = new THREE.Group();
   private kinds: Kind[] = [];
   private batches = new Map<string, Batch>();
@@ -371,8 +380,9 @@ export class JellyBoard {
   // Build the scenes for these hexes, one per kind from its seed, and batch them; deterministic for the same hexes and seeds.
   // `pause` runs between kinds (a scene takes about a tenth of a second to build), so no one task holds the page for long; it
   // answers false when the board is no longer wanted, and the build stops there.
-  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false) {
+  static async create(hexes: JellyHex[], seedOf: (kind: Terrain) => number, pause: () => Promise<boolean>, lite = false, holdAge = () => false) {
     const b = new JellyBoard();
+    b.holdAge = holdAge;
     b.lite = lite;
     try {
       return await b.build(hexes, seedOf, pause);
@@ -409,9 +419,17 @@ export class JellyBoard {
           return null;
         }
       }
-      const hx = hexes
-        .filter((h) => h.terrain === kind)
-        .map((h): Hx => ({ id: h.id, T: new THREE.Matrix4().makeTranslation(h.x, h.y, h.z), rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 }));
+      const kindHexes = hexes.filter((h) => h.terrain === kind);
+      const r = rng32(seedOf(kind));
+      const ha = tile.layout.hillAt;
+      const pool = [0, 1, 2, 3, 4, 5].filter(s => Math.sin(ha + s * Math.PI / 3) < -0.25);
+      const rots = kindHexes.map((_, i) => pool[i % pool.length]!);
+      for (let i = rots.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [rots[i], rots[j]] = [rots[j]!, rots[i]!]; }
+      const hx = kindHexes.map((h, i): Hx => {
+        const angle = rots[i]! * Math.PI / 3;
+        const T = new THREE.Matrix4().makeRotationY(angle).setPosition(h.x, h.y, h.z);
+        return { id: h.id, T, rot: angle, rollAt: -Infinity, tapAt: -Infinity, dull: 0, dullTo: 0, M: new THREE.Matrix4(), fx: new THREE.Color(1, 1, 1), roll: -1, dirty: true, wasActive: false, glow: 0, glowWas: 0, slot: 0 };
+      });
       b.kinds.push({ kind, tile, hexes: hx, leaves: [], sprites: [] });
       if (!(await pause())) {
         b.dispose();
@@ -784,6 +802,11 @@ export class JellyBoard {
     for (const { k, h } of this.byHex.values()) h.dullTo = id && h.id === id && k.kind !== "waste" ? 1 : 0;
   }
 
+  setRobberHexDim(dim: number) {
+    setRobberHexDim(dim);
+    this.update(this.t, true, true);
+  }
+
   // Proofs: target / settled dull (0..1).
   dullTarget(id: string) {
     return this.byHex.get(id)?.h.dullTo ?? 0;
@@ -806,12 +829,12 @@ export class JellyBoard {
   // Proofs: put every board story at this age (seconds) and rewrite every instance.
   setAge(seconds: number) {
     this.t0 = 0;
-    this.update(Math.max(0, seconds), true, false);
+    this.update(Math.max(0, seconds), true, false, false);
   }
 
   // Advance every scene to time t (seconds) and copy what moved to its instances. `all` rewrites every instance; `snap` lands
   // the dulling at once (reduced motion). `holdAge` keeps stories at age 0 (title and lobby: the match has not started).
-  update(t: number, all = false, snap = false, holdAge = false) {
+  update(t: number, all = false, snap = false, holdAge = this.holdAge()) {
     const dt = Math.max(0, t - this.t);
     this.t = t;
     // The board's age: a story that starts with the match (the ore's climber) counts from the first live play frame. Not from
@@ -932,7 +955,10 @@ export class JellyBoard {
   // For the proofs. The ground's height (world y) at a point of a hex, from the hex's centre.
   groundAt(id: string, dx: number, dz: number) {
     const e = this.byHex.get(id);
-    return e ? e.h.T.elements[13]! + e.k.tile.ground(dx, dz) : NaN;
+    if (!e) return NaN;
+    // (dx, dz) is a world offset; the tile's own frame is the inverse of the hex's turn (T's rotation, transposed).
+    const t = e.h.T.elements;
+    return t[13]! + e.k.tile.ground(t[0]! * dx + t[2]! * dz, t[8]! * dx + t[10]! * dz);
   }
 
   // For the proofs: per kind, how near to the hex's centre (horizontally) any corner of anything on it comes now, and what
@@ -1033,6 +1059,9 @@ export class JellyBoard {
     return closest;
   }
 
+  // Jelly's existing clearance contract is camera-independent.
+  setVisibilityContext(_context: VisibilityContext) {}
+
   stats(): JellyStats {
     let triangles = 0;
     for (const b of this.batches.values()) {
@@ -1042,7 +1071,8 @@ export class JellyBoard {
     }
     for (const m of this.bakes) triangles += m.userData.tris as number;
     for (const sb of this.sprites) triangles += 2 * sb.count;
-    return { lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
+    // Every published child is a batched, baked or sprite mesh; builders attach no nested groups here.
+    return { quality: this.lite ? "lite" : "full", objects: ownedBy(this.group), lite: this.lite, drawCalls: this.batches.size + this.bakes.length + this.sprites.length, triangles: Math.round(triangles), kinds: this.kinds.length, batches: this.batches.size, bakes: this.bakes.length, sprites: this.sprites.length };
   }
 
   dispose() {
@@ -1071,4 +1101,20 @@ export class JellyBoard {
     this.kinds = [];
     this.byHex.clear();
   }
+}
+
+// #759: the uniform lazy boundary. The renderer hands this to the shared build-and-swap (appearance-controller.ts), with no
+// need to know Jelly's seed or quality conventions.
+export const create: CreateLook = (hexes, key, pause, lite, holdAge) =>
+  JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge);
+
+// What a group's direct children own: meshes, and their distinct geometries and materials.
+function ownedBy(group: THREE.Group) {
+  const geometries = new Set(), materials = new Set();
+  for (const child of group.children) {
+    const mesh = child as THREE.Mesh;
+    geometries.add(mesh.geometry);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+  }
+  return { meshes: group.children.length, geometries: geometries.size, materials: materials.size };
 }

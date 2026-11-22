@@ -1,0 +1,128 @@
+{
+  "file": "IslandCanvas-CFJt1l9M.js",
+  "appOnlyGzip": 200790,
+  "appOnlySaving": 1355,
+  "appOnlyLiterals": 13,
+  "sourceBytes": 765516,
+  "sourceGzip": 202145,
+  "candidateBytes": 761374,
+  "candidateGzip": 199979,
+  "gzipSaving": 2166,
+  "note": "Read-only built-artifact estimates. appOnly matches comments to two application source files; all-literal estimate includes Three and is excluded. No source patch, buildable-source saving, or runtime validation.",
+  "literals": [
+    {
+      "start": 264851,
+      "end": 265522,
+      "rawSaving": 12,
+      "preview": "float G_BlinnPhong_Implicit( ) {\n\treturn 0.25;\n}\nfloat D_BlinnPhong( const in float shininess, const"
+    },
+    {
+      "start": 272042,
+      "end": 274609,
+      "rawSaving": 12,
+      "preview": "#define PI 3.141592653589793\n#define PI2 6.283185307179586\n#define PI_HALF 1.5707963267948966\n#defin"
+    },
+    {
+      "start": 435666,
+      "end": 439085,
+      "rawSaving": 875,
+      "preview": "\n\n\t\t\tprecision highp float;\n\t\t\tprecision highp int;\n\n\t\t\tvarying vec3 vOutputDirection;\n\n\t\t\tuniform s"
+    },
+    {
+      "start": 439378,
+      "end": 441137,
+      "rawSaving": 207,
+      "preview": "\n\n\t\t\tprecision highp float;\n\t\t\tprecision highp int;\n\n\t\t\tvarying vec3 vOutputDirection;\n\n\t\t\tuniform s"
+    },
+    {
+      "start": 646080,
+      "end": 649822,
+      "rawSaving": 499,
+      "preview": "\n\t\tuniform highp sampler2D tNormal;\n\t\tuniform highp sampler2D tDepth;\n\t\tuniform sampler2D tNoise;\n\n\t"
+    },
+    {
+      "start": 658040,
+      "end": 659134,
+      "rawSaving": 29,
+      "preview": "\n\n\t\tprecision highp float;\n\n\t\tuniform sampler2D tDiffuse;\n\n\t\t#include <tonemapping_pars_fragment>\n\t\t"
+    },
+    {
+      "start": 685901,
+      "end": 686319,
+      "rawSaving": 206,
+      "preview": "];\n  uniform float uSplashNow;\n  uniform float uSplashLive;\n  // Every live splash at p: x the heigh"
+    },
+    {
+      "start": 688541,
+      "end": 688692,
+      "rawSaving": 82,
+      "preview": " * uTime; }\n  // 1 near the coast (travel-time phase), 0 on the open sea, and its slope along o.\n  f"
+    },
+    {
+      "start": 688922,
+      "end": 689470,
+      "rawSaving": 421,
+      "preview": ";\n  }\n  // Near the coast a swell's phase is the open sea's phase at the anchor, the point straight "
+    },
+    {
+      "start": 689508,
+      "end": 690104,
+      "rawSaving": 172,
+      "preview": " - tau);\n  }\n  float swellPhase(vec2 p, float o, float tau, float k, float w, vec2 d) {\n    return k"
+    },
+    {
+      "start": 690168,
+      "end": 690384,
+      "rawSaving": 117,
+      "preview": "); }\n  // The two swells here: x, y their phases, z the height of their group (the set envelope), w "
+    },
+    {
+      "start": 690800,
+      "end": 690954,
+      "rawSaving": 83,
+      "preview": ", h / d));\n  }\n  // The swells' height factor: Green's law, capped once broken at gamma x the depth."
+    },
+    {
+      "start": 691020,
+      "end": 691196,
+      "rawSaving": 96,
+      "preview": " * d / max(e, 1e-4));\n  }\n  // Seconds since the group's crest passed (0 to about 6), from the phase"
+    },
+    {
+      "start": 691361,
+      "end": 691885,
+      "rawSaving": 63,
+      "preview": ";\n  }\n  void gerstner(float th, vec2 d, float k, float a, float q, inout vec3 off, inout vec3 n) {\n "
+    },
+    {
+      "start": 696222,
+      "end": 698942,
+      "rawSaving": 832,
+      "preview": "\n      float sceneZ(vec2 uv) {\n        float d = texture2D(uUnderDepth, uv).x;\n        return isOrth"
+    },
+    {
+      "start": 700651,
+      "end": 700849,
+      "rawSaving": 141,
+      "preview": "\n      void main() {\n        // Each wave as it reaches the waterline: a run-up 0.9 s fast and a 2.1"
+    },
+    {
+      "start": 705011,
+      "end": 705842,
+      "rawSaving": 90,
+      "preview": "];\n      uniform float uSplashNow;\n      uniform float uMotion;\n      uniform vec2 uResolution;\n    "
+    },
+    {
+      "start": 707259,
+      "end": 707831,
+      "rawSaving": 111,
+      "preview": "#include <color_fragment>\n        {\n          // Soft light, not a net: two drifting scales of wide-"
+    },
+    {
+      "start": 753815,
+      "end": 754249,
+      "rawSaving": 93,
+      "preview": "\n      // The circle is local XY; +Z is up after the mesh's rotation. Crests stay at or below y = 0."
+    }
+  ]
+}

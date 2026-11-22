@@ -5,7 +5,7 @@
 // Headless Chromium on SwiftShader at 390x844 (touch) and 1280x720 (mouse). Run: npm run splash-prove
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const cpuThrottle = Number(process.env.SPLASH_PROVE_CPU_THROTTLE || 1);

@@ -25,7 +25,7 @@ writeFileSync(path.join(dir, "PRGM.json"), JSON.stringify({ code: "PRGM", host: 
 
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: dir, SAVE_MS: "20", GRACE_MS: "60000", HOLD_MS: "60000", TURN_MS: "60000" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, SAVE_MS: "20", GRACE_MS: "60000", HOLD_MS: "60000", TURN_MS: "60000" },
   stdio: ["ignore", "pipe", "pipe"],
 });
 host.stderr.on("data", (d) => { stderr += d; });

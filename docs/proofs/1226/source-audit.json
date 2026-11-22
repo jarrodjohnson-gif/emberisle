@@ -1,0 +1,7 @@
+{
+  "parser": "PyYAML 6.0.3",
+  "workflow_semantic_diff": "only server checkout/setup-node docs conditions removed",
+  "old_ci_install_lines_retained_as_prefix": 114,
+  "desk_gate_source_and_assertions": "byte unchanged",
+  "node": "v24.19.0"
+}

@@ -1,0 +1,48 @@
+mutation=rematch-reset
+expected_assertion=rematch clears every previous public need
+exit_status=1
+
+> needs-prove
+> node --import ./register.mjs needs-prove.mjs
+
+ok needs validation and shared local/host expiry rules
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+ok real start transition clears restored needs from every public seat
+DEBUG postgame response {"type":"error","message":"Needs are available during a game."}
+ok finished-game need ACT is refused with public state and existing need preserved
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: rematch clears every previous public need
++ actual - expected
+
+  [
++   [
++     'grain'
++   ],
++   [
++     'ore'
++   ],
++   [
++     'clay'
++   ]
+-   [],
+-   [],
+-   []
+  ]
+
+    at file:///tmp/p873-server-cases-final2-20261026/server/needs-prove.mjs:152:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [ [ 'grain' ], [ 'ore' ], [ 'clay' ] ],
+  expected: [ [], [], [] ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

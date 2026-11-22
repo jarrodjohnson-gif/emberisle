@@ -90,9 +90,25 @@ export interface PlayerState {
   // Goods this seat lost to successful wayfarer steals (#550); absent reads as 0. Online the host keeps it out of every
   // view until the game is won, then sends it to every seat and watcher with the rest of the final state (server/host.mjs).
   goodsLost?: number;
+  // #1452: what the results screen's awards count, kept like goodsLost: hidden from every view until the win.
+  tally?: Tally;
   pathsLeft: number;
   outpostsLeft: number;
   strongholdsLeft: number;
+  // #1608: the seat's number, 1 to 6, on five and six seat tables only (docs/design/six-players.md, "Colours and non-colour
+  // identification"). It never changes in a game. A five or six seat rematch must copy it to the new player (owed to piece 8). Classic games leave it out, so a
+  // classic seat shows no number.
+  seat?: number;
+}
+
+// #1452: goods gathered from rolls per good, goods thrown away on 7s, goods stolen with the wayfarer, accepted table trades
+// (as asker or answerer) and bank or dock trades. Absent in an old save; every count then reads 0.
+export interface Tally {
+  earned: Record<Resource, number>;
+  discarded: number;
+  stole: number;
+  tableTrades: number;
+  bankTrades: number;
 }
 
 export interface TradeOffer {
@@ -105,6 +121,18 @@ export interface TradeOffer {
 export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
+
+// The five and six seat island (#1604, src/lib/game/expanded.ts). Versioned so a later format can be told apart.
+export interface ExpandedVariant {
+  kind: "expanded";
+  version: 1;
+  // The official letter spiral's starting corner hex and direction; absent for the random token layout.
+  spiral?: { start: string; direction: 1 | -1 };
+  // Both wastes, which the token spiral skips. The wayfarer starts on the first when it is enabled.
+  wastes: string[];
+  // The turn rule, fixed before setup (#1605): the official paired turns. Versioned so a later rule can be told apart.
+  turns: { rule: "paired"; version: 1 };
+}
 
 export interface GameState {
   // Legacy saves use classic On. Fixed when the table is created.
@@ -123,7 +151,7 @@ export interface GameState {
   dice: [number, number] | null;
   // Pre-setup roll-off (docs/design/first-player.md): the die on each seat, and who still rolls this round.
   // `first` is a rematch's last winner (#266): it places first without rolling, and the rest roll off behind it.
-  rollOff: { rolls: Record<string, number>; pending: string[]; first?: string } | null;
+  rollOff: { rolls: Record<string, number>; pending: string[]; first?: string; tied?: string[]; settled?: string[] } | null;
   setupIndex: number;
   lastSetupVertex: string | null;
   longestRoad: string | null;
@@ -143,8 +171,19 @@ export interface GameState {
   playedCard: boolean;
   // Dice rolls so far (not the roll-off) and what the latest one paid, per hex; a missing field in an old save reads as none.
   rolls?: number;
+  // #1453: how often each sum 2 to 12 came up (not the roll-off), started at a game's first roll; absent in an older game.
+  // Public, like every roll in the log; only the results screen draws it.
+  rollSums?: number[];
   lastProduction?: { hex: string; player: string; res: Resource; n: number; vertex?: string }[];
   hostId: string;
+  // Absent means the classic island, as in every game saved before #1604; never inferred from the seat count.
+  variant?: ExpandedVariant;
+  // Paired turns only (#1605, src/lib/game/expanded.ts); classic games never have them. Set when setup ends. `current`
+  // is still the seat that may act now; `primary` is the seat whose dice this paired turn is, and `role` says whether
+  // `current` is that primary or its partner. `activation` counts actor activations from 1, the first primary's.
+  primary?: string;
+  role?: "primary" | "partner";
+  activation?: number;
 }
 
 export type Action =

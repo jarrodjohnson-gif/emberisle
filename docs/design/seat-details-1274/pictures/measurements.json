@@ -1,0 +1,3363 @@
+{
+  "browser": "153.0.8010.12",
+  "runs": [
+    {
+      "size": "390x844",
+      "variant": "before",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              326
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              220
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              220
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Finn",
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              220
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Bartholomew Longfellow",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              316
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 44,
+                "font": 14
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              68,
+              366,
+              374
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 14
+              },
+              {
+                "text": "Open chat",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    },
+    {
+      "size": "390x844",
+      "variant": "after",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              468,
+              390,
+              376
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              578,
+              390,
+              266
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                64.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                80.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                149,
+                12,
+                64.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                217.5,
+                12,
+                64.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              578,
+              390,
+              266
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Finn",
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              578,
+              390,
+              266
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Bartholomew Longfellow",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              474,
+              390,
+              370
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                76.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                92.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                173,
+                12,
+                76.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                253.5,
+                12,
+                76.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              0,
+              422,
+              390,
+              422
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Open chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": true,
+            "scrolls": 6
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    },
+    {
+      "size": "844x390",
+      "variant": "before",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              314
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 32,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              220
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              220
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Finn",
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                169.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                185.5,
+                12,
+                169.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                359,
+                12,
+                169.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                532.5,
+                12,
+                169.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              220
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Bartholomew Longfellow",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              314
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 43,
+                "font": 14
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 43,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              544,
+              64,
+              288,
+              314
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 20,
+                "font": 14
+              },
+              {
+                "text": "Open chat",
+                "h": 20,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 12
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    },
+    {
+      "size": "844x390",
+      "variant": "after",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              117,
+              320,
+              273
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 103
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              124,
+              320,
+              266
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              124,
+              320,
+              266
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Finn",
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                169.5,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                185.5,
+                12,
+                169.5,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                359,
+                12,
+                169.5,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                532.5,
+                12,
+                169.5,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              124,
+              320,
+              266
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Bartholomew Longfellow",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              117,
+              320,
+              273
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Mira",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 97
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "seat-p0",
+              "box": [
+                12,
+                12,
+                178,
+                44
+              ],
+              "text": "JarrodJar9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "seat-p1",
+              "box": [
+                194,
+                12,
+                178,
+                44
+              ],
+              "text": "Bartholomew LongfellowBar9 goods5 points13"
+            },
+            {
+              "id": "seat-p2",
+              "box": [
+                376,
+                12,
+                178,
+                44
+              ],
+              "text": "MiraMir9 goods3 points10"
+            },
+            {
+              "id": "seat-p3",
+              "box": [
+                558,
+                12,
+                178,
+                44
+              ],
+              "text": "FinnFin0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              12,
+              117,
+              320,
+              273
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "16px",
+            "heading": "Jarrod",
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Open chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 155
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    },
+    {
+      "size": "1280x720",
+      "variant": "before",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                478,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                526,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                574,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              128,
+              192,
+              346
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [
+            "rail-p1",
+            "rail-p2",
+            "rail-p3"
+          ],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                420,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              224,
+              192,
+              192
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [
+            "rail-p3"
+          ],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              272,
+              192,
+              192
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                372,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                420,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              176,
+              192,
+              192
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [
+            "rail-p2",
+            "rail-p3"
+          ],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                516,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              224,
+              192,
+              288
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 44,
+                "font": 14
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [
+            "rail-p3"
+          ],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                526,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                574,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                622,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 1,
+          "menu": {
+            "box": [
+              12,
+              128,
+              192,
+              394
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "none",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 14
+              },
+              {
+                "text": "Open chat",
+                "h": 44,
+                "font": 14
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [
+            "rail-p1",
+            "rail-p2",
+            "rail-p3"
+          ],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    },
+    {
+      "size": "1280x720",
+      "variant": "after",
+      "screens": {
+        "rail": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": null
+        },
+        "own": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              80,
+              256,
+              346
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "opponent": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              176,
+              256,
+              220
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "empty": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              224,
+              256,
+              220
+            ],
+            "label": "Finn's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 0",
+              "Fortunes held: 0",
+              "Points shown: 0",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 0",
+              "Strongholds (2 each): 0",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "watcher": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              128,
+              256,
+              220
+            ],
+            "label": "Bartholomew Longfellow's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 5",
+              "Wayfarers played: 3"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 2"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [],
+            "focusInside": false,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-opponent": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              176,
+              256,
+              324
+            ],
+            "label": "Mira's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 0",
+              "Points shown: 3",
+              "Wayfarers played: 0"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 0,
+            "rows": [
+              {
+                "text": "Offer a trade…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Mention @Mira in chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        },
+        "routes-own": {
+          "seats": [
+            {
+              "id": "rail-p0",
+              "box": [
+                12,
+                80,
+                192,
+                44
+              ],
+              "text": "Jarrod9 goods2 fortunes3 points, plus 1 hidden+110"
+            },
+            {
+              "id": "rail-p1",
+              "box": [
+                12,
+                128,
+                192,
+                44
+              ],
+              "text": "Bartholomew Longfellow9 goods5 points13"
+            },
+            {
+              "id": "rail-p2",
+              "box": [
+                12,
+                176,
+                192,
+                44
+              ],
+              "text": "Mira9 goods3 points10"
+            },
+            {
+              "id": "rail-p3",
+              "box": [
+                12,
+                224,
+                192,
+                44
+              ],
+              "text": "Finn0 points00"
+            }
+          ],
+          "hintShown": 0,
+          "menu": {
+            "box": [
+              212,
+              80,
+              256,
+              398
+            ],
+            "label": "Jarrod's actions",
+            "radius": "20px",
+            "padding": "8px",
+            "heading": null,
+            "facts": [
+              "Cards in hand: 9",
+              "Fortunes held: 2",
+              "Points shown: 3",
+              "Wayfarers played: 0",
+              "Your fortunes: wayfarer ×1 · points ×1"
+            ],
+            "score": [
+              "Outposts (1 each): 1",
+              "Strongholds (2 each): 2",
+              "Longest path: 0",
+              "Largest army: 0",
+              "Your point fortunes: 1",
+              "Your total: 4"
+            ],
+            "ledgerNote": "\"Hidden fortunes may add points\"",
+            "privateRows": 2,
+            "rows": [
+              {
+                "text": "Trade with the bank or a dock…",
+                "h": 44,
+                "font": 15
+              },
+              {
+                "text": "Open chat",
+                "h": 44,
+                "font": 15
+              }
+            ],
+            "focusInside": true,
+            "inView": true,
+            "topInBottomHalf": false,
+            "scrolls": 0
+          },
+          "seatsMoved": [],
+          "focusAfterEscape": true
+        }
+      },
+      "gameEnd": {
+        "opponentPrivateRows": 2
+      }
+    }
+  ],
+  "errors": []
+}

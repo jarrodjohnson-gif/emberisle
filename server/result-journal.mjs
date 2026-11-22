@@ -1,0 +1,166 @@
+// The terminal outcome journal (#889, docs/design/profiles.md "Exactly-once recording", docs/research/profile-results.md).
+// One file per finished tracked game, `<gameId>.json`, holding the frozen outcome the host computed once, at the win.
+// It lives apart from the room files, so room cleanup, expiry and deletion never touch it. Result recording (#890) reads
+// these and removes each one only after its receipt commits; until then they stay, across shutdown and restart.
+import { randomBytes } from "node:crypto";
+import { mkdirSync, readdirSync, readFileSync } from "node:fs";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { UUID } from "./profiles.mjs";
+
+export const OUTCOME_V = 1;
+const NAME = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.json$/;
+
+// Temp file, sync, rename, then sync the directory: a commit is acknowledged only once it would survive power loss.
+// Windows cannot open a directory for fsync from Node (EPERM/EISDIR), so that last step is skipped there; NTFS orders
+// the rename's metadata itself. Every other failure is the caller's to see.
+export async function writeDurable(dir, name, text) {
+  await fs.mkdir(dir, { recursive: true, mode: 0o700 });
+  const tmp = path.join(dir, `.${name}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
+  const fh = await fs.open(tmp, "wx", 0o600);
+  try {
+    try {
+      await fh.writeFile(text);
+      await fh.sync();
+    } finally {
+      await fh.close();
+    }
+    await fs.rename(tmp, path.join(dir, name));
+  } catch (e) {
+    await fs.rm(tmp, { force: true }).catch(() => {});
+    throw e;
+  }
+  if (process.platform === "win32") return;
+  const d = await fs.open(dir, "r");
+  try {
+    await d.sync();
+  } finally {
+    await d.close();
+  }
+}
+
+const plain = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+// Milliseconds since the epoch, kept below the year 2100 so a corrupt value near Number.MAX_SAFE_INTEGER is refused.
+export const isTime = (v) => Number.isSafeInteger(v) && v >= 0 && v <= 4_102_444_800_000;
+
+// A frozen outcome as the host writes it: the game's id, start and end, policy and eligibility from the frozen roster, the
+// rules engine's winner, and one row per starting player with its final points.
+export function validOutcome(o) {
+  if (!plain(o) || o.v !== OUTCOME_V || typeof o.gameId !== "string" || !UUID.test(o.gameId)) return false;
+  if (!isTime(o.startedAt) || !isTime(o.endedAt) || o.endedAt < o.startedAt || !Number.isSafeInteger(o.policy) || typeof o.eligible !== "boolean") return false;
+  if (!Array.isArray(o.players) || o.players.length < 1 || typeof o.winner !== "string") return false;
+  return o.players.every(
+    (p) =>
+      plain(p) &&
+      typeof p.pid === "string" &&
+      (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) &&
+      typeof p.name === "string" &&
+      (p.kind === "human" || p.kind === "bot") &&
+      Number.isSafeInteger(p.points) &&
+      typeof p.won === "boolean" &&
+      typeof p.assisted === "boolean",
+  ) && o.players.filter((p) => p.won).length === 1 && o.players.some((p) => p.pid === o.winner && p.won);
+}
+
+// Opens the journal at `dir`. Every `<gameId>.json` already there is pending, readable or not: an unreadable one is
+// reported and left for repair, and its id still fences that game from resuming. `fault(point)` lets a proof fail or
+// kill the host at "journal-before" and "journal-after".
+export function openJournal(dir, { fault = () => {} } = {}) {
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const ids = new Set();
+  // Files that exist but are not a valid outcome: they fence their game, and a repair from the terminal room overwrites them.
+  const corrupt = new Set();
+  const outcomes = new Map();
+  for (const name of readdirSync(dir)) {
+    const m = name.match(NAME);
+    if (!m) continue;
+    try {
+      const o = JSON.parse(readFileSync(path.join(dir, name), "utf8"));
+      if (validOutcome(o) && o.gameId === m[1]) {
+        ids.add(m[1]);
+        outcomes.set(m[1], o);
+      } else {
+        corrupt.add(m[1]);
+        console.error(`results: pending outcome ${name} is not one this host wrote; kept for repair`);
+      }
+    } catch (e) {
+      corrupt.add(m[1]);
+      console.error(`results: pending outcome ${name} is unreadable (${e.message}); kept for repair`);
+    }
+  }
+  // One operation per game at a time: put, replace and done never interleave on the same id.
+  const tails = new Map();
+  function serial(id, fn) {
+    const prev = tails.get(id) ?? Promise.resolve();
+    const next = prev.then(fn);
+    const tail = next.then(() => {}, () => {}).finally(() => {
+      if (tails.get(id) === tail) tails.delete(id);
+    });
+    tails.set(id, tail);
+    return next;
+  }
+  async function put(outcome) {
+    if (!validOutcome(outcome)) throw new Error("bad outcome");
+    const id = outcome.gameId;
+    if (ids.has(id) && !tails.has(id)) return false;
+    return serial(id, async () => {
+      if (ids.has(id)) return false;
+      fault("journal-before");
+      await writeDurable(dir, `${id}.json`, JSON.stringify(outcome));
+      ids.add(id);
+      corrupt.delete(id);
+      outcomes.set(id, outcome);
+      fault("journal-after");
+      return true;
+    });
+  }
+  // Profile deletion (#891): a pending outcome rewritten in place, durably, with a deleted profile's rows redacted. Its game
+  // stays pending under the same id.
+  async function replace(outcome) {
+    if (!validOutcome(outcome)) throw new Error("bad outcome");
+    const id = outcome.gameId;
+    if (!ids.has(id) && !tails.has(id)) throw new Error("bad outcome");
+    return serial(id, async () => {
+      if (!ids.has(id)) throw new Error("bad outcome");
+      await writeDurable(dir, `${id}.json`, JSON.stringify(outcome));
+      outcomes.set(id, outcome);
+    });
+  }
+  // Step 6 (#890): once the game's receipt has committed, its pending file is removed, durably. From then on the receipt in
+  // the profile store fences that game id, so the host checks both.
+  async function done(id) {
+    if (!ids.has(id) && !tails.has(id)) return false;
+    return serial(id, async () => {
+      if (!ids.has(id)) return false;
+      await fs.rm(path.join(dir, `${id}.json`), { force: true });
+      if (process.platform !== "win32") {
+        const d = await fs.open(dir, "r");
+        try {
+          await d.sync();
+        } finally {
+          await d.close();
+        }
+      }
+      ids.delete(id);
+      outcomes.delete(id);
+      return true;
+    });
+  }
+  return {
+    dir,
+    // A game id that is pending: it must never resume from a nonterminal snapshot. A recorded one is fenced by its receipt.
+    has: (id) => ids.has(id) || corrupt.has(id),
+    // A readable pending outcome is on disk for this game; a corrupt file is not one and is repaired from the room.
+    ready: (id) => ids.has(id),
+    // The game ids whose files are kept for repair, so profile deletion (#1393) can redact them in place.
+    unreadable: () => [...corrupt],
+    put,
+    replace,
+    done,
+    // The readable pending outcomes, oldest end first, for result recording to consume.
+    pending: () => [...outcomes.values()].sort((a, b) => a.endedAt - b.endedAt || a.gameId.localeCompare(b.gameId)),
+    get size() {
+      return ids.size + corrupt.size;
+    },
+  };
+}

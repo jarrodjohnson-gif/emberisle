@@ -12,6 +12,7 @@ import { chooseBotAction } from "../src/lib/game/ai.ts";
 import { totalVP } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { connectTable } from "../src/lib/net/table.ts";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 const GAMES = 2;
 const MAX_ACTIONS = 5000;
@@ -30,10 +31,50 @@ setTimeout(() => fail("the proof ran past 120 s"), 120_000);
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
+// #889: each finished game's pending outcome, kept apart from the rooms.
+const RESULTS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-results-"));
+process.on("exit", () => {
+  rmSync(ROOMS_DIR, { recursive: true, force: true });
+  rmSync(RESULTS_DIR, { recursive: true, force: true });
+});
+// #1287: use the real host projection with deliberately nonzero private cards.
+// Every observer, including a watcher, must get the zero placeholder until the win.
+{
+  const fixtureProfiles = mkdtempSync(path.join(tmpdir(), "emberisle-hidden-fixture-"));
+  const fixture = spawn(process.execPath, ["--import", "./register.mjs", "--input-type=module", "--eval", `
+    import { viewFor } from "./host.mjs";
+    import { createGame } from "../src/lib/game/board.ts";
+    const g = createGame({ humans: [{name:"A"}, {name:"B"}, {name:"C"}], bots:0, seed:9 });
+    g.phase = "main";
+    g.players[1].hidden = { knight:1, road:2, plenty:3, monopoly:4, vp:5 };
+    for (const you of ["p0", "p2", null]) {
+      const q = viewFor(g, you).players.find(p => p.id === "p1");
+      if (Object.values(q.hidden).some(n => n !== 0)) {
+        console.log("FAIL deterministic opponent hidden fortunes leaked", JSON.stringify({you, hidden:q.hidden}));
+        process.exit(1);
+      }
+    }
+    console.log("deterministic nonzero host fortunes stay hidden from opponents and watcher: ok");
+  `], { cwd: new URL(".", import.meta.url), env: { ...process.env, PORT:"0", ROOMS_DIR, RESULTS_DIR, PROFILES_DIR: fixtureProfiles } });
+  let output = "", stderr = "", passed = false;
+  const timer = setTimeout(() => { fixture.kill("SIGKILL"); fail("deterministic hidden-fortune fixture timed out"); }, STEP_MS);
+  fixture.stdout.on("data", (data) => {
+    output += data;
+    if (output.includes("deterministic nonzero host fortunes stay hidden from opponents and watcher: ok")) {
+      passed = true;
+      fixture.kill("SIGTERM");
+    }
+  });
+  fixture.stderr.on("data", (data) => { stderr += data; });
+  await new Promise((resolve) => fixture.on("close", resolve));
+  clearTimeout(timer);
+  rmSync(fixtureProfiles, { recursive: true, force: true });
+  console.log(output);
+  if (!passed) fail("deterministic hidden-fortune projection", stderr || "fixture failed");
+}
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -80,6 +121,9 @@ function player(name) {
         // Before the end: no seed or rng (#111), and no other seat's hand (#186).
         if ("seed" in g || "rng" in g) p.leaks.push({ seq: g.seq, what: "seed/rng" });
         for (const q of g.players) if (q.id !== m.you && "resources" in q) p.leaks.push({ seq: g.seq, what: `${q.id} resources` });
+        for (const q of g.players) if (q.id !== m.you && Object.values(q.hidden ?? {}).some((n) => n !== 0)) {
+          p.leaks.push({ seq: g.seq, what: `${q.id} hidden fortunes` });
+        }
       }
       p.prev = p.state;
       p.state = g;
@@ -185,6 +229,27 @@ function checkReveal(all, n) {
   const leaks = all.flatMap((x) => x.leaks.map((l) => ({ you: x.you, ...l })));
   if (leaks.length) fail(`${where}: a state before the end leaked`, leaks.slice(0, 5));
   return { name: final.players.find((q) => q.id === winner).name, vp };
+}
+
+// #889: by the time the final state reached the seats, the room on disk held the frozen outcome and the journal held the
+// same outcome under that game's UUID. Each game, the rematch included, has its own.
+const gameIds = [];
+function checkJournal(all, n) {
+  const where = `game ${n}`;
+  const final = all[0].state;
+  const room = JSON.parse(readFileSync(path.join(ROOMS_DIR, `${all[0].code}.json`), "utf8"));
+  const id = room.roster?.gameId;
+  if (!id || gameIds.includes(id)) fail(`${where}: no fresh game UUID on disk`, id);
+  gameIds.push(id);
+  let pending;
+  try {
+    pending = JSON.parse(readFileSync(path.join(RESULTS_DIR, `${id}.json`), "utf8"));
+  } catch (e) {
+    fail(`${where}: no pending outcome for ${id}`, e.message);
+  }
+  if (JSON.stringify(pending) !== JSON.stringify(room.outcome)) fail(`${where}: the room's outcome and the journal's differ`, { room: room.outcome, pending });
+  if (pending.winner !== final.winner || pending.players.find((p) => p.won)?.pid !== final.winner) fail(`${where}: the journalled winner`, pending.winner);
+  for (const p of pending.players) if (p.points !== totalVP(final, p.pid)) fail(`${where}: ${p.pid}'s journalled points`, { journal: p.points, final: totalVP(final, p.pid) });
 }
 
 async function checkRefused(all, n) {
@@ -301,8 +366,8 @@ async function rematch(all, w, gone) {
   await until(() => w.state.seq === all[0].state.seq, "the watcher seeing the roll-off end");
   const g = all[0].state;
   const rest = g.players.slice(1);
-  const ordered = rest.every((q, i) => i === 0 || g.rollOff.rolls[rest[i - 1].id] >= g.rollOff.rolls[q.id]);
-  if (g.phase !== "setupSettle" || g.current !== "p0" || g.players[0].name !== winnerName || !ordered || "p0" in g.rollOff.rolls) {
+  const ordered = rollOffOrderOk(g);
+  if (!ordered || g.players[0].name !== winnerName || "p0" in g.rollOff.rolls) {
     fail("the winner places first, the rest by their roll", { phase: g.phase, current: g.current, players: g.players.map((q) => q.name), rolls: g.rollOff.rolls });
   }
   if (g.log.at(-1) !== `${winnerName} places first, then ${rest[0].name} and ${rest[1].name}.`) fail("the order line", g.log.at(-1));
@@ -340,6 +405,7 @@ for (let n = 1; n <= GAMES; n++) {
   }
   const actions = await playToTheEnd(all, n);
   const { name, vp } = checkReveal(all, n);
+  checkJournal(all, n);
   await checkRefused(all, n);
   console.log(`game ${n}: ${name} wins with ${vp} in ${actions} actions, reveal ok, post-win refused`);
 }

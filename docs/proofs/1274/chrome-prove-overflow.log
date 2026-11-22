@@ -1,0 +1,20 @@
+
+> chrome-prove
+> node scripts/chrome-prove.mjs
+
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: 1280x720 table menu: no horizontal overflow
+    at inside (file:///workspace/emberisle/scripts/chrome-prove.mjs:43:10)
+    at async file:///workspace/emberisle/scripts/chrome-prove.mjs:93:7 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

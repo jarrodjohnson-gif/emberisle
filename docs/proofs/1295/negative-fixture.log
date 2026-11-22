@@ -1,0 +1,4 @@
+ok fixture 1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5
+FAIL fixture 1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep
+saved crystal diagnostic: seed 608879584, 1 recorded failures
+PASS negative fixture: exact original colour criteria reject failed CI values; unmodified diagnostic helper still writes JSON with failure/state/seed. This is a helper fixture, not a browser replay.

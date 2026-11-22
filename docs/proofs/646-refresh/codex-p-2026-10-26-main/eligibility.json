@@ -1,0 +1,24 @@
+{
+  "checked_at": "2026-10-26T01:08:53Z",
+  "last_pr_activity": "2026-10-22T20:23:47Z",
+  "expired_at": "2026-10-24T20:23:47Z",
+  "original_head": "18f6794c01059051108f913016522751a4b61b89",
+  "original_issue_updated": "2026-10-21T17:21:51Z",
+  "original_labels": [
+    "implementation",
+    "status:in-review",
+    "ux",
+    "helper-ok",
+    "lane:hud",
+    "lane:net",
+    "model:opus",
+    "tier:2",
+    "prio:p2"
+  ],
+  "removed_only": "model:opus",
+  "expiry_comment": 6405986968,
+  "continuation_comment": 6405987582,
+  "rule_url": "https://github.com/jarrodjohnson-gif/emberisle/blob/9bde9861490662ef3e95e90db5cfa2dc7874fd55/docs/LANES.md#L91",
+  "new_model": "GPT-6.1 Sol",
+  "original_authorship_preserved": true
+}

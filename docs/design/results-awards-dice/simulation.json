@@ -1,0 +1,151 @@
+{
+  "falseAlarm": {
+    "30": 4.5,
+    "40": 5,
+    "60": 4.7,
+    "80": 5,
+    "113": 4.8,
+    "150": 4.7,
+    "200": 4.7
+  },
+  "games": [
+    {
+      "rolls": 98,
+      "titles": {
+        "p0": "Trade broker",
+        "p1 (won)": "Grain baron",
+        "p2": "Wayfarer's favourite",
+        "p3": "Hit by 7s"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 86,
+      "titles": {
+        "p0": "Hit by 7s",
+        "p1 (won)": "Brick baron",
+        "p2": "Wayfarer's favourite",
+        "p3": "Trade broker"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 87,
+      "titles": {
+        "p0": "Wayfarer's favourite",
+        "p1": "Hit by 7s",
+        "p2 (won)": "Grain baron",
+        "p3": "Hit by 7s"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 118,
+      "titles": {
+        "p0": "Hit by 7s",
+        "p1 (won)": "Wool baron",
+        "p2": "Trade broker",
+        "p3": "Wayfarer's favourite"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 127,
+      "titles": {
+        "p0": "Hit by 7s",
+        "p1": "Wool baron",
+        "p2 (won)": "Light fingers",
+        "p3": "Wayfarer's favourite"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 108,
+      "titles": {
+        "p0": "Hit by 7s",
+        "p1": "Wool baron",
+        "p2": "Wayfarer's favourite",
+        "p3 (won)": "Light fingers"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 136,
+      "titles": {
+        "p0": "Wayfarer's favourite",
+        "p1": "Hit by 7s",
+        "p2": "Trade broker",
+        "p3 (won)": "Wool baron"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 107,
+      "titles": {
+        "p0": "Wayfarer's favourite",
+        "p1": "Wool baron",
+        "p2 (won)": "Light fingers",
+        "p3": "Hit by 7s"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 135,
+      "titles": {
+        "p0": "Trade broker",
+        "p1": "Wayfarer's favourite",
+        "p2 (won)": "Ore baron",
+        "p3": "Hit by 7s"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    },
+    {
+      "rolls": 120,
+      "titles": {
+        "p0": "Grain baron",
+        "p1": "Hit by 7s",
+        "p2": "Wayfarer's favourite",
+        "p3 (won)": "Light fingers"
+      },
+      "losersOnMain": true,
+      "winnerChip": true,
+      "unusualDice": false
+    }
+  ],
+  "pictured": {
+    "A": {
+      "total": 113,
+      "sum": null,
+      "line": "8 came up most, 21 times. 2 and 12 came up least, 3 times each."
+    },
+    "B": {
+      "total": 113,
+      "sum": null,
+      "line": "Close to the odds. 8 came up most, 21 times. 2 and 12 came up least, 3 times each."
+    }
+  },
+  "summary": {
+    "games": 10,
+    "everyLoserOnMainTitle": 10,
+    "winnerGotChip": 10,
+    "diceCalledUnusual": 0
+  }
+}

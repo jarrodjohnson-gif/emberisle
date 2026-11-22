@@ -1,0 +1,32 @@
+Preserved all job names, matrices, timeouts, and proof steps against current main
+event=pull_request draft=False: all browser gates=True
+event=pull_request draft=True: all browser gates=False
+event=push draft=False: all browser gates=False
+event=push draft=True: all browser gates=False
+actual checks shell event=pull_request all expected: exit=0 expected=0
+actual checks shell event=pull_request build=failure: exit=1 expected=1
+actual checks shell event=pull_request build=cancelled: exit=1 expected=1
+actual checks shell event=pull_request build=skipped: exit=1 expected=1
+actual checks shell event=pull_request server=failure: exit=1 expected=1
+actual checks shell event=pull_request server=cancelled: exit=1 expected=1
+actual checks shell event=pull_request server=skipped: exit=1 expected=1
+actual checks shell event=pull_request browser-a=failure: exit=1 expected=1
+actual checks shell event=pull_request browser-a=cancelled: exit=1 expected=1
+actual checks shell event=pull_request browser-a=skipped: exit=1 expected=1
+actual checks shell event=pull_request browser-b=failure: exit=1 expected=1
+actual checks shell event=pull_request browser-b=cancelled: exit=1 expected=1
+actual checks shell event=pull_request browser-b=skipped: exit=1 expected=1
+actual checks shell event=push all expected: exit=0 expected=0
+actual checks shell event=push build=failure: exit=1 expected=1
+actual checks shell event=push build=cancelled: exit=1 expected=1
+actual checks shell event=push build=skipped: exit=1 expected=1
+actual checks shell event=push server=failure: exit=1 expected=1
+actual checks shell event=push server=cancelled: exit=1 expected=1
+actual checks shell event=push server=skipped: exit=1 expected=1
+actual checks shell event=push browser-a=failure: exit=1 expected=1
+actual checks shell event=push browser-a=cancelled: exit=1 expected=1
+actual checks shell event=push browser-a=success: exit=1 expected=1
+actual checks shell event=push browser-b=failure: exit=1 expected=1
+actual checks shell event=push browser-b=cancelled: exit=1 expected=1
+actual checks shell event=push browser-b=success: exit=1 expected=1
+Event controls passed: 12 browser-gate cases and 26 actual roll-up shell cases

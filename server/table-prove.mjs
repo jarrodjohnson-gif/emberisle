@@ -4,13 +4,14 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", LOBBY_HOLD_MS: "200", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -162,15 +163,9 @@ async function step(c, msg) {
     await step(c, { type: "roll" });
     rolls++;
   }
-  const join = (id) => Number(id.slice(1));
   for (const c of all) {
     const g = c.state.game;
-    const die = (p) => g.rollOff.rolls[p.id];
-    const [first, ...rest] = g.players;
-    const ordered =
-      rest.every((p) => die(first) > die(p)) &&
-      rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1].id) < join(p.id))) &&
-      g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 && g.rollOff.pending.length === 0 && Object.keys(g.rollOff.rolls).length === 3;
+    const ordered = rollOffOrderOk(g);
     if (!ordered) fail(`${c.name} roll-off order`, g.rollOff);
     if (c.rolls.length) fail(`${c.name} got rolled during the roll-off`, c.rolls);
     if (!c.inbox.some((m) => m.type === "log" && /^\w+ places first, then \w+ and \w+\.$/.test(m.text))) fail(`${c.name} never heard who places first`);

@@ -1,0 +1,833 @@
+{
+  "browser": "153.0.8010.12",
+  "runs": [
+    {
+      "size": "430x932",
+      "beforeSignin": {
+        "sheet": {
+          "top": 349,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 571
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "signin": {
+        "sheet": {
+          "top": 293,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 627
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Forgot your PIN? Use your recovery code",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "recover": {
+        "sheet": {
+          "top": 174,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 746
+        },
+        "sheetInView": true,
+        "bodyScrolls": 153,
+        "pageScrolled": 0,
+        "mainButton": "Reset PIN and sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "Recovery code",
+          "New PIN",
+          "Confirm new PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Reset PIN and sign in",
+          "Back to sign in",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "beforeSummary": {
+        "sheet": {
+          "top": 521,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 399
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "save": {
+        "sheet": {
+          "top": 433,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 487
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "K7Q-M4X",
+          "cut": false,
+          "w": 143
+        }
+      },
+      "summary": {
+        "sheet": {
+          "top": 433,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 487
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "New recovery code",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "newcode": {
+        "sheet": {
+          "top": 505,
+          "bottom": 920,
+          "left": 12,
+          "right": 418,
+          "w": 406,
+          "h": 415
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Make new code",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Current PIN",
+          "Make new code",
+          "Cancel"
+        ],
+        "code": null
+      }
+    },
+    {
+      "size": "390x844",
+      "beforeSignin": {
+        "sheet": {
+          "top": 261,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 571
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "signin": {
+        "sheet": {
+          "top": 205,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 627
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Forgot your PIN? Use your recovery code",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "recover": {
+        "sheet": {
+          "top": 157,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 675
+        },
+        "sheetInView": true,
+        "bodyScrolls": 224,
+        "pageScrolled": 0,
+        "mainButton": "Reset PIN and sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "Recovery code",
+          "New PIN",
+          "Confirm new PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Reset PIN and sign in",
+          "Back to sign in",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "recoverError": {
+        "sheet": {
+          "top": 157,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 675
+        },
+        "sheetInView": true,
+        "bodyScrolls": 296,
+        "pageScrolled": 0,
+        "mainButton": "Reset PIN and sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "Recovery code",
+          "New PIN",
+          "Confirm new PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Reset PIN and sign in",
+          "Back to sign in",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "beforeSummary": {
+        "sheet": {
+          "top": 433,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 399
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "save": {
+        "sheet": {
+          "top": 325,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 507
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "K7Q-M4X",
+          "cut": false,
+          "w": 143
+        }
+      },
+      "save-a": {
+        "sheet": {
+          "top": 325,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 507
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "482-913",
+          "cut": false,
+          "w": 143
+        }
+      },
+      "save-c": {
+        "sheet": {
+          "top": 325,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 507
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "K7QM-4XR2",
+          "cut": false,
+          "w": 184
+        }
+      },
+      "summary": {
+        "sheet": {
+          "top": 345,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 487
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "New recovery code",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "newcode": {
+        "sheet": {
+          "top": 417,
+          "bottom": 832,
+          "left": 12,
+          "right": 378,
+          "w": 366,
+          "h": 415
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Make new code",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Current PIN",
+          "Make new code",
+          "Cancel"
+        ],
+        "code": null
+      }
+    },
+    {
+      "size": "375x812",
+      "beforeSignin": {
+        "sheet": {
+          "top": 229,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 571
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "signin": {
+        "sheet": {
+          "top": 173,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 627
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Forgot your PIN? Use your recovery code",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "recover": {
+        "sheet": {
+          "top": 150,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 650
+        },
+        "sheetInView": true,
+        "bodyScrolls": 249,
+        "pageScrolled": 0,
+        "mainButton": "Reset PIN and sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "Recovery code",
+          "New PIN",
+          "Confirm new PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Reset PIN and sign in",
+          "Back to sign in",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "beforeSummary": {
+        "sheet": {
+          "top": 401,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 399
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "save": {
+        "sheet": {
+          "top": 253,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 547
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "K7Q-M4X",
+          "cut": false,
+          "w": 143
+        }
+      },
+      "summary": {
+        "sheet": {
+          "top": 313,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 487
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "New recovery code",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "newcode": {
+        "sheet": {
+          "top": 385,
+          "bottom": 800,
+          "left": 12,
+          "right": 363,
+          "w": 351,
+          "h": 415
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Make new code",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Current PIN",
+          "Make new code",
+          "Cancel"
+        ],
+        "code": null
+      }
+    },
+    {
+      "size": "820x1180",
+      "beforeSignin": {
+        "sheet": {
+          "top": 305,
+          "bottom": 876,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 571
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "signin": {
+        "sheet": {
+          "top": 277,
+          "bottom": 904,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 627
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "PIN",
+          "Show PIN",
+          "Forgot your PIN? Use your recovery code",
+          "Remember me on this device",
+          "Sign in",
+          "Create profile",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "recover": {
+        "sheet": {
+          "top": 141,
+          "bottom": 1040,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 899
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Reset PIN and sign in",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Login",
+          "Recovery code",
+          "New PIN",
+          "Confirm new PIN",
+          "Show PIN",
+          "Remember me on this device",
+          "Reset PIN and sign in",
+          "Back to sign in",
+          "Continue as guest"
+        ],
+        "code": null
+      },
+      "beforeSummary": {
+        "sheet": {
+          "top": 391,
+          "bottom": 790,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 399
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "save": {
+        "sheet": {
+          "top": 357,
+          "bottom": 824,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 467
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Copy",
+          "I've written it down",
+          "Done"
+        ],
+        "code": {
+          "text": "K7Q-M4X",
+          "cut": false,
+          "w": 143
+        }
+      },
+      "summary": {
+        "sheet": {
+          "top": 347,
+          "bottom": 834,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 487
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Done",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Edit profile",
+          "Change PIN",
+          "New recovery code",
+          "Done",
+          "Sign out"
+        ],
+        "code": null
+      },
+      "newcode": {
+        "sheet": {
+          "top": 393,
+          "bottom": 788,
+          "left": 186,
+          "right": 634,
+          "w": 448,
+          "h": 395
+        },
+        "sheetInView": true,
+        "bodyScrolls": 0,
+        "pageScrolled": 0,
+        "mainButton": "Make new code",
+        "mainInView": true,
+        "shortControls": [],
+        "controls": [
+          "Close",
+          "Current PIN",
+          "Make new code",
+          "Cancel"
+        ],
+        "code": null
+      }
+    }
+  ],
+  "errors": []
+}

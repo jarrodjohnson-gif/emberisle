@@ -1,0 +1,121 @@
+[
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "164-164",
+    "newLines": "164-164",
+    "old": "      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width };",
+    "new": "      return { left: b.left, right: b.right, top: b.top, bottom: b.bottom, width: b.width, height: b.height };"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "169-172",
+    "newLines": "169-181",
+    "old": "    const colours = [...give.querySelectorAll(\".trade-resource\")].map((card) => ({\n      icon: getComputedStyle(card.querySelector(\".trade-add > svg\")).color,\n      name: getComputedStyle(card.querySelector(\".trade-resource-name\")).color,\n    }));",
+    "new": "    const colours = [...give.querySelectorAll(\".trade-resource\")].map((card) => {\n      const button = card.querySelector(\".trade-add\");\n      const swatch = document.createElement(\"span\");\n      card.append(swatch);\n      swatch.style.color = \"var(--sym)\";\n      const palette = getComputedStyle(swatch).color;\n      swatch.style.color = \"var(--muted)\";\n      const unavailable = getComputedStyle(swatch).color;\n      swatch.remove();\n      return { palette, unavailable, disabled: button.disabled,\n        icon: getComputedStyle(card.querySelector(\".trade-add > svg\")).color,\n        name: getComputedStyle(card.querySelector(\".trade-resource-name\")).color };\n    });"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "178-177",
+    "newLines": "187-187",
+    "old": "",
+    "new": "      unselectedCards: [...element.querySelectorAll(\".trade-resource:not([data-selected])\")].map(rect),"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "181-186",
+    "newLines": "191-200",
+    "old": "  const short = page.viewportSize().height <= 480;\n  assert.ok(short ? geometry.bank.right <= geometry.table.left : geometry.bank.bottom <= geometry.table.top,\n    `${tag} ${route}: approved B puts Bank left on short screens and above Table otherwise ${JSON.stringify(geometry)}`);\n  if (!short) assert.ok(Math.abs(geometry.bank.left - geometry.table.left) <= 0.5 && Math.abs(geometry.bank.right - geometry.table.right) <= 0.5,\n    `${tag} ${route}: portrait Bank box spans the Table column`);\n  assert.ok(geometry.bankAction.left >= geometry.quote.right - 0.5, `${tag} ${route}: compact Bank action sits beside its quote`);",
+    "new": "  assert.ok(geometry.table.right <= geometry.bank.left,\n    `${tag} ${route}: final owner footer puts Table left and Bank right ${JSON.stringify(geometry)}`);\n  assert.ok(Math.abs(geometry.bank.top - geometry.table.top) <= 0.5 && Math.abs(geometry.bank.width - geometry.table.width) <= 0.5,\n    `${tag} ${route}: final owner footer columns align and have equal width`);\n  if (page.viewportSize().height <= 480) {\n    assert.ok(geometry.bankAction.left >= geometry.quote.right - 0.5, `${tag} ${route}: short-screen Bank action stays beside its quote`);\n  } else {\n    assert.ok(geometry.bankAction.top >= geometry.quote.bottom - 0.5, `${tag} ${route}: one Bank action sits below its exact quote`);\n    assert.ok(Math.abs(geometry.bankAction.width - geometry.quote.width) <= 0.5, `${tag} ${route}: normal-height Bank action fills its inner column`);\n  }"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "188-189",
+    "newLines": "202-206",
+    "old": "  assert.equal(new Set(geometry.colours.map((c) => c.icon)).size, 5, `${tag} ${route}: all five goods have distinct symbol colours`);\n  assert.equal(new Set(geometry.colours.map((c) => c.name)).size, 5, `${tag} ${route}: all five goods have distinct name colours`);",
+    "new": "  assert.equal(new Set(geometry.colours.map((c) => c.palette)).size, 5, `${tag} ${route}: all five goods retain distinct palette colours`);\n  for (const colour of geometry.colours) {\n    assert.equal(colour.icon, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each symbol uses its good colour, or neutral when unavailable`);\n    assert.equal(colour.name, colour.disabled ? colour.unavailable : colour.palette, `${tag} ${route}: each name uses its good colour, or neutral when unavailable`);\n  }"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "193-192",
+    "newLines": "210-214",
+    "old": "",
+    "new": "  for (const card of geometry.unselectedCards) assert.ok(card.height <= (page.viewportSize().height <= 480 ? 90 : 104),\n    `${tag} ${route}: unselected cards retain the final owner's compact height ${JSON.stringify(card)}`);\n  const stock = panelFor(page).locator(\"#trade-bank-stock\");\n  if (await stock.count()) assert.equal(await stock.isVisible(), true, `${tag} ${route}: live Bank stock is visible as well as described`);\n  if (page.viewportSize().height > 480) assert.equal(await panelFor(page).locator(\"#trade-bank-title\").textContent(), \"Bank & docks \u00b7 one exchange\", `${tag} ${route}: final owner Bank heading`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "389-389",
+    "newLines": "411-411",
+    "old": "  await hint(page, \"Bank 4:1: give 4 stone, get 1 wheat now.\");",
+    "new": "  await hint(page, \"You give 4 stone. You get 1 wheat.\");"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "517-517",
+    "newLines": "539-539",
+    "old": "  await describedAs(bankFor(page), `Bank 4:1: give 4 wood, get 1 stone now. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);",
+    "new": "  await describedAs(bankFor(page), `You give 4 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} exact Bank receipt and live stock`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "553-554",
+    "newLines": "575-576",
+    "old": "  await hint(page, \"Dock 2:1: give 2 wood, get 1 stone now.\");\n  await describedAs(bankFor(page), `Dock 2:1: give 2 wood, get 1 stone now. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);",
+    "new": "  await hint(page, \"You give 2 wood. You get 1 stone.\");\n  await describedAs(bankFor(page), `You give 2 wood. You get 1 stone. Bank stock: ${base.bank.ore} stone.`, `${tag} live dock and stock description`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "568-568",
+    "newLines": "590-590",
+    "old": "    await hint(page, `${rate === 4 ? \"Bank\" : \"Dock\"} ${rate}:1: give ${rate} wood, get 1 stone now.`);",
+    "new": "    await hint(page, `You give ${rate} wood. You get 1 stone.`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "584-584",
+    "newLines": "606-606",
+    "old": "  await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+    "new": "  await hint(page, \"You give 4 wood. You get 1 stone.\");"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "597-597",
+    "newLines": "619-619",
+    "old": "    await hint(page, `${rate === 4 ? \"Bank\" : \"Dock\"} ${rate}:1: give ${rate} wood, get 1 stone now.`);",
+    "new": "    await hint(page, `You give ${rate} wood. You get 1 stone.`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "635-635",
+    "newLines": "657-657",
+    "old": "  await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+    "new": "  await hint(page, \"You give 4 wood. You get 1 stone.\");"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "685-685",
+    "newLines": "707-707",
+    "old": "    await hint(page, \"Bank 4:1: give 4 wood, get 1 stone now.\");",
+    "new": "    await hint(page, \"You give 4 wood. You get 1 stone.\");"
+  },
+  {
+    "file": "scripts/trade-map.test.mjs",
+    "oldLines": "96-96",
+    "newLines": "96-96",
+    "old": "    assert.equal(await panel.getByTestId(\"trade-hint\").textContent(), \"Bank 4:1: give 4 wood, get 1 sheep now.\");",
+    "new": "    assert.equal(await panel.getByTestId(\"trade-hint\").textContent(), \"You give 4 wood. You get 1 sheep.\");"
+  },
+  {
+    "file": "scripts/trade-map.test.mjs",
+    "oldLines": "161-161",
+    "newLines": "161-161",
+    "old": "    assert.equal(await panel.getByTestId(\"trade-hint\").textContent(), `${rate === 4 ? \"Bank\" : \"Dock\"} ${rate}:1: give ${rate} stone, get 1 sheep now.`);",
+    "new": "    assert.equal(await panel.getByTestId(\"trade-hint\").textContent(), `You give ${rate} stone. You get 1 sheep.`);"
+  },
+  {
+    "file": "scripts/trade-tabs-prove.mjs",
+    "oldLines": "532-533",
+    "newLines": "554-555",
+    "old": "    [\"Bank\", bankFor(page)],\n    [\"Ask\", askFor(page)],",
+    "new": "    [\"Ask\", askFor(page)],\n    [\"Bank\", bankFor(page)],"
+  }
+]

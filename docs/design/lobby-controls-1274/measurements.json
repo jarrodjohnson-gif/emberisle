@@ -1,0 +1,5517 @@
+{
+  "chromium": "153.0.8010.12",
+  "browserErrors": [],
+  "results": [
+    {
+      "picture": "empty-320x568.png",
+      "state": "empty",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 150.1,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 5 W 6 J. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "before-320x568.png",
+      "state": "before",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [],
+      "views": [],
+      "status": {
+        "x": 254.6,
+        "y": 69,
+        "w": 40.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Copy / Copy link",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 0,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "joined-table-320x568.png",
+      "state": "joined-table",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 150.1,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 55.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 80.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 164.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 230.6,
+        "y": 69,
+        "w": 64.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 0,
+      "minGapPair": "Table / Play games",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-table-320x568.png",
+      "state": "a-table",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 150.1,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 5 W 6 J. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "state": "MMMM (measured only)",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 164.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-copied-320x568.png",
+      "state": "a-copied",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 173.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-blocked-320x568.png",
+      "state": "a-blocked",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 173.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [
+        "Table code 254x32"
+      ],
+      "minGap": -16,
+      "minGapPair": "Table / Table code",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": {
+        "x": 24,
+        "y": 68,
+        "w": 272,
+        "h": 70.8,
+        "focused": "copy-fallback"
+      },
+      "live": null,
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-games-320x568.png",
+      "state": "a-games",
+      "focus": "lc-tab-games",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 150.1,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "false",
+          "x": 25,
+          "y": 69,
+          "w": 57.1,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "true",
+          "x": 90.1,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.1,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.1,
+        "y": 69,
+        "w": 54.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 5 W 6 J. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": null,
+      "chatShare": null,
+      "chatFloor": null,
+      "chatLog": null,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-text125-320x568.png",
+      "state": "a-text125",
+      "viewport": "320x568",
+      "rootFont": "20px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 167,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 65,
+          "w": 68,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 15.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 9,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "WWWW at 125% (measured only)",
+      "viewport": "320x568",
+      "rootFont": "20px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 190.5,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 65,
+          "w": 68,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 15.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 9,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "MMMM copied at 125% (measured only)",
+      "viewport": "320x568",
+      "rootFont": "20px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 181.7,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 65,
+          "w": 68,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 15.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 9,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-text150-320x568.png",
+      "state": "a-text150",
+      "viewport": "320x568",
+      "rootFont": "24px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 184,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 69,
+        "w": 10.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": -24,
+      "minGapPair": "Say something… / 7 points",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 0,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "WWWW at 150% (measured only)",
+      "viewport": "320x568",
+      "rootFont": "24px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 207.5,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 69,
+        "w": 10.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": -24,
+      "minGapPair": "Say something… / 7 points",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 0,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "MMMM copied at 150% (measured only)",
+      "viewport": "320x568",
+      "rootFont": "24px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 198.6,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 69,
+        "w": 10.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": -24,
+      "minGapPair": "Say something… / 7 points",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 0,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-full-320x568.png",
+      "state": "a-full",
+      "viewport": "320x568",
+      "rootFont": "16px",
+      "code": "5W6J",
+      "header": [
+        {
+          "name": "Table code 5 W 6 J. Copy",
+          "x": 25,
+          "y": 17,
+          "w": 150.1,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 69,
+          "w": 58,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 54.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 10 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 5 W 6 J. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 25,
+        "y": 225,
+        "w": 270,
+        "h": 222
+      },
+      "chatShare": 0.377,
+      "chatFloor": null,
+      "chatLog": 48,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "empty-390x844.png",
+      "state": "empty",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 177.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 3 9 W H. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "before-390x844.png",
+      "state": "before",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [],
+      "views": [],
+      "status": {
+        "x": 258.6,
+        "y": 81,
+        "w": 102.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Copy / Copy link",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "joined-table-390x844.png",
+      "state": "joined-table",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 177.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 55.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 84.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 168.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 242.6,
+        "y": 81,
+        "w": 118.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 0,
+      "minGapPair": "Table / Play games",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-table-390x844.png",
+      "state": "a-table",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 177.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 3 9 W H. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "state": "MMMM (measured only)",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 191.7,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-copied-390x844.png",
+      "state": "a-copied",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 202.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-blocked-390x844.png",
+      "state": "a-blocked",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 202.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [
+        "Table code 324x32"
+      ],
+      "minGap": -20,
+      "minGapPair": "Table / Table code",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": {
+        "x": 24,
+        "y": 76,
+        "w": 342,
+        "h": 70.8,
+        "focused": "copy-fallback"
+      },
+      "live": null,
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-games-390x844.png",
+      "state": "a-games",
+      "focus": "lc-tab-games",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 177.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "false",
+          "x": 29,
+          "y": 81,
+          "w": 57.1,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "true",
+          "x": 94.1,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.1,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.1,
+        "y": 81,
+        "w": 108.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 3 9 W H. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": null,
+      "chatShare": null,
+      "chatFloor": 0.52,
+      "chatLog": null,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-text125-390x844.png",
+      "state": "a-text125",
+      "viewport": "390x844",
+      "rootFont": "20px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 194.4,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 77,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 104.5,
+          "y": 77,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 207.5,
+          "y": 77,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 291.5,
+        "y": 81,
+        "w": 69.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 245,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "WWWW at 125% (measured only)",
+      "viewport": "390x844",
+      "rootFont": "20px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 219.4,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 77,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 104.5,
+          "y": 77,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 207.5,
+          "y": 77,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 291.5,
+        "y": 81,
+        "w": 69.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 245,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "MMMM copied at 125% (measured only)",
+      "viewport": "390x844",
+      "rootFont": "20px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 208.6,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 77,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 104.5,
+          "y": 77,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 207.5,
+          "y": 77,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 291.5,
+        "y": 81,
+        "w": 69.5,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 245,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-text150-390x844.png",
+      "state": "a-text150",
+      "viewport": "390x844",
+      "rootFont": "24px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 211.3,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 72,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 114.4,
+          "y": 72,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 236.4,
+          "y": 72,
+          "w": 86,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 330.4,
+        "y": 81,
+        "w": 30.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        10
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 206,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "WWWW at 150% (measured only)",
+      "viewport": "390x844",
+      "rootFont": "24px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 236.3,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 72,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 114.4,
+          "y": 72,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 236.4,
+          "y": 72,
+          "w": 86,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 330.4,
+        "y": 81,
+        "w": 30.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        10
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 206,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "MMMM copied at 150% (measured only)",
+      "viewport": "390x844",
+      "rootFont": "24px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 225.5,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 72,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 114.4,
+          "y": 72,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 236.4,
+          "y": 72,
+          "w": 86,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 330.4,
+        "y": 81,
+        "w": 30.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        10
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 206,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-full-390x844.png",
+      "state": "a-full",
+      "viewport": "390x844",
+      "rootFont": "16px",
+      "code": "39WH",
+      "header": [
+        {
+          "name": "Table code 3 9 W H. Copy",
+          "x": 29,
+          "y": 29,
+          "w": 177.5,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 29,
+          "y": 81,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 94.6,
+          "y": 81,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 178.6,
+          "y": 81,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 252.6,
+        "y": 81,
+        "w": 108.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Reachable · 15 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 3 9 W H. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 29,
+        "y": 253,
+        "w": 332,
+        "h": 458
+      },
+      "chatShare": 0.5231,
+      "chatFloor": 0.52,
+      "chatLog": 284,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "empty-667x375.png",
+      "state": "empty",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 187.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code K 7 C V. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "before-667x375.png",
+      "state": "before",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [],
+      "views": [],
+      "status": {
+        "x": 246.6,
+        "y": 69,
+        "w": 32.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Copy / Copy link",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 69,
+        "w": 362.5,
+        "h": 237
+      },
+      "chatShare": 0.3676,
+      "chatFloor": null,
+      "chatLog": 63,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "joined-table-667x375.png",
+      "state": "joined-table",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 187.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 55.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 72.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 156.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 230.6,
+        "y": 69,
+        "w": 48.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 0,
+      "minGapPair": "Table / Play games",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-table-667x375.png",
+      "state": "a-table",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 187.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code K 7 C V. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "state": "MMMM (measured only)",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 214,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-copied-667x375.png",
+      "state": "a-copied",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-blocked-667x375.png",
+      "state": "a-blocked",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [
+        "Table code 617x32"
+      ],
+      "minGap": -16,
+      "minGapPair": "Table / Table code",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": {
+        "x": 16,
+        "y": 68,
+        "w": 635,
+        "h": 70.8,
+        "focused": "copy-fallback"
+      },
+      "live": null,
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-games-667x375.png",
+      "state": "a-games",
+      "focus": "lc-tab-games",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 187.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "false",
+          "x": 17,
+          "y": 69,
+          "w": 57.1,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "true",
+          "x": 82.1,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.1,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.1,
+        "y": 69,
+        "w": 39.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code K 7 C V. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": null,
+      "chatShare": null,
+      "chatFloor": null,
+      "chatLog": null,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-text125-667x375.png",
+      "state": "a-text125",
+      "viewport": "667x375",
+      "rootFont": "20px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 204.7,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 92.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 195.5,
+          "y": 65,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 76,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "WWWW at 125% (measured only)",
+      "viewport": "667x375",
+      "rootFont": "20px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 244.7,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 92.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 195.5,
+          "y": 65,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 76,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "MMMM copied at 125% (measured only)",
+      "viewport": "667x375",
+      "rootFont": "20px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 231,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 65,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 92.5,
+          "y": 65,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 195.5,
+          "y": 65,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 279.5,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 76,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-text150-667x375.png",
+      "state": "a-text150",
+      "viewport": "667x375",
+      "rootFont": "24px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 221.6,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 102.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 224.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 276.4,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 37,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "WWWW at 150% (measured only)",
+      "viewport": "667x375",
+      "rootFont": "24px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 261.6,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 102.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 224.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 276.4,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 37,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "MMMM copied at 150% (measured only)",
+      "viewport": "667x375",
+      "rootFont": "24px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 247.9,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 60,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 102.4,
+          "y": 60,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 224.4,
+          "y": 60,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 276.4,
+        "y": 69,
+        "w": 4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "Your name is Jarrod. Change it / Remove Bot",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 37,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-full-667x375.png",
+      "state": "a-full",
+      "viewport": "667x375",
+      "rootFont": "16px",
+      "code": "K7CV",
+      "header": [
+        {
+          "name": "Table code K 7 C V. Copy",
+          "x": 17,
+          "y": 17,
+          "w": 187.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 17,
+          "y": 69,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 82.6,
+          "y": 69,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 166.6,
+          "y": 69,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 240.6,
+        "y": 69,
+        "w": 38.9,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 8 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code K 7 C V. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 287.5,
+        "y": 17,
+        "w": 362.5,
+        "h": 289
+      },
+      "chatShare": 0.4483,
+      "chatFloor": null,
+      "chatLog": 115,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "empty-844x390.png",
+      "state": "empty",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 184.3,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "before-844x390.png",
+      "state": "before",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [],
+      "views": [],
+      "status": {
+        "x": 254.6,
+        "y": 77,
+        "w": 62.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Copy / Copy link",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 77,
+        "w": 486.3,
+        "h": 236
+      },
+      "chatShare": 0.3948,
+      "chatFloor": 0.39,
+      "chatLog": 62,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "joined-table-844x390.png",
+      "state": "joined-table",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 184.3,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 55.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 80.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 164.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 238.6,
+        "y": 77,
+        "w": 78.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 0,
+      "minGapPair": "Table / Play games",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-table-844x390.png",
+      "state": "a-table",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 184.3,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "state": "MMMM (measured only)",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 214,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-copied-844x390.png",
+      "state": "a-copied",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-blocked-844x390.png",
+      "state": "a-blocked",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [
+        "Table code 778x32"
+      ],
+      "minGap": -16,
+      "minGapPair": "Table / Table code",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": {
+        "x": 24,
+        "y": 76,
+        "w": 796,
+        "h": 70.8,
+        "focused": "copy-fallback"
+      },
+      "live": null,
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-games-844x390.png",
+      "state": "a-games",
+      "focus": "lc-tab-games",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 184.3,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "false",
+          "x": 25,
+          "y": 77,
+          "w": 57.1,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "true",
+          "x": 90.1,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.1,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.1,
+        "y": 77,
+        "w": 68.7,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": null,
+      "chatShare": null,
+      "chatFloor": 0.39,
+      "chatLog": null,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-text125-844x390.png",
+      "state": "a-text125",
+      "viewport": "844x390",
+      "rootFont": "20px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 201.2,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 73,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 73,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 73,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 287.5,
+        "y": 77,
+        "w": 29.3,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 75,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "WWWW at 125% (measured only)",
+      "viewport": "844x390",
+      "rootFont": "20px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 244.7,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 73,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 73,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 73,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 287.5,
+        "y": 77,
+        "w": 29.3,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 75,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "MMMM copied at 125% (measured only)",
+      "viewport": "844x390",
+      "rootFont": "20px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 231,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 73,
+          "w": 67.5,
+          "h": 52
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 100.5,
+          "y": 73,
+          "w": 95,
+          "h": 52
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 203.5,
+          "y": 73,
+          "w": 76,
+          "h": 52
+        }
+      ],
+      "status": {
+        "x": 287.5,
+        "y": 77,
+        "w": 29.3,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 4,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        3
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 75,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-text150-844x390.png",
+      "state": "a-text150",
+      "viewport": "844x390",
+      "rootFont": "24px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 218.1,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 68,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 68,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 68,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 77,
+        "w": 32.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": -1,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 36,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "WWWW at 150% (measured only)",
+      "viewport": "844x390",
+      "rootFont": "24px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 261.6,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 68,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 68,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 68,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 77,
+        "w": 32.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": -1,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 36,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "MMMM copied at 150% (measured only)",
+      "viewport": "844x390",
+      "rootFont": "24px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 247.9,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 68,
+          "w": 77.4,
+          "h": 62
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 110.4,
+          "y": 68,
+          "w": 114,
+          "h": 62
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 232.4,
+          "y": 68,
+          "w": 44,
+          "h": 62
+        }
+      ],
+      "status": {
+        "x": 284.4,
+        "y": 77,
+        "w": 32.4,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": -1,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        14
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 36,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-full-844x390.png",
+      "state": "a-full",
+      "viewport": "844x390",
+      "rootFont": "16px",
+      "code": "28U9",
+      "header": [
+        {
+          "name": "Table code 2 8 U 9. Copy",
+          "x": 25,
+          "y": 25,
+          "w": 184.3,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 25,
+          "y": 77,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 90.6,
+          "y": 77,
+          "w": 76,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 174.6,
+          "y": 77,
+          "w": 66,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 248.6,
+        "y": 77,
+        "w": 68.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [
+        "Wayfarer on",
+        "Reachable · 17 ms"
+      ],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code 2 8 U 9. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 332.8,
+        "y": 25,
+        "w": 486.3,
+        "h": 288
+      },
+      "chatShare": 0.4817,
+      "chatFloor": 0.39,
+      "chatLog": 114,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "picture": null,
+      "state": "empty",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 196.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W V Y 7. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "before-1280x720.png",
+      "state": "before",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [],
+      "views": [],
+      "status": {
+        "x": 313.8,
+        "y": 97,
+        "w": 265.2,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Copy / Copy link",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "joined-table-1280x720.png",
+      "state": "joined-table",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 196.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 55.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 116.6,
+          "y": 97,
+          "w": 99.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 223.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 317.9,
+        "y": 97,
+        "w": 261.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 0,
+      "minGapPair": "Table / Play games",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-table-1280x720.png",
+      "state": "a-table",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 196.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W V Y 7. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "state": "MMMM (measured only)",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 214,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code M M M M. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": null
+    },
+    {
+      "picture": "a-copied-1280x720.png",
+      "state": "a-copied",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W W W W. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-blocked-1280x720.png",
+      "state": "a-blocked",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 227.8,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [
+        "Table code 526x30"
+      ],
+      "minGap": -28,
+      "minGapPair": "Table / Table code",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": {
+        "x": 48,
+        "y": 84,
+        "w": 544,
+        "h": 68,
+        "focused": "copy-fallback"
+      },
+      "live": null,
+      "copies": "WWWW"
+    },
+    {
+      "picture": "a-games-1280x720.png",
+      "state": "a-games",
+      "focus": "lc-tab-games",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 196.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "false",
+          "x": 61,
+          "y": 97,
+          "w": 57.1,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "true",
+          "x": 126.1,
+          "y": 97,
+          "w": 101.2,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 235.3,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 329.3,
+        "y": 97,
+        "w": 249.7,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W V Y 7. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": null,
+      "chatShare": null,
+      "chatFloor": 0.4,
+      "chatLog": null,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "picture": null,
+      "state": "a-text125",
+      "viewport": "1280x720",
+      "rootFont": "20px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 213.6,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 67.5,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 136.5,
+          "y": 97,
+          "w": 120.9,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 265.4,
+          "y": 97,
+          "w": 100,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 373.4,
+        "y": 97,
+        "w": 205.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 89,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "WWWW at 125% (measured only)",
+      "viewport": "1280x720",
+      "rootFont": "20px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 244.7,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 67.5,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 136.5,
+          "y": 97,
+          "w": 120.9,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 265.4,
+          "y": 97,
+          "w": 100,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 373.4,
+        "y": 97,
+        "w": 205.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 89,
+      "fallback": null,
+      "live": "",
+      "copies": "WWWW"
+    },
+    {
+      "state": "MMMM copied at 125% (measured only)",
+      "viewport": "1280x720",
+      "rootFont": "20px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 231,
+          "h": 44,
+          "font": 18.75
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 67.5,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 136.5,
+          "y": 97,
+          "w": 120.9,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 265.4,
+          "y": 97,
+          "w": 100,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 373.4,
+        "y": 97,
+        "w": 205.6,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 2.5,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 89,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": "a-text150-1280x720.png",
+      "state": "a-text150",
+      "viewport": "1280x720",
+      "rootFont": "24px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 230.5,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 77.4,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 146.4,
+          "y": 97,
+          "w": 141.5,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 295.9,
+          "y": 97,
+          "w": 114,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 417.9,
+        "y": 97,
+        "w": 161.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        2
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 50,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "WWWW at 150% (measured only)",
+      "viewport": "1280x720",
+      "rootFont": "24px",
+      "code": "WWWW",
+      "header": [
+        {
+          "name": "Table code W W W W. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 261.6,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 77.4,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 146.4,
+          "y": 97,
+          "w": 141.5,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 295.9,
+          "y": 97,
+          "w": 114,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 417.9,
+        "y": 97,
+        "w": 161.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        2
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 50,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    },
+    {
+      "state": "MMMM copied at 150% (measured only)",
+      "viewport": "1280x720",
+      "rootFont": "24px",
+      "code": "MMMM",
+      "header": [
+        {
+          "name": "Table code M M M M. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 247.9,
+          "h": 44,
+          "font": 22.5
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 77.4,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 146.4,
+          "y": 97,
+          "w": 141.5,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 295.9,
+          "y": 97,
+          "w": 114,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 417.9,
+        "y": 97,
+        "w": 161.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": -3,
+      "minGapPair": "7 points / Leave the table",
+      "cardScroll": [
+        0,
+        2
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 50,
+      "fallback": null,
+      "live": "Copied",
+      "copies": "MMMM"
+    },
+    {
+      "picture": null,
+      "state": "a-full",
+      "viewport": "1280x720",
+      "rootFont": "16px",
+      "code": "WVY7",
+      "header": [
+        {
+          "name": "Table code W V Y 7. Copy",
+          "x": 61,
+          "y": 45,
+          "w": 196.6,
+          "h": 44,
+          "font": 15
+        }
+      ],
+      "views": [
+        {
+          "name": "Table",
+          "role": "tab",
+          "selected": "true",
+          "x": 61,
+          "y": 97,
+          "w": 57.6,
+          "h": 44
+        },
+        {
+          "name": "Play games",
+          "role": "tab",
+          "selected": "false",
+          "x": 126.6,
+          "y": 97,
+          "w": 100.3,
+          "h": 44
+        },
+        {
+          "name": "Rules",
+          "role": "button",
+          "selected": null,
+          "x": 234.9,
+          "y": 97,
+          "w": 86,
+          "h": 44
+        }
+      ],
+      "status": {
+        "x": 328.9,
+        "y": 97,
+        "w": 250.1,
+        "h": 44
+      },
+      "headerFits": true,
+      "rulesFit": true,
+      "clipped": [],
+      "under44": [],
+      "minGap": 8,
+      "minGapPair": "Table code W V Y 7. Copy / Table",
+      "cardScroll": [
+        0,
+        0
+      ],
+      "chat": {
+        "x": 61,
+        "y": 269,
+        "w": 518,
+        "h": 302
+      },
+      "chatShare": 0.4157,
+      "chatFloor": 0.4,
+      "chatLog": 128,
+      "fallback": null,
+      "live": "",
+      "copies": "MMMM"
+    }
+  ]
+}

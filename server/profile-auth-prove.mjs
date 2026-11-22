@@ -42,7 +42,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function startHost(env = {}, dir = PROFILES_DIR, observeHashes = false) {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", ...(observeHashes ? ["--import", "./profile-auth-observer.mjs"] : []), "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, PROFILES_DIR: dir, PROFILES_DEV: "", ...env },
     stdio: observeHashes ? ["ignore", "pipe", "pipe", "ipc"] : undefined,
   });
   const h = { proc, log: "", hashEvents: [] };

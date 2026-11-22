@@ -1,0 +1,13 @@
+
+> hand-cards-prove
+> node scripts/hand-cards-prove.mjs
+
+desk 1280x720: 88x80 cards, 22 px symbols, 30 px tabular counts; fills rgb(255, 255, 255) rgb(243, 246, 245) rgb(255, 255, 255) rgb(255, 255, 255) rgb(243, 246, 245); contrast 11.6 10.6 11.6 11.6 10.6; symbol, count and name centred within 0.008 px at rest, 0.008 px lit; gain fill rgb(47, 106, 79), count 6.37:1, +2 tab 17.5px 700 28 px tall 11.57:1, −1 tab 9.04:1; 1 cue per change; 0 console errors
+desk: bank-trade motion sampled from WAAPI, fixed footprint, immediate deltas, restart, clipping and settle proved
+port 390x844: 66.8x62 cards, 18 px symbols, 24 px tabular counts; fills rgb(255, 255, 255) rgb(243, 246, 245) rgb(255, 255, 255) rgb(255, 255, 255) rgb(243, 246, 245); contrast 11.6 10.6 11.6 11.6 10.6; symbol, count and name centred within 0.008 px at rest, 0.008 px lit; gain fill rgb(47, 106, 79), count 6.37:1, +2 tab 14px 700 24 px tall 11.57:1, −1 tab 9.04:1; 1 cue per change; 0 console errors
+port: bank-trade motion sampled from WAAPI, fixed footprint, immediate deltas, restart, clipping and settle proved
+short 844x390: 47.2x44 cards, 14 px symbols, 24 px tabular counts; fills rgb(255, 255, 255) rgb(243, 246, 245) rgb(255, 255, 255) rgb(255, 255, 255) rgb(243, 246, 245); contrast 11.6 10.6 11.6 11.6 10.6; symbol, count and name centred within 0.008 px at rest, 0.000 px lit; gain fill rgb(47, 106, 79), count 6.37:1, +2 tab 14px 700 24 px tall 11.57:1, −1 tab 9.04:1; 1 cue per change; 0 console errors
+short: bank-trade motion sampled from WAAPI, fixed footprint, immediate deltas, restart, clipping and settle proved
+reduced short touch: fill and tab run 0s, 0s; card motion removed; the highlight and +N/−N stand still
+deskshort 1000x450 fine pointer: cards 139.2x52 in a 60 px tray, unchanged through a gain and a loss; tab unclipped
+hand-cards-prove: ok

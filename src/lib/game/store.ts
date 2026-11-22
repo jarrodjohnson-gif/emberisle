@@ -1,12 +1,16 @@
 import { create } from "zustand";
-import { createGame } from "./board";
+import { createGame, type GameOptions } from "./board";
 import { logBotAction } from "./ai";
 import { applyAction, legalCities, legalRoads, legalSettle, publicVP, stealTargets, victoryTarget } from "./rules";
 
 const BANNER_MS = 2500;
 let bannerTimer: ReturnType<typeof setTimeout> | null = null;
-function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+function clearBanner() {
   if (bannerTimer) clearTimeout(bannerTimer);
+  bannerTimer = null;
+}
+function showBanner(set: (p: { banner: string | null }) => void, text: string) {
+  clearBanner();
   set({ banner: text });
   bannerTimer = setTimeout(() => set({ banner: null }), BANNER_MS);
 }
@@ -123,7 +127,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   if (before && after.winner && !before.winner) {
     // The banner buzz is felt at once; only the choice of sting waits for the lazy trade-sound chunk.
     if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
-    void tradeSounds.then(({ gameEnd }) => gameEnd(play, before, after, me, mode));
+    void tradeSounds.then((m) => m?.gameEnd(play, before, after, me, mode));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -158,7 +162,7 @@ export interface GameLogLine {
   at: number;
   text: string;
 }
-const GAME_LOG_MAX = 200;
+export const GAME_LOG_MAX = 200;
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
 
@@ -207,30 +211,62 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
 import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
-import type { Bag, ChatLine, Legal, Me, Reaction, Seat, TableClient } from "@/lib/net/table";
+import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Rematch, Seat, TableClient, TableEvents, TttMsg } from "@/lib/net/table";
+import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
 import { PROTO } from "@/lib/net/proto";
 import { readMutedSeats } from "@/lib/muted-seats";
 import { HAPTIC_MS } from "@/lib/haptic-durations";
-import { haptics, play, playLater, stop, yourTurn, type SoundName } from "@/lib/sound";
+import { haptics, play, playLater, resetTradePlease, stop, yourTurn, type SoundName } from "@/lib/sound";
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
 
-const tradeSounds = import("../trade-sound");
+const tradeSounds = import("../trade-sound").catch(() => null);
 
-// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when the host's 20 s run out.
-export interface OpenOffer {
+// The ask-the-table offer every seat is looking at (docs/BUILD_BIBLE.md 4.4). `until` is when a bot's offer runs out
+// (20 s); it is null for a person's offer, which holds until it is answered (#1245). The toast never shows a countdown
+// for either (#1507, owner q1517-bot-offer-stall A).
+interface OpenOffer {
   tradeId: string;
   from: string;
   fromName: string;
   give: Bag;
   want: Bag;
-  until: number;
+  until: number | null;
+}
+
+// #1609: five or six seats deal the expanded island. expanded.ts loads only then, and registers the paired turn rules
+// (`turnRules.paired`) before the game exists, so no action reaches an expanded state without them. Only the newest deal
+// lands: another start, Back on the Play page, or leaving a game (`dropDeal`) while the module is on its way drops the
+// earlier one. A failed load says so, and the next press asks again (chunk retries the file).
+const expanded = chunk(() => import("./expanded"));
+let deals = 0;
+export const dropDeal = () => deals++;
+function deal(o: GameOptions, go: (s: GameState) => void) {
+  const n = ++deals;
+  if (o.humans.length + o.bots < 5) return go(createGame(o));
+  const error = "Could not load. Try again.";
+  expanded.load().then(
+    (m) => n === deals && go(m.createExpandedGame(o)),
+    () => n === deals && useGame.setState({ error, toast: error }),
+  );
 }
 
 // The client is needed only for discovery or an explicit online journey.
 const tableModule = chunk(() => import("@/lib/net/table"));
+
+// #767: a finished game's profile result as the host sent it. `wins` is keyed by player id for each seat that started bound to
+// a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
+// was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
+export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
+function gameResult(r: unknown): GameResult | null {
+  const v = r as Partial<GameResult> | null;
+  if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
+  const wins = Object.entries(v.wins);
+  if (!wins.every(([, n]) => n === null || (Number.isSafeInteger(n) && (n as number) >= 0))) return null;
+  return { tracked: v.tracked, wins: Object.fromEntries(wins) };
+}
 
 // The window listeners that wake a backing-off table; one connection at a time, so one remover.
 let stopWake: (() => void) | null = null;
@@ -241,7 +277,8 @@ function clearWake() {
 let outcomeTimer: ReturnType<typeof setTimeout> | null = null;
 
 // Practice runs the ask-the-table offer here, as host.mjs does online (#363): a bot answers BOT_ANSWER_MS to twice that
-// after the ask, and an offer nobody takes closes after OFFER_MS. The timers belong to the open offer.
+// after the ask. A bot's offer nobody takes closes after OFFER_MS; a person's holds until answered (#1245). The timers
+// belong to the open offer.
 const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
 // People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
@@ -259,7 +296,54 @@ function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
   heldYes = [];
+  if (outcomeTimer) clearTimeout(outcomeTimer);
+  outcomeTimer = null;
 }
+
+const clearPlay = (): Partial<GameStore> => ({
+  error: null,
+  announcement: null,
+  toast: null,
+  banner: null,
+  buildMode: "none",
+  roadPicks: [],
+  pendingPlace: null,
+  pendingSteal: null,
+  offer: null,
+  declined: [],
+  tradeOutcome: null,
+  tradeTaker: null,
+  tradeOpen: false,
+  tradeOpener: null,
+  menuFor: null,
+  legal: null,
+  turnTimer: null,
+  gameResult: null,
+  tableVariant: undefined,
+  rematchChoice: undefined,
+});
+
+const clearTable = (): Partial<GameStore> => ({
+  ...clearPlay(),
+  screen: "title",
+  serverSha: null,
+  state: null,
+  net: null,
+  peeking: false,
+  seats: [],
+  code: "",
+  spectator: false,
+  watching: 0,
+  chat: [],
+  reactions: [],
+  unread: 0,
+  chatDraft: "",
+  gameLog: [],
+  lobbyLog: "",
+  seatId: "",
+  isHost: false,
+  ttt: null,
+});
 
 export type Screen = "title" | "lobby" | "play";
 
@@ -277,6 +361,10 @@ interface GameStore {
   error: string | null;
   // Bumped on every refused move, so the same error twice is announced twice (#380).
   errorSeq: number;
+  // Need refusals only; monotonic for this store lifetime, so unrelated errors never discard an in-flight selection.
+  needError: number;
+  // Nonpersisted settlement identity for local Need clearing; narration and ordinary gains never advance it.
+  localTrade: number;
   // Said to a screen reader (and sounded) without a line on screen: a short build's tap is answered by its chip (#535).
   announcement: string | null;
   buildMode: BuildMode;
@@ -288,6 +376,11 @@ interface GameStore {
   // The Costs card (the building-costs card that comes with the board game), opened from the Table menu.
   costs: boolean;
   costsOpener: HTMLElement | null;
+  // #766: the title's profile client, set when its sheet first opens. It gives Host and Join a credential only for its own
+  // confirmed host, at the moment of sending; nothing of it reaches game state or the saved seat.
+  profile: ProfileAttachment | null;
+  // #767: the host's word on a finished online game's profile result, or null (no profiled seat, or not over).
+  gameResult: GameResult | null;
   toast: string | null;
   // One line everyone reads for a moment: the roll and who got what, or an award changing hands (#188).
   banner: string | null;
@@ -301,6 +394,8 @@ interface GameStore {
   wayfarerChoices: Partial<Record<"ai" | "online" | "hotseat", WayfarerMode>>;
   setWayfarerChoice: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
   tableWayfarerMode: WayfarerMode;
+  // #1609: the seats Play with bots and Pass and play deal, set from Game options (SeatChoice); absent is four.
+  seatCount?: number;
   startAi: () => void;
   startHotseat: (count: number) => void;
   loadState: (s: GameState, localId: string, host: boolean, table?: string) => void;
@@ -332,6 +427,10 @@ interface GameStore {
   code: string;
   isHost: boolean;
   tableVictoryTarget: VictoryTarget;
+  // #1611: set at an expanded table (five or six seats), from its seat list.
+  tableVariant?: "expanded";
+  // #1611: the host is choosing how to rematch an expanded game with fewer than five at the table, from these.
+  rematchChoice?: Rematch[];
   setVictoryTarget: (value: VictoryTarget) => void;
   seats: Seat[];
   legal: Legal | null;
@@ -340,7 +439,8 @@ interface GameStore {
   // `host` is the host's clock on the push that opened this window (0 when the push carried none).
   turnTimer: { at: number; player: string; deadline: number; host: number } | null;
   // The host clock minus this one, as best this tab has measured it (0 before any push). A push shows the skew less the time it
-  // spent on the way, so the largest one seen is the closest. The final-countdown cues are timed from it, not from `at`.
+  // spent on the way, so the largest one seen is the closest. The chip and its final-countdown cues count down by it (#1664);
+  // `at` only tells one window from the next.
   clockSkew: number;
   lobbyLog: string;
   hostTable: (visibility?: "open" | "private") => void;
@@ -358,6 +458,8 @@ interface GameStore {
   resync: boolean;
   // How many spectators the table has, from `seats {watching}` (#347).
   watching: number;
+  // This seat's lobby tic-tac-toe game, as the host last sent it (#1263); null after each welcome.
+  ttt: TttMsg | null;
   // Sit back down in the seat this browser held (localStorage), e.g. after a reload (#196).
   rejoinTable: () => boolean;
   setReady: (value: boolean) => void;
@@ -367,8 +469,11 @@ interface GameStore {
   addBot: () => void;
   removeBot: (id: string) => void;
   startTable: () => void;
-  // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first.
-  playAgain: () => void;
+  // A rematch (#266): online the host asks for it; hotseat deals it here, the last winner first. `choice` answers the
+  // host's rematch choice at an expanded table (#1611).
+  playAgain: (choice?: Rematch | "dismiss") => void;
+  // #1411: an online player who is not the host says they want another game, or takes it back.
+  wantAgain: (value: boolean) => void;
   // Table chat (docs/design/chat.md)
   // This tab's seat id (s0...), from welcome. localId is the player id once the game starts.
   seatId: string;
@@ -411,6 +516,8 @@ interface GameStore {
   chromeLanded: () => void;
   askTable: (give: Bag, want: Bag) => void;
   answerTrade: (yes: boolean) => void;
+  // The asker takes back its own open offer (#1245).
+  cancelTrade: () => void;
   // The player whose action menu is open in the HUD rail or seat strip (docs/design/chat.md "The player action menu").
   menuFor: string | null;
   openMenu: (id: string | null) => void;
@@ -480,7 +587,11 @@ const NAME_MAX = 16;
 const NAME_KEY = "emberisle-name";
 function savedName() {
   if (typeof window === "undefined") return "Ember";
-  return localStorage.getItem(NAME_KEY) || "Ember";
+  try {
+    return localStorage.getItem(NAME_KEY) || "Ember";
+  } catch {
+    return "Ember";
+  }
 }
 
 // null (not a default swatch) until the player actively picks one, so a fresh tab sends no `color`
@@ -488,8 +599,32 @@ function savedName() {
 // touch the picker would both request the same default color and the second would be rejected.
 function savedColor(): string | null {
   if (typeof window === "undefined") return null;
-  const saved = localStorage.getItem("emberisle-color");
-  return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  try {
+    const saved = localStorage.getItem("emberisle-color");
+    return saved && (PLAYER_COLORS as readonly string[]).includes(saved) ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+// #1350: the open profile card listens here for the host's answer; the lazy card chunk sets and clears `on`.
+export const cardReply: { on?: (msg: ProfileCardReply) => void } = {};
+
+// #720: committed changes for bot moments (src/lib/game/bot-moments.ts sets `on`). A note is sent after the change is in the
+// store; the listener can never dispatch, delay or refuse it, and a throw is swallowed so play goes on. `deal` changes with
+// every new game or table. An action note is practice's own commit; an offer note is a table ask (`automated` is null online,
+// where the host does not say); a state note is an online push, `first` after each welcome.
+export type CommitNote =
+  | { deal: number; before: GameState; after: GameState; action: Action; actor: string; automated: boolean }
+  | { deal: number; offer: { tradeId: string; from: string; fromName: string; give: Bag; want: Bag }; automated: boolean | null }
+  | { deal: number; before: GameState | null; after: GameState; first: boolean };
+export const commitTap: { on?: (note: CommitNote) => void } = {};
+function tap(note: CommitNote) {
+  try {
+    commitTap.on?.(note);
+  } catch {
+    // Presentation only: a broken listener never stops the game.
+  }
 }
 
 export const useGame = create<GameStore>((set, get) => ({
@@ -505,12 +640,16 @@ export const useGame = create<GameStore>((set, get) => ({
   error: null,
   announcement: null,
   errorSeq: 0,
+  needError: 0,
+  localTrade: 0,
   buildMode: "none",
   roadPicks: [],
   howTo: false,
   howToOpener: null,
   costs: false,
   costsOpener: null,
+  profile: null,
+  gameResult: null,
   toast: null,
   banner: null,
   net: null,
@@ -528,6 +667,7 @@ export const useGame = create<GameStore>((set, get) => ({
   synced: 0,
   resync: false,
   watching: 0,
+  ttt: null,
   pendingSteal: null,
   seatId: "",
   chat: [],
@@ -549,31 +689,51 @@ export const useGame = create<GameStore>((set, get) => ({
   menuFor: null,
   setName: (n) => {
     const name = Array.from(n).slice(0, NAME_MAX).join("");
-    if (name.trim() && typeof window !== "undefined") localStorage.setItem(NAME_KEY, name.trim());
+    if (name.trim() && typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name.trim());
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
   },
   commitName: () => {
     const name = get().name.trim() || "Ember";
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     set({ name });
     return name;
   },
   setColor: (c) => {
-    if (typeof window !== "undefined") localStorage.setItem("emberisle-color", c);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("emberisle-color", c);
+      } catch {
+        // storage can be blocked; color is still set in state
+      }
+    }
     set({ color: c });
   },
   setHowTo: (v, opener) => set({ howTo: v, howToOpener: v ? (opener ?? null) : null }),
   setCosts: (v, opener) => set({ costs: v, costsOpener: v ? (opener ?? null) : null }),
-  setBuildMode: (m) => set({ buildMode: m, roadPicks: [] }),
+  setBuildMode: (m) => set({ buildMode: m, roadPicks: [], pendingSteal: null }),
   wayfarerChoices: {},
   tableWayfarerMode: "on",
   setWayfarerChoice: (context, mode) => {
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
   startAi: () => {
+    resetTradePlease();
     stopEndMusic();
     // A table left dialing (a reload with a saved seat) must not pull a practice game back to the lobby.
     clearWake();
+    clearBanner();
     clearKnocks();
     get().net?.close();
     // A new game owes nothing to the last one's offer or bot ask.
@@ -581,30 +741,27 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     const name = get().commitName();
-    const state = createGame({ humans: [{ name }], bots: 3, wayfarerMode: get().wayfarerChoices.ai ?? "on" });
-    set({
-      screen: "play",
-      mode: "ai",
-      host: true,
-      localId: "p0",
-      state,
-      gameLog: stamp(state.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      spectator: false,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
+    deal({ humans: [{ name }], bots: (get().seatCount ?? 4) - 1, wayfarerMode: get().wayfarerChoices.ai ?? "on" }, (state) => {
+      set({
+        ...clearPlay(),
+        screen: "play",
+        mode: "ai",
+        host: true,
+        localId: "p0",
+        state,
+        gameLog: stamp(state.log),
+        net: null,
+        peeking: false,
+        spectator: false,
+      });
+      play("game_start");
     });
-    play("game_start");
   },
   startHotseat: (count) => {
+    resetTradePlease();
     stopEndMusic();
     clearWake();
+    clearBanner();
     clearKnocks();
     get().net?.close();
     clearOfferTimers();
@@ -613,31 +770,27 @@ export const useGame = create<GameStore>((set, get) => ({
     const humans = Array.from({ length: count }, (_, i) => ({
       name: i === 0 ? get().commitName() : `Seat ${i + 1}`,
     }));
-    const state = createGame({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" });
-    set({
-      screen: "play",
-      mode: "hotseat",
-      host: true,
-      localId: "p0",
-      state,
-      gameLog: stamp(state.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      spectator: false,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
-    });
+    deal({ humans, bots: 0, wayfarerMode: get().wayfarerChoices.hotseat ?? "on" }, (state) =>
+      set({
+        ...clearPlay(),
+        screen: "play",
+        mode: "hotseat",
+        host: true,
+        localId: "p0",
+        state,
+        gameLog: stamp(state.log),
+        net: null,
+        peeking: false,
+        spectator: false,
+      }),
+    );
   },
   restoring: typeof window !== "undefined" && inPlayAtSavedSeat(),
   loadState: (s, localId, host, table) => {
+    if (!get().state || (get().state?.phase === "over" && s.phase !== "over") || (table && table !== get().table)) resetTradePlease();
     // A push that leaves the turn alone (a seat rejoining) keeps an open picker, with the host's fresh victims (#1110).
     const { pendingSteal: ps, state: was, legal } = get();
-    const targets = ps && was && s.phase === was.phase && s.current === was.current ? (legal?.steal[ps.hexId] ?? []) : [];
+    const targets = ps && was && s.phase === was.phase && s.current === was.current && s.turn === was.turn ? (legal?.steal[ps.hexId] ?? []) : [];
     set({
       restoring: false,
       screen: "play",
@@ -654,50 +807,19 @@ export const useGame = create<GameStore>((set, get) => ({
     });
   },
   goTitle: () => {
+    dropDeal();
+    resetTradePlease();
     stopEndMusic();
     // Leaving on purpose frees the seat; only a drop keeps it. A watcher never held one, and the saved seat may be another table's.
     if (!get().spectator) rememberSeat(null);
     clearWake();
+    clearBanner();
     clearKnocks();
     clearOfferTimers();
     botAsked = "";
     botDeclined.clear();
     get().net?.close();
-    set({
-      screen: "title",
-      serverSha: null,
-      wayfarerChoices: {},
-      state: null,
-      error: null,
-      announcement: null,
-      buildMode: "none",
-      net: null,
-      peeking: false,
-      seats: [],
-      legal: null,
-      turnTimer: null,
-      code: "",
-      spectator: false,
-      watching: 0,
-      pendingSteal: null,
-      chat: [],
-      reactions: [],
-      unread: 0,
-      chatDraft: "",
-      gameLog: [],
-      menuFor: null,
-      lobbyLog: "",
-      seatId: "",
-      isHost: false,
-      roadPicks: [],
-      pendingPlace: null,
-      toast: null,
-      offer: null,
-      declined: [],
-      tradeOutcome: null, tradeTaker: null,
-      tradeOpen: false,
-      tradeOpener: null,
-    });
+    set({ ...clearTable(), wayfarerChoices: {} });
   },
   dispatch: (action, asId, automated = false) => {
     const { state, localId, mode, net, spectator } = get();
@@ -706,7 +828,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") {
       // The host is the rules; its next state message updates the board.
       if (!net?.act(action)) return { ok: false, error: "Not available online." };
-      set({ buildMode: "none", roadPicks: [] });
+      set({ buildMode: "none", roadPicks: [], pendingSteal: null });
       return { ok: true };
     }
     const actor = asId ?? (mode === "hotseat" ? state.current : localId);
@@ -719,8 +841,9 @@ export const useGame = create<GameStore>((set, get) => ({
     const nextState = automated
       ? logBotAction(state, res.state, action, actor, state.players.find((p) => p.id === actor)?.name.replace(/ \(bot\)$/i, "") ?? actor)
       : res.state;
-    set({ state: nextState, gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [] });
+    set({ state: nextState, localTrade: get().localTrade + Number(action.type === "bankTrade" || (action.type === "respondTrade" && action.accept)), gameLog: appendLog(get().gameLog, newLog(state.log, nextState.log)), error: null, announcement: null, toast: null, buildMode: "none", roadPicks: [], pendingSteal: null });
     hear(state, nextState, localId, mode);
+    tap({ deal: deals, before: state, after: nextState, action, actor, automated });
     // An offer lives only while its asker still has the turn in `main` and still holds the offered goods (as host.mjs play).
     const open = get().offer;
     if (open) {
@@ -758,11 +881,12 @@ export const useGame = create<GameStore>((set, get) => ({
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (EmberisleApp re-runs this).
     const { offer } = get();
     if (offer?.from === cur.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363).
-    if (state.phase === "main" && !offer && botAsked !== `${state.turn}:${cur.id}`) {
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody: expanded.ts's
+    // pairedTradeAsk, inline here because calling it through the loaded module costs the index chunk more (#1609).
+    if (state.phase === "main" && !offer && state.role !== "partner" && botAsked !== `${state.turn}:${cur.id}`) {
       botAsked = `${state.turn}:${cur.id}`;
       const ask = chooseTradeAsk(state, cur.id, botDeclined.get(cur.id));
-      if (ask) return openOffer(set, get, cur.id, ask.give, ask.want);
+      if (ask) return openOffer(set, get, cur.id, ask.give, ask.want, true);
     }
     const a = chooseBotAction(state, cur.id);
     if (a) dispatch(a, cur.id, true);
@@ -776,7 +900,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!kind) return;
     // Online, the host says whom each hex can rob. Offline, ask the rules the same question (#189).
     const targets = mode === "online" ? (legal?.steal[id] ?? []) : stealTargets(state, id, actor);
-    if (targets.length > 1) {
+    if (id !== state.robberHex && targets.length > 1) {
       set({ pendingSteal: { hexId: id, kind, targets } });
       return;
     }
@@ -883,7 +1007,9 @@ export const useGame = create<GameStore>((set, get) => ({
   hostTable: (visibility) => {
     get().commitName();
     const wayfarerMode = get().wayfarerChoices.online ?? "on";
-    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility }));
+    // #1611: five or six on the Play page's Seats choice open an expanded table.
+    const variant = (get().seatCount ?? 4) > 4 ? "expanded" : undefined;
+    connect(set, get, (t, me) => t.open(me, { wayfarerMode, visibility, variant }));
   },
   joinTable: (code) => {
     get().commitName();
@@ -918,7 +1044,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const name = Array.from(n.trim()).slice(0, NAME_MAX).join("");
     if (!name) return;
     set({ name });
-    if (typeof window !== "undefined") localStorage.setItem(NAME_KEY, name);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(NAME_KEY, name);
+      } catch {
+        // storage can be blocked; name is still set in state
+      }
+    }
     get().net?.rename(name);
   },
   addBot: () => {
@@ -930,27 +1062,30 @@ export const useGame = create<GameStore>((set, get) => ({
   startTable: () => {
     if (!get().spectator) get().net?.start();
   },
-  playAgain: () => {
+  wantAgain: (value) => {
+    if (!get().spectator) get().net?.wantAgain(value);
+  },
+  playAgain: (choice) => {
     const { mode, state, net, spectator } = get();
     if (spectator) return;
-    if (mode === "online") return net?.again();
+    if (mode === "online") return net?.again(choice);
     if (mode !== "hotseat" || state?.phase !== "over") return;
+    resetTradePlease();
+    stopEndMusic();
+    clearBanner();
+    clearKnocks();
+    clearOfferTimers();
     const winner = state.players.find((p) => p.id === state.winner)!;
     const ordered = [winner, ...state.players.filter((p) => p !== winner)];
-    const next = createGame({ humans: ordered.map((p) => ({ name: p.name })), bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on" });
-    set({
-      state: next,
-      localId: "p0",
-      gameLog: appendLog(get().gameLog, next.log),
-      error: null,
-      announcement: null,
-      toast: null,
-      buildMode: "none",
-      roadPicks: [],
-      pendingPlace: null,
-      pendingSteal: null,
-      tradeOpen: false,
-    });
+    // Five or six seats keep the expanded island, and each player keeps its seat number and colour (createExpandedGame).
+    deal({ humans: ordered, bots: 0, winnerFirst: true, wayfarerMode: state.wayfarerMode ?? "on", victoryTarget: state.victoryTarget }, (next) =>
+      set({
+        ...clearPlay(),
+        state: next,
+        localId: "p0",
+        gameLog: appendLog(get().gameLog, next.log),
+      }),
+    );
   },
   setChatOpen: (v) => {
     try {
@@ -1003,11 +1138,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const error =
       state?.phase !== "main" || state.current !== localId
         ? "Not your turn."
-        : RESOURCES.some((r) => (give[r] ?? 0) > (me?.resources[r] ?? 0))
-          ? "You lack those goods."
-          : RESOURCES.every((r) => !give[r] && !want[r])
-            ? "Offer something."
-            : null;
+        : state.role === "partner"
+          ? "No player trades on a partner turn."
+          : RESOURCES.some((r) => (give[r] ?? 0) > (me?.resources[r] ?? 0))
+            ? "You lack those goods."
+            : RESOURCES.every((r) => !give[r] && !want[r])
+              ? "Offer something."
+              : null;
     if (error) {
       set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
@@ -1024,6 +1161,12 @@ export const useGame = create<GameStore>((set, get) => ({
       set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
       play("ui_error");
     }
+  },
+  cancelTrade: () => {
+    const { offer, net, spectator, mode, localId } = get();
+    if (!offer || spectator || offer.from !== localId) return;
+    if (mode === "online") return net?.cancel(offer.tradeId);
+    endOffer(set, get, null);
   },
   openMenu: (id) => {
     set({ menuFor: id });
@@ -1046,26 +1189,30 @@ function endOffer(set: Set, get: Get, taker: string | null) {
   else if (state?.players.every((p) => p.id === offer.from || declined.includes(p.id))) play("corn_no");
   else if (me === offer.from) play("trade_no");
   // Every receiver gets the resolved offer as one brief log line, with no response controls.
-  if (outcomeTimer) clearTimeout(outcomeTimer);
   set({ tradeTaker: taker, tradeOutcome: taker ? `${takerName} takes it.` : "Nobody took it." });
   outcomeTimer = setTimeout(() => set({ tradeOutcome: null, tradeTaker: null }), BANNER_MS);
 }
 
 // Practice's table offer for `from`, closing any earlier one (host.mjs openOffer). Every other bot answers it after a delay.
-function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag) {
+function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag, automated = false) {
   endOffer(set, get, null);
+  clearOfferTimers();
   const state = get().state!;
   const tradeId = `t${state.seq}-${++offerSeq}`;
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
-  set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + OFFER_MS }, declined: [], tradeOutcome: null, tradeTaker: null });
+  // #1245 (owner q-trade-hold B): only a bot's offer runs out; a person's holds until answered (host.mjs openOffer).
+  const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
+  set({ offer: { tradeId, from, fromName, give, want, until: runOut ? Date.now() + OFFER_MS : null }, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
-  void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
-  offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
+  if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated });
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
     const answer = () => {
       if (get().offer?.tradeId !== tradeId) return;
-      const yes = shouldAcceptTrade(get().state!, p.id, { from, give, want });
+      // Every bot says No during a partner turn, which takes no player trades (pairedAcceptTrade, inline as above).
+      const yes = get().state!.role !== "partner" && shouldAcceptTrade(get().state!, p.id, { from, give, want });
       if (yes && peopleWaiting(get)) heldYes.push(p.id);
       else respond(set, get, p.id, yes);
     };
@@ -1115,7 +1262,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   const accepted = applyAction(offered.state, actor, { type: "respondTrade", accept: true });
   if (accepted.error) return accepted.error;
   const tradeLines = newLog(state.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
-  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, gameLog: appendLog(gameLog, tradeLines) });
+  set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, localTrade: get().localTrade + 1, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
 }
@@ -1126,11 +1273,13 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
 // seat this browser saved for another table.
 type ConnectKind = "normal" | "quiet" | "peek" | "watch";
 async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => void, kind: ConnectKind = "normal") {
+  // A new table drops whatever an earlier one (or a local deal) still has on its way (#1611). A peek carries no game.
+  if (kind !== "peek") dropDeal();
   clearWake();
   // Not a leave: a rejoin after a crash dials the same seat, which the host must still be holding.
   get().net?.close(false);
   const selectedHost = new URL(window.location.href);
-  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined };
+  const selectedMe: Me = { name: get().name.trim() || "Ember", color: get().color ?? undefined, profile: get().profile ?? undefined };
   let cancelled = false;
   let removeListeners = () => {};
   let restoreTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1153,19 +1302,65 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
   let welcomed = false;
   let outdated: string | null = null;
   let firstState = false;
+  let held: Parameters<TableEvents["state"]>[0][] | null = null;
+  // The best clock estimate: the largest sample since this socket's welcome or the start of the window shown, whichever is later.
+  // A redial starts it over (a rejoin may reach a different host clock); a new window does too, so a clock step heals there.
+  let bestSkew = -Infinity;
+  const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+    set({ gameResult: game.phase === "over" ? gameResult(result) : null });
+    // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
+    const me = you ?? "";
+    const rollOff = rollOffLine(get().state, game);
+    // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
+    hear(get().state, game, me, "online", firstState);
+    tap({ deal: deals, before: get().state, after: game, first: firstState });
+    const swing = awardLine(get().state, game) ?? takeMatchPointLine();
+    // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
+    // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
+    // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
+    const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
+    const prev = get().turnTimer;
+    const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
+    // A new window starts the estimate over: a new seat waited on, or the same one after a move. A vote that moves the deadline
+    // is the same window, and the first state after a welcome keeps the welcome's sample, which a busy page cannot spoil (#1664).
+    const fresh = turnTimer !== prev && (!prev || prev.player !== turnPlayer || game.seq !== get().state?.seq);
+    const clockSkew = (bestSkew = fresh && !firstState ? skew : Math.max(skew, bestSkew));
+    firstState = false;
+    // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
+    set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
+    // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
+    if (get().state?.phase === "over" && game.phase !== "over") {
+      clearBanner();
+      clearKnocks();
+      clearOfferTimers();
+      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
+    }
+    get().loadState(game, me, get().isHost, get().code);
+    if (recovery && !get().spectator) {
+      recovery = false;
+      set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
+    }
+    if (!get().spectator) rememberLive(get().code);
+    if (outdated) set({ announcement: null, error: outdated, toast: outdated });
+    if (rollOff) showBanner(set, rollOff);
+    else if (swing) showBanner(set, swing);
+  };
   let table: TableClient;
   try { table = connectTable(hostUrl(selectedHost), {
     health: (connectionHealth) => {
       if (recovery && (get().restoring || get().state !== null) && connectionHealth.status === "Reachable") return;
       set({ connectionHealth });
     },
-    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode }) => {
+    welcome: ({ proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, variant }) => {
       pending = false;
+      // An expanded table's island needs expanded.ts: it starts loading now, so its first state rarely waits (#1611).
+      if (variant) void expanded.prefetch();
       welcomed = true;
       firstState = true;
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      clearOfferTimers();
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1198,13 +1393,17 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
           recovery = false;
           set({ restoring: false, screen: "lobby" });
         }, 1500);
-      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0 });
+      set({ announcement: null, code, spectator: false, seatId: you ?? "", isHost: host ?? false, screen: restoring ? "title" : inGame ? "play" : "lobby", mode: "online", error: outdated, toast: outdated, chat: history, reactions: [], unread: 0, ttt: null });
     },
+    // #1664: the welcome is timed from when the hello went out, so a page busy when it comes still measures true, before any state.
+    clock: (skew) => set({ clockSkew: (bestSkew = Math.max(skew, bestSkew)) }),
     // The window may have closed while we were away; the next state brings it back rather than a chip stuck at 0:00.
     reconnecting: (attempt) => {
       recovery = true;
       firstState = true;
-      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null });
+      bestSkew = -Infinity;
+      clearOfferTimers();
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
     },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
@@ -1224,51 +1423,41 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode }) => {
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode, variant, choose }) => {
       const before = get().seats;
       const after = seats as Seat[];
       const me = get().localId;
-      void tradeSounds.then(({ diggerBell }) => diggerBell(play, before, after, me));
-      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on" });
+      void tradeSounds.then((m) => m?.diggerBell(play, before, after, me));
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, rematchChoice: choose });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
-    state: ({ you, game, legal, turnDeadline, turnPlayer, serverNow }) => {
-      // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
-      const me = you ?? "";
-      const rollOff = rollOffLine(get().state, game);
-      // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-      hear(get().state, game, me, "online", firstState);
-      const swing = awardLine(get().state, game) ?? takeMatchPointLine();
-      // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.
-      // Every push carries the same window, and the skew wobbles by however long this tab took to get to the message:
-      // the timer we hold stays while the host's deadline is the same, so the chip neither remounts nor announces twice.
-      const skew = typeof serverNow === "number" ? serverNow - Date.now() : 0;
-      const prev = get().turnTimer;
-      // A new connection starts the estimate over: a rejoin may reach a different host clock.
-      const clockSkew = firstState ? skew : Math.max(skew, get().clockSkew);
-      firstState = false;
-      const turnTimer = !turnDeadline || !turnPlayer ? null : prev?.deadline === turnDeadline && prev.player === turnPlayer ? prev : { at: turnDeadline - skew, player: turnPlayer, deadline: turnDeadline, host: serverNow as number };
-      // The first state after a join or a page-load rejoin seeds the log with what the engine kept, the way practice does.
-      set({ legal, turnTimer, clockSkew, gameLog: get().state ? get().gameLog : appendLog(get().gameLog, game.log) });
-      // A rematch's new game (#266): drop any half-made move or open panel left over from the win.
-      if (get().state?.phase === "over" && game.phase !== "over") set({ buildMode: "none", roadPicks: [], pendingPlace: null, tradeOpen: false });
-      get().loadState(game, me, get().isHost, get().code);
-      if (recovery && !get().spectator) {
-        recovery = false;
-        set({ announcement: "Back at the table", toast: "Back at the table", connectionHealth: { status: "Reachable", rtt: get().connectionHealth.rtt } });
-      }
-      if (!get().spectator) rememberLive(get().code);
-      if (outdated) set({ announcement: null, error: outdated, toast: outdated });
-      if (rollOff) showBanner(set, rollOff);
-      else if (swing) showBanner(set, swing);
+    // #1611: an expanded state is shown and applied only once expanded.ts (paired turns) is in, through the same chunk as
+    // a local deal. States that come meanwhile wait behind it, in order; a failed load says so and the next state asks again.
+    // They hold piece 6's deal token: leaving, another table or a local game meanwhile drops them unapplied.
+    // #1612: a held state keeps the host clock offset it arrived with; read after the wait, the countdown ran late by it.
+    state: (msg) => {
+      const wait = { ...msg, serverNow: msg.serverNow && msg.serverNow - Date.now() };
+      if (held) return void held.push(wait);
+      const load = msg.game.variant && expanded.load();
+      if (!load || load.status === "fulfilled") return applyState(msg);
+      held = [wait];
+      const n = deals;
+      load.then(
+        () => n === deals && held?.forEach((m) => applyState({ ...m, serverNow: m.serverNow && m.serverNow + Date.now() })),
+        () => n === deals && set({ error: "Could not load. Try again.", toast: "Could not load. Try again." }),
+      ).finally(() => (held = null));
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
+    ttt: (ttt) => set({ ttt }),
     tradeOffer: ({ tradeId, from, give, want, seconds }) => {
+      clearOfferTimers();
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
-      set({ offer: { tradeId, from, fromName, give, want, until: Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
+      // #1245: a null `seconds` is an offer that holds until answered (no run-out).
+      set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
-      void tradeSounds.then(({ offerChime }) => offerChime(play, from, fromName, me, give, want));
+      void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
+      tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated: null });
     },
     tradeDeclined: ({ tradeId, by }) => {
       const { offer, declined } = get();
@@ -1277,9 +1466,11 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    error: (message) => {
+    tableProfileCard: (msg) => cardReply.on?.(msg),
+    profileError: (msg) => cardReply.on?.(msg),
+    error: (message, request) => {
       if (!pending && kind !== "peek") {
-        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1 });
+        set({ announcement: null, error: message, toast: message, errorSeq: get().errorSeq + 1, needError: get().needError + Number(request === "need") });
         play("ui_error");
       }
       // A refused join leaves an unseated socket the host never closes; drop it so the next peek can open its own.
@@ -1295,30 +1486,22 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me) => vo
         if (get().net === table) set({ net: null, peeking: false });
         return;
       }
+      stopEndMusic();
+      clearBanner();
+      clearKnocks();
+      clearOfferTimers();
       if (keepSeat) {
-        stopEndMusic();
-
-        set({ announcement: null, restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+        set({ ...clearTable(), restoring: false, error: "Your seat is open in another tab", toast: "Your seat is open in another tab" });
         return;
       }
       if (kind === "watch") {
         // A watcher holds nothing worth saving, and the seat secret in localStorage may belong to another table.
-        stopEndMusic();
-
-        set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null, spectator: false, watching: 0 });
+        set({ ...clearTable(), error: "Lost the table", toast: "Lost the table" });
         return;
       }
       rememberSeat(null);
-      if (pending) {
-        const gone = get().restoring ? "Seat is gone." : null;
-        stopEndMusic();
-
-        set({ announcement: null, restoring: false, error: gone, toast: gone, screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
-        return;
-      }
-      stopEndMusic();
-
-      set({ announcement: null, error: "Lost the table", toast: "Lost the table", screen: "title", net: null, peeking: false, seats: [], code: "", state: null });
+      const err = pending ? (get().restoring ? "Seat is gone." : null) : "Lost the table";
+      set({ ...clearTable(), ...(pending ? { restoring: false } : {}), error: err, toast: err });
     },
   });
   } catch { loadFailed(); return; }

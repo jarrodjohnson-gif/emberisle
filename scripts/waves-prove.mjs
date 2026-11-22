@@ -165,7 +165,7 @@ assert.deepEqual(failures, [], "CPU twin checks");
 
 // Part 2: the foam alone (FOAM_ONLY: red = foam, green = offset / 2.5), overhead on the windward coast, 120 s at 4 frames a
 // second on SwiftShader. Each pixel 0.5-2 units out records how long each foam event lasts.
-const { chromium } = await import("playwright");
+const { chromium } = await import("./proof-browser.mjs");
 const { createServer } = await import("vite");
 const port = Number(process.env.VITE_PORT || 8191);
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });

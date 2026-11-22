@@ -1,0 +1,9 @@
+$ npm run needs-prove
+
+> needs-prove
+> node --import ./server/register.mjs scripts/needs-prove.mjs
+
+ok Need picker with 250ms host echoes: rapid selections compose; five 44px controls, maximum two, clear, public chip within 1s, hidden hand preserved, rejoin and unchanged hole
+ok real table trade: received requested Stone clears the public need on the other client
+ok hotseat/practice shared local path: matching bank trade clears; only two own completed turns expire a need
+needs browser prove ok

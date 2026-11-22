@@ -1,0 +1,32 @@
+$ node --import ./server/register.mjs --import /tmp/sol-next/control.mjs scripts/steal-picker-push-prove.mjs
+CONTROL_PARENT_DIE 6
+CONTROL_PARENT_DIE 4
+CONTROL_PARENT_DIE 2
+CONTROL_PARENT_DIE 4
+CONTROL_PARENT_DIE 4
+ok   picker opens with both victims {"picker":{"hexId":"-2,0","kind":"moveRobber","targets":["p1","p2"]},"bar":2,"phase":"robber","current":"p0","pushes":1}
+ok   a push that leaves the turn alone keeps the picker {"picker":{"hexId":"-2,0","kind":"moveRobber","targets":["p1","p2"]},"bar":2,"phase":"robber","current":"p0","pushes":2}
+ok   a push that changes the current player closes the picker {"picker":null,"bar":0,"phase":"robber","current":"p1","pushes":3}
+ok   a push that leaves one victim does not keep a stale list {"picker":null,"bar":0,"phase":"robber","current":"p0","pushes":4}
+ok   Knight picker opens before roll with two victims {"phase":"roll","current":"p0","picker":{"hexId":"-2,0","kind":"playKnight","targets":["p1","p2"]},"targets":["p1","p2"]}
+CONTROL_WAIT_FAILURE_STATE {
+  phase: 'robber',
+  current: 'p0',
+  dice: [ 3, 4 ],
+  picker: null,
+  error: null
+}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 30000ms exceeded.
+    at page.waitForFunction (/tmp/sol-next/control.mjs:33:33)
+    at /workspace/emberisle/work/p1209-sol/scripts/steal-picker-push-prove.mjs:149:20 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0
+
+EXIT 1

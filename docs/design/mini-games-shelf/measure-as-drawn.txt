@@ -1,0 +1,192 @@
+== phone-390x844: per screen
+   a-lobby-closed: card top 243 px, card height 589 px (island share above the card 29%)
+   b-shelf: card top 168 px, card height 664 px (island share above the card 20%); ends 12 px above the footer
+   b-shelf-alone: card top 168 px, card height 664 px (island share above the card 20%); ends 12 px above the footer
+   b-shelf-invited: card top 168 px, card height 664 px (island share above the card 20%); ends 12 px above the footer
+   c-solo-stacker: card top 60 px, card height 772 px (island share above the card 7%); ends 12 px above the footer
+   d-tictactoe: card top 24 px, card height 808 px (island share above the card 3%); CLIPPED: content ends 122 px under the footer's top
+   e-start-closes: card top 201 px, card height 631 px (island share above the card 24%); 'Game closed.' COVERED by the Starting stamp
+== phone-390x844: controls under 44 px (label WxH -> screen):
+   Copy 88x32 -> e-start-closes
+   Copy link 88x32 -> e-start-closes
+== phone-390x844: neighbouring controls closer than 8 px:
+   Copy | Copy link: 4 px -> e-start-closes
+   Table | Play games: 4 px -> e-start-closes
+   7 | 10: 4 px -> e-start-closes
+   Table | Play games 1: 4 px -> c-solo-stacker
+   Cell 1, X | Cell 2: 6 px -> d-tictactoe
+   Cell 1, X | Cell 4: 6 px -> d-tictactoe
+   Cell 2 | Cell 3, O: 6 px -> d-tictactoe
+   Cell 2 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 3, O | Cell 6: 6 px -> d-tictactoe
+   Cell 4 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 4 | Cell 7: 6 px -> d-tictactoe
+   Cell 5, X | Cell 6: 6 px -> d-tictactoe
+   Cell 5, X | Cell 8: 6 px -> d-tictactoe
+   Cell 6 | Cell 9: 6 px -> d-tictactoe
+   Cell 7 | Cell 8: 6 px -> d-tictactoe
+   Cell 8 | Cell 9: 6 px -> d-tictactoe
+   Quit game | 7: 2 px -> d-tictactoe
+   Quit game | 10: 2 px -> d-tictactoe
+== phone-390x844: font sizes in use (px -> sample text):
+   9.36px: 5 | 2 | 6 | 3 | 8
+   10px: 580 : 320
+   11px: 1 | Loads here when you tap. Not
+   12px: Table code · Wayfarer On | Not part of this mock | 2 of 4 ready | Win at | 7
+   13px: Game closed.
+   14px: Copy | Copy link | Table | Play games | Seats and chat, as today
+   15px: While you wait | Sandwich Stacker | PLAY | Tic-tac-toe
+   16px: Ready | Left | Right | Not ready | Start
+   18px: X | O
+   22px: Sandwich Stacker
+   28px: Starting…
+   36px: YHRR | X | O
+== desktop-1280x720: per screen
+   a-lobby-closed: card top 24 px, card height 672 px (island share above the card 3%)
+   b-shelf: card top 24 px, card height 672 px (island share above the card 3%); ends 12 px above the footer
+   b-shelf-alone: card top 24 px, card height 672 px (island share above the card 3%); ends 12 px above the footer
+   b-shelf-invited: card top 24 px, card height 672 px (island share above the card 3%); ends 12 px above the footer
+   c-solo-stacker: card top 24 px, card height 672 px (island share above the card 3%); ends 12 px above the footer
+   d-tictactoe: card top 24 px, card height 672 px (island share above the card 3%); CLIPPED: content ends 166 px under the footer's top
+   e-start-closes: card top 24 px, card height 672 px (island share above the card 3%); 'Game closed.' visible
+== desktop-1280x720: controls under 44 px (label WxH -> screen):
+   Copy 88x32 -> e-start-closes
+   Copy link 88x32 -> e-start-closes
+   Table 81x36 -> e-start-closes
+   Play games 120x36 -> e-start-closes
+   7 36x36 -> e-start-closes
+   10 36x36 -> e-start-closes
+   Leave the table 334x32 -> e-start-closes
+   Table 80x36 -> d-tictactoe
+   Play games 122x36 -> d-tictactoe
+   Play games 1 146x36 -> c-solo-stacker
+   Sound off 113x36 -> c-solo-stacker
+   Close 86x36 -> d-tictactoe
+   Quit game 99x36 -> d-tictactoe
+== desktop-1280x720: neighbouring controls closer than 8 px:
+   Copy | Copy link: 4 px -> e-start-closes
+   Table | Play games: 4 px -> e-start-closes
+   7 | 10: 4 px -> e-start-closes
+   Table | Play games 1: 4 px -> c-solo-stacker
+   Cell 1, X | Cell 2: 6 px -> d-tictactoe
+   Cell 1, X | Cell 4: 6 px -> d-tictactoe
+   Cell 2 | Cell 3, O: 6 px -> d-tictactoe
+   Cell 2 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 3, O | Cell 6: 6 px -> d-tictactoe
+   Cell 4 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 4 | Cell 7: 6 px -> d-tictactoe
+   Cell 5, X | Cell 6: 6 px -> d-tictactoe
+   Cell 5, X | Cell 8: 6 px -> d-tictactoe
+   Cell 6 | Cell 9: 6 px -> d-tictactoe
+   Cell 7 | Cell 8: 6 px -> d-tictactoe
+   Cell 8 | Cell 9: 6 px -> d-tictactoe
+   Quit game | Start: 6 px -> d-tictactoe
+== desktop-1280x720: font sizes in use (px -> sample text):
+   10px: 580 : 320
+   11px: 1 | Loads here when you tap. Not
+   12px: Table code · Wayfarer On | Not part of this mock | 2 of 4 ready | Win at | 7
+   13px: Game closed.
+   14px: Copy | Copy link | Table | Play games | Seats and chat, as today
+   15px: While you wait | Sandwich Stacker | PLAY | Tic-tac-toe
+   16px: Ready | Not ready | Start
+   18px: X | O
+   22px: Sandwich Stacker
+   25.344px: 5 | 2 | 6 | 3 | 8
+   28px: Starting…
+   36px: X | O
+   56px: YHRR
+== phone-320x568: per screen
+   a-lobby-closed: card top -33 px, card height 589 px (island share above the card -6%)
+   b-shelf: card top -140 px, card height 696 px (island share above the card -25%); ends 12 px above the footer
+   b-shelf-alone: card top -140 px, card height 696 px (island share above the card -25%); ends 12 px above the footer
+   b-shelf-invited: card top -140 px, card height 696 px (island share above the card -25%); ends 12 px above the footer
+   c-solo-stacker: card top -199 px, card height 755 px (island share above the card -35%); ends 12 px above the footer
+   d-tictactoe: card top -252 px, card height 808 px (island share above the card -44%); CLIPPED: content ends 93 px under the footer's top
+   e-start-closes: card top -75 px, card height 631 px (island share above the card -13%); 'Game closed.' visible
+== phone-320x568: controls under 44 px (label WxH -> screen):
+   Copy 88x32 -> e-start-closes
+   Copy link 88x32 -> e-start-closes
+== phone-320x568: neighbouring controls closer than 8 px:
+   Copy | Copy link: 4 px -> e-start-closes
+   Table | Play games: 4 px -> e-start-closes
+   7 | 10: 4 px -> e-start-closes
+   Table | Play games 1: 4 px -> c-solo-stacker
+   Cell 1, X | Cell 2: 6 px -> d-tictactoe
+   Cell 1, X | Cell 4: 6 px -> d-tictactoe
+   Cell 2 | Cell 3, O: 6 px -> d-tictactoe
+   Cell 2 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 3, O | Cell 6: 6 px -> d-tictactoe
+   Cell 4 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 4 | Cell 7: 6 px -> d-tictactoe
+   Cell 5, X | Cell 6: 6 px -> d-tictactoe
+   Cell 5, X | Cell 8: 6 px -> d-tictactoe
+   Cell 6 | Cell 9: 6 px -> d-tictactoe
+   Cell 7 | Cell 8: 6 px -> d-tictactoe
+   Cell 8 | Cell 9: 6 px -> d-tictactoe
+== phone-320x568: font sizes in use (px -> sample text):
+   7.68px: 5 | 2 | 6 | 3 | 8
+   10px: 580 : 320
+   11px: 1 | Loads here when you tap. Not
+   12px: Table code · Wayfarer On | Not part of this mock | 2 of 4 ready | Win at | 7
+   13px: Game closed.
+   14px: Copy | Copy link | Table | Play games | Seats and chat, as today
+   15px: While you wait | Sandwich Stacker | PLAY | Tic-tac-toe
+   16px: Ready | Left | Right | Not ready | Start
+   18px: X | O
+   22px: Sandwich Stacker
+   28px: Starting…
+   36px: YHRR | X | O
+== sideways-844x390: per screen
+   a-lobby-closed: card top 24 px, card height 342 px (island share above the card 6%)
+   b-shelf: card top 24 px, card height 342 px (island share above the card 6%); CLIPPED: content ends 290 px under the footer's top
+   b-shelf-alone: card top 24 px, card height 342 px (island share above the card 6%); CLIPPED: content ends 290 px under the footer's top
+   b-shelf-invited: card top 24 px, card height 342 px (island share above the card 6%); CLIPPED: content ends 290 px under the footer's top
+   c-solo-stacker: card top 24 px, card height 342 px (island share above the card 6%); CLIPPED: content ends 298 px under the footer's top
+   d-tictactoe: card top 24 px, card height 342 px (island share above the card 6%); CLIPPED: content ends 496 px under the footer's top
+   e-start-closes: card top 24 px, card height 342 px (island share above the card 6%); 'Game closed.' COVERED by the Starting stamp
+== sideways-844x390: controls under 44 px (label WxH -> screen):
+   Copy 88x32 -> e-start-closes
+   Copy link 88x32 -> e-start-closes
+   Table 81x36 -> e-start-closes
+   Play games 120x36 -> e-start-closes
+   7 36x36 -> e-start-closes
+   10 36x36 -> e-start-closes
+   Leave the table 334x32 -> e-start-closes
+   Table 80x36 -> d-tictactoe
+   Play games 122x36 -> d-tictactoe
+   Play games 1 146x36 -> c-solo-stacker
+   Sound off 113x36 -> c-solo-stacker
+   Close 86x36 -> d-tictactoe
+   Quit game 99x36 -> d-tictactoe
+== sideways-844x390: neighbouring controls closer than 8 px:
+   Copy | Copy link: 4 px -> e-start-closes
+   Table | Play games: 4 px -> e-start-closes
+   7 | 10: 4 px -> e-start-closes
+   Play | Leave the table: 1 px -> b-shelf-invited
+   Table | Play games 1: 4 px -> c-solo-stacker
+   Cell 1, X | Cell 2: 6 px -> d-tictactoe
+   Cell 1, X | Cell 4: 6 px -> d-tictactoe
+   Cell 2 | Cell 3, O: 6 px -> d-tictactoe
+   Cell 2 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 3, O | Cell 6: 6 px -> d-tictactoe
+   Cell 4 | Cell 5, X: 6 px -> d-tictactoe
+   Cell 4 | Cell 7: 6 px -> d-tictactoe
+   Cell 5, X | Cell 6: 6 px -> d-tictactoe
+   Cell 5, X | Cell 8: 6 px -> d-tictactoe
+   Cell 6 | Cell 9: 6 px -> d-tictactoe
+   Cell 7 | Cell 8: 6 px -> d-tictactoe
+   Cell 8 | Cell 9: 6 px -> d-tictactoe
+== sideways-844x390: font sizes in use (px -> sample text):
+   10px: 580 : 320
+   11px: 1 | Loads here when you tap. Not
+   12px: Table code · Wayfarer On | Not part of this mock | 2 of 4 ready | Win at | 7
+   13px: Game closed.
+   13.728px: 5 | 2 | 6 | 3 | 8
+   14px: Copy | Copy link | Table | Play games | Seats and chat, as today
+   15px: While you wait | Sandwich Stacker | PLAY | Tic-tac-toe
+   16px: Ready | Not ready | Start
+   18px: X | O
+   22px: Sandwich Stacker
+   28px: Starting…
+   36px: X | O
+   56px: YHRR

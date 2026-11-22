@@ -1,0 +1,15 @@
+ok  source graph: Ruffle is not imported
+ok  1280x720 shelf: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":70,"y":214,"right":114,"bottom":258,"width":44,"height":44,"viewport":[1280,720]}
+ok  1280x720 header: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":61,"y":181,"right":93,"bottom":213,"width":32,"height":32,"viewport":[1280,720]}
+ok  1280x720: shelf, stacker above the footer, Ready stays, Start closes
+ok  390x844 shelf: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":38,"y":198,"right":82,"bottom":242,"width":44,"height":44,"viewport":[390,844]}
+ok  390x844 header: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":29,"y":149,"right":61,"bottom":181,"width":32,"height":32,"viewport":[390,844]}
+ok  390x844 header: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":29,"y":149,"right":61,"bottom":181,"width":32,"height":32,"viewport":[390,844]}
+ok  390x844: touch buttons, above the footer, Close and Leave remove the player
+ok  320x568 shelf: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":34,"y":186,"right":78,"bottom":230,"width":44,"height":44,"viewport":[320,568]}
+ok  320x568 header: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":25,"y":145,"right":57,"bottom":177,"width":32,"height":32,"viewport":[320,568]}
+ok  320x568: picture saved
+ok  844x390 shelf: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":341.75,"y":142,"right":385.75,"bottom":186,"width":44,"height":44,"viewport":[844,390]}
+ok  844x390 header: captured logo loaded, contained and named {"natural":[240,210],"complete":true,"fit":"contain","x":332.75,"y":109,"right":364.75,"bottom":141,"width":32,"height":32,"viewport":[844,390]}
+ok  844x390: shelf and header logo checked
+lobby-wait-box-prove: ok

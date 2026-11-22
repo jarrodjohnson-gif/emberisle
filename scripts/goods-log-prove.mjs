@@ -2,7 +2,7 @@
 // chronological persistent dock rows, newest HUD line, cap, and both motion preferences.
 import assert from 'node:assert/strict';
 import { mkdirSync } from 'node:fs';
-import { chromium } from 'playwright';
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 const port=Number(process.env.VITE_PORT||18534);
 const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
@@ -14,7 +14,7 @@ try {
   const context=await browser.newContext({viewport:{width,height},reducedMotion:reduced?'reduce':'no-preference'});
   const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));
   await page.goto(`http://127.0.0.1:${port}`);
-  await page.getByRole('button',{name:'Four seats, one table',exact:true}).click();
+  await page.getByRole('button',{name:'Pass and play',exact:true}).click();
   const result=await page.evaluate(async()=>{
    const {createGame}=await import('/src/lib/game/board.ts');
    const R=await import('/src/lib/game/rules.ts');

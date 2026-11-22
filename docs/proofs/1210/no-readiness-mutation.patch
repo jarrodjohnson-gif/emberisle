@@ -1,0 +1,18 @@
+diff --git a/scripts/audio-recovery-prove.mjs b/scripts/audio-recovery-prove.mjs
+index bb76c21..bec2b61 100644
+--- a/scripts/audio-recovery-prove.mjs
++++ b/scripts/audio-recovery-prove.mjs
+@@ -211,13 +211,6 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
+   check(traded && rolled && expected.every(s => s.has('your_turn.wav')), 'host actions give all players a new turn and complete a trade');
+   // #1210: a full paced queue intentionally drops new cues; admit this host cue
+   // before measuring media recovery, rather than timing out on a dropped request.
+-  const readyQueues = await wait(async () => {
+-    const queues = await Promise.all(tabs.map(t => t.page.evaluate(() => {
+-      const s = window.sound.__audioRecoveryQueue(); return { queue: s.queue, pacing: s.pacing };
+-    })));
+-    return queues.every(s => s.queue.length === 0 && !s.pacing) ? queues : null;
+-  }, 'sound queues quiescent before the required host bong');
+-  console.log('QUEUE_BEFORE_BONG', JSON.stringify(readyQueues));
+   await call(tabs[0], 'sendSound', 'bong');
+   for (const t of tabs) await t.page.waitForFunction(() => window.game.getState().chat.some(l => l.sound === 'bong'));
+   check(true, 'host broadcasts the soundboard cue to all seats');

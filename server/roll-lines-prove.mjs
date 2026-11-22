@@ -13,7 +13,7 @@ const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
 process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
-  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR },
+  env: { ...process.env, PORT: "0", ACT_RATE: "1000", ACT_CAP: "1000", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
 });
 process.on("exit", () => host.kill("SIGKILL"));
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -111,6 +111,8 @@ async function act(c, msg) {
   c.send(msg);
   await until(() => c.state.game.seq > seq || c.errors.length > errors, `${c.name} ${msg.type}`);
   if (c.errors.length > errors) fail(`${c.name} ${JSON.stringify(msg)}`, c.errors.at(-1));
+  // The loops below read every seat's phase; the host sends the new state to each socket in turn, so wait for all of them.
+  await until(() => people.every((o) => o.state.game.seq >= c.state.game.seq), `every seat to see ${c.name}'s ${msg.type}`);
 }
 
 // The goods line for `name`'s roll, as rules.ts writes it, with or without a short bank.

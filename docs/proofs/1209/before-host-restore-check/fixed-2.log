@@ -1,0 +1,15 @@
+$ npm run steal-picker-push-prove
+
+> steal-picker-push-prove
+> node --import ./server/register.mjs scripts/steal-picker-push-prove.mjs
+
+ok   picker opens with both victims {"picker":{"hexId":"-2,0","kind":"moveRobber","targets":["p1","p2"]},"bar":2,"phase":"robber","current":"p0","pushes":1}
+ok   a push that leaves the turn alone keeps the picker {"picker":{"hexId":"-2,0","kind":"moveRobber","targets":["p1","p2"]},"bar":2,"phase":"robber","current":"p0","pushes":2}
+ok   a push that changes the current player closes the picker {"picker":null,"bar":0,"phase":"robber","current":"p1","pushes":3}
+ok   a push that leaves one victim does not keep a stale list {"picker":null,"bar":0,"phase":"robber","current":"p0","pushes":4}
+ok   Knight picker opens before roll with two victims {"phase":"roll","current":"p0","picker":{"hexId":"-2,0","kind":"playKnight","targets":["p1","p2"]},"targets":["p1","p2"]}
+ok   real host uses the same non-seven dice as the setup [4,4]
+ok   same-player roll closes Knight picker despite two legal victims {"phase":"main","current":"p0","knight":1,"picker":null,"targets":["p1","p2"],"bar":0,"dice":[4,4]}
+PASS steal-picker-push-prove
+
+EXIT 0

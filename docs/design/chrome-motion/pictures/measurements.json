@@ -1,0 +1,487 @@
+{
+  "browser": "153.0.8010.12",
+  "peaks": {
+    "build-ready": 160,
+    "build-ready-ring": 160,
+    "my-number-glow": 300,
+    "my-number-ring": 300,
+    "fortune-cue-glow": 640
+  },
+  "runs": [
+    {
+      "tag": "390x844-normal-before",
+      "rolled": 8,
+      "animations": [
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "390x844-normal-after",
+      "rolled": 8,
+      "animations": [
+        "build-ready-ring@160",
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300",
+        "my-number-ring@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "build-ready-ring"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "my-number-ring"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "390x844-reduced-before",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    },
+    {
+      "tag": "390x844-reduced-after",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    },
+    {
+      "tag": "844x390-normal-before",
+      "rolled": 8,
+      "animations": [
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "844x390-normal-after",
+      "rolled": 8,
+      "animations": [
+        "build-ready-ring@160",
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300",
+        "my-number-ring@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "build-ready-ring"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "my-number-ring"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "844x390-reduced-before",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    },
+    {
+      "tag": "844x390-reduced-after",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    },
+    {
+      "tag": "1280x720-normal-before",
+      "rolled": 8,
+      "animations": [
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "1280x720-normal-after",
+      "rolled": 8,
+      "animations": [
+        "build-ready-ring@160",
+        "build-ready@160",
+        "fortune-cue-glow@640",
+        "my-number-glow@300",
+        "my-number-ring@300"
+      ],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "matrix(1.04, 0, 0, 1.04, 0, 0)",
+        "animation": "build-ready",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "build-ready-ring"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "matrix(1.12, 0, 0, 1.12, 0, 0)",
+        "animation": "my-number-glow",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "my-number-ring"
+        }
+      },
+      "cue": {
+        "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 6px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "fortune-cue-glow"
+      }
+    },
+    {
+      "tag": "1280x720-reduced-before",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "none",
+          "opacity": "1",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    },
+    {
+      "tag": "1280x720-reduced-after",
+      "rolled": 8,
+      "animations": [],
+      "path": {
+        "pulsing": true,
+        "shadow": "rgb(47, 143, 91) 0px 0px 0px 1px inset",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgb(70, 194, 127) 0px 0px 0px 2px inset",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "myNumber": {
+        "n": "8",
+        "shadow": "none",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none",
+        "ring": {
+          "shadow": "rgba(36, 109, 114, 0.35) 0px 0px 0px 4px",
+          "opacity": "0",
+          "transform": "none",
+          "animation": "none"
+        }
+      },
+      "cue": {
+        "shadow": "rgb(36, 109, 114) 0px 0px 0px 2px",
+        "opacity": "1",
+        "transform": "none",
+        "animation": "none"
+      }
+    }
+  ],
+  "errors": []
+}

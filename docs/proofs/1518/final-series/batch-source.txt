@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+export PATH=/workspace/work/runtime/node_modules/node/bin:$PATH
+series_dir=/workspace/work/resume-nov9/1518-timer-series
+mkdir -p "$series_dir"
+git rev-parse HEAD > "$series_dir/source-head"
+git rev-parse HEAD:scripts/turn-gain-prove.mjs > "$series_dir/proof-blob"
+node --version > "$series_dir/node-version"
+node --input-type=module -e 'setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},200)' &
+load_pid=$!
+trap 'kill "$load_pid" 2>/dev/null || true' EXIT
+date -u +%FT%TZ > "$series_dir/full.started"
+flock /tmp/emberisle-team-browser.lock node scripts/turn-gain-prove.mjs > "$series_dir/full.log" 2>&1
+result=$?
+printf '%s\n' "$result" > "$series_dir/full.exit"
+tail -8 "$series_dir/full.log"
+if [ "$result" -ne 0 ]; then exit "$result"; fi
+for run in $(seq 1 20); do
+ date -u +%FT%TZ > "$series_dir/$run.started"
+ flock /tmp/emberisle-team-browser.lock env ONLY=reconnect node scripts/turn-gain-prove.mjs > "$series_dir/$run.log" 2>&1
+ result=$?
+ printf '%s\n' "$result" > "$series_dir/$run.exit"
+ printf 'run %s exit %s\n' "$run" "$result"
+ if [ "$result" -ne 0 ]; then tail -16 "$series_dir/$run.log"; exit "$result"; fi
+done

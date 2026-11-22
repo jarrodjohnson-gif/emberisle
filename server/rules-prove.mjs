@@ -4,6 +4,7 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction, harborRate, legalRoads, legalSettle, publicVP, roadLength, stealTargets } from "../src/lib/game/rules.ts";
 import { RESOURCES } from "../src/lib/game/types.ts";
 import { AXIAL_DIRS } from "../src/lib/game/hex.ts";
+import { rollOffOrderOk } from "../scripts/roll-off-oracle.mjs";
 
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
@@ -336,6 +337,29 @@ ok("there is no 7 token", true);
 }
 ok("a fortune bought this turn cannot be played this turn (check 6 above)", true);
 ok("a knight may be played before the roll (check 7 above)", true);
+{
+  // Every playable kind is held back the turn it is bought, not only the knight; an older copy of the same kind is not.
+  const land = fresh().hexes.find((h) => h.id !== fresh().robberHex).id;
+  const plays = {
+    knight: { type: "playKnight", hexId: land, stealFrom: null },
+    road: { type: "playRoad", edgeIds: [] },
+    plenty: { type: "playPlenty", resources: ["grain", "ore"] },
+    monopoly: { type: "playMonopoly", resource: "ore" },
+  };
+  const buy = (kind, held) => {
+    const g = fresh();
+    g.deck = [kind, ...g.deck];
+    g.players[0].hidden[kind] = held;
+    giveCards(g.players[0], { wool: 1, grain: 1, ore: 1 });
+    const r = applyAction(g, "p0", { type: "buyCard" });
+    if (r.error) fail(`buy ${kind}`, r.error);
+    return r.state;
+  };
+  const sameTurn = Object.keys(plays).map((k) => applyAction(buy(k, 0), "p0", plays[k]).error);
+  ok("every fortune kind bought this turn is refused this turn", sameTurn.every((e) => e === "A fortune cannot be played the turn it is bought."), sameTurn);
+  const older = applyAction(buy("monopoly", 1), "p0", plays.monopoly);
+  ok("an older fortune of the same kind can still be played the turn another is bought", !older.error && older.state.players[0].hidden.monopoly === 1, older.error);
+}
 
 // Points
 {
@@ -371,6 +395,7 @@ ok("a tie with nobody holding the longest path gives it to nobody (check 3 above
   knight("p1", 6);
   ok("a tie does not take the award away (army; path is check 4 above)", tied === "p0" && g.largestArmy === "p1", { tied, now: g.largestArmy });
 }
+// table-prove checks the zero placeholder once; finish-prove checks nonzero host fixtures and every pre-win push.
 ok("hidden points stay hidden until the end (server/table-prove.mjs, viewFor)", true);
 
 // Roll-off (docs/design/first-player.md): roll as `current` until setup starts.
@@ -383,18 +408,9 @@ function rollOff(g) {
   if (g.phase !== "setupSettle") fail("roll-off never ended", g.phase);
   return g;
 }
-// The invariant wherever a roll-off ends: the first seat's die is strictly highest, the rest by die then join order.
+// The invariant wherever a roll-off ends: verified against the shared roll-off oracle (scripts/roll-off-oracle.mjs).
 function orderOk(g) {
-  const { rolls, pending } = g.rollOff;
-  const die = (p) => rolls[p.id];
-  const [first, ...rest] = g.players;
-  const join = (p) => Number(p.id.slice(1));
-  return (
-    rest.every((p) => die(first) > die(p)) &&
-    rest.every((p, i) => i === 0 || die(rest[i - 1]) > die(p) || (die(rest[i - 1]) === die(p) && join(rest[i - 1]) < join(p))) &&
-    g.current === first.id && g.phase === "setupSettle" && g.setupIndex === 0 &&
-    pending.length === 0 && Object.keys(rolls).length === g.players.length && g.players.every((p) => die(p) >= 1 && die(p) <= 6)
-  );
+  return rollOffOrderOk(g);
 }
 {
   const three = () => createGame({ humans: [{ name: "A" }, { name: "B" }, { name: "C" }], bots: 0, seed: 9 });
@@ -428,6 +444,51 @@ function orderOk(g) {
     if (!orderOk(end)) fail("order after tie", end.rollOff);
   }
   console.log("roll-off: a forced tie at 6 rerolls only the leaders, in join order; order ok after it");
+
+  function withDice(seq, fn) {
+    const orig = crypto.getRandomValues.bind(crypto);
+    const d = [...seq];
+    crypto.getRandomValues = (buf) => {
+      if (d.length) buf[0] = d.shift() - 1;
+      else orig(buf);
+      return buf;
+    };
+    try {
+      return fn();
+    } finally {
+      crypto.getRandomValues = orig;
+    }
+  }
+
+  // #1286: tiebreak rerolls compute leaders only from rerollers; eliminated players follow in round-1 order
+  withDice([6, 6, 5, 2, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak roll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0") {
+      fail("forced tiebreak order p0,p1,p2", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls });
+    }
+  });
+
+  // #1286: reroll matching an eliminated player's round-1 die does not pull them back in
+  withDice([6, 6, 5, 5, 1], () => {
+    let g = three();
+    for (let i = 0; i < 5; i++) {
+      const r = applyAction(g, g.current, { type: "roll" });
+      if (r.error) fail("forced tiebreak reroll", r.error);
+      g = r.state;
+    }
+    const ids = g.players.map((p) => p.id).join();
+    const pulledP2 = g.log.some((l) => l.includes("C tie") || l.includes("and C tie"));
+    if (ids !== "p0,p1,p2" || g.phase !== "setupSettle" || g.current !== "p0" || pulledP2) {
+      fail("forced reroll p2 not pulled into reroll", { players: ids, phase: g.phase, current: g.current, rolls: g.rollOff?.rolls, log: g.log });
+    }
+  });
+  console.log("roll-off: #1286 forced rerolls resolve leaders among rerollers and do not pull eliminated players back in");
 
   // 200 full roll-offs at 3 and 4 seats: order ok every time, ties happen, and state.rng is never touched.
   let ties = 0;
@@ -481,12 +542,16 @@ function orderOk(g) {
   let secondPaid = true;
   let pathFromIt = true;
   let spacing = true;
+  let opponentSpacing = true;
   while (g.phase === "setupSettle") {
     const pid = g.current;
     order.push(pid);
     const spots = legalSettle(g, pid, true);
     const mine = g.vertices.filter((v) => v.building?.playerId === pid).map((v) => v.id);
     if (spots.some((s) => mine.some((m) => edgesAt(g, m).some((e) => far(e, m) === s)))) spacing = false;
+    const occupied = g.vertices.filter((v) => v.building).map((v) => v.id);
+    if (spots.some((s) => occupied.some((m) => edgesAt(g, m).some((e) => far(e, m) === s)))) opponentSpacing = false;
+    ok("each setup legal spot stays clear of all buildings", opponentSpacing);
     const spot = spots[0];
     const before = hand(g.players.find((p) => p.id === pid));
     let r = applyAction(g, pid, { type: "setupSettle", vertexId: spot });
@@ -507,6 +572,7 @@ function orderOk(g) {
   ok("each setup turn is one outpost and one path from it", pathFromIt);
   ok("only the second outpost pays: one card per hex it touches", firstRoundEmpty && secondPaid);
   ok("an outpost must not touch another building, including your own", spacing);
+  ok("setup legal spots stay clear of every seat’s buildings", opponentSpacing);
 
   const first = ids[0];
   const lone = g.vertices.find((v) => !v.building && legalSettle(g, first, true).includes(v.id) && !legalSettle(g, first, false).includes(v.id));
@@ -546,7 +612,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     ok(`${what} says "${want}" and changes nothing`, r.error === want && JSON.stringify(r.state) === before && JSON.stringify(g) === before, r.error ?? "allowed");
   };
   const main = build();
-  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("an outpost on a built corner", main, { type: "buildOutpost", vertexId: vA }, "That corner is taken.");
   refuses("an outpost that touches no path of yours", main, { type: "buildOutpost", vertexId: vX }, "Outpost must touch your path.");
   refuses("a stronghold on another seat's outpost", main, { type: "buildStronghold", vertexId: vB }, "Upgrade one of your own outposts.");
@@ -556,8 +622,18 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   refuses("a disconnected path", main, { type: "buildPath", edgeId: island.id }, "Path must connect to you.");
   const setupOutpost = build();
   setupOutpost.phase = "setupSettle";
-  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("a setup outpost on a built corner", setupOutpost, { type: "setupSettle", vertexId: vA }, "That corner is taken.");
+  for (const phase of ["main", "setupSettle"]) {
+    const opponent = build();
+    opponent.vertices.find((v) => v.id === vA).building.playerId = "p1";
+    opponent.phase = phase;
+    refuses(`${phase}: an outpost next to an opponent`, opponent,
+      { type: phase === "main" ? "buildOutpost" : "setupSettle", vertexId: vN },
+      "Too close. Leave a corner between buildings.");
+    ok(`${phase}: legal spots exclude an opponent's adjacent corner`,
+      !legalSettle(opponent, "p0", phase === "setupSettle").includes(vN));
+  }
   const setupPath = build();
   setupPath.phase = "setupRoad";
   setupPath.lastSetupVertex = vA;
@@ -624,6 +700,29 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   ok("trade, build, and buy after the roll; pass ends the turn", early.error && !r.error && r.state.current === "p1" && r.state.phase === "roll", early.error ?? r.error);
 }
 
+// #1287: otherwise-valid actions must be refused before rolling, without moving any state.
+{
+  const g = rollPhase(fresh());
+  giveCards(g.players[0], { timber: 10, clay: 10, grain: 10, wool: 10, ore: 10 });
+  g.vertices[0].building = { playerId: "p0", kind: "outpost" };
+  const edgeId = legalRoads(g, "p0", false)[0];
+  for (const [action, error] of [
+    [{ type: "buildPath", edgeId }, "Cannot build now."],
+    [{ type: "bankTrade", give: "timber", want: "ore" }, "Cannot trade now."],
+    [{ type: "offerTrade", to: "p1", give: { timber: 1 }, want: { ore: 1 } }, "Cannot trade now."],
+  ]) {
+    const before = JSON.stringify(g);
+    const r = applyAction(g, "p0", action);
+    ok(`${action.type} before the roll is refused and changes nothing`,
+      r.error === error && JSON.stringify(r.state) === before && JSON.stringify(g) === before,
+      r.error ?? "allowed");
+    const ready = structuredClone(g);
+    ready.phase = "main";
+    const allowed = applyAction(ready, "p0", action);
+    ok(`${action.type} control succeeds after the roll`, !allowed.error, allowed.error);
+  }
+}
+
 // A seven
 {
   const g = rollPhase(fresh());
@@ -632,6 +731,64 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   giveCards(g.players[2], { wool: 9 });
   const s = rollTo(g, 7);
   ok("more than 7 cards discards half, rounded down", s.phase === "discard" && JSON.stringify(s.discardNeeded) === JSON.stringify({ p0: 4, p2: 4 }), s.discardNeeded);
+}
+// #1839: who the wayfarer may rob. A neighbour with an empty hand is never a target.
+{
+  const setup = () => {
+    const g = fresh();
+    g.phase = "robber";
+    const target = g.hexes.find((h) => h.terrain !== "waste" && h.id !== g.robberHex);
+    const corners = g.vertices.filter((v) => v.hexes.includes(target.id));
+    return { g, target, corners };
+  };
+  const total = (g) => g.players.map(hand).join();
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], {});
+    ok("an empty-handed building owner is not a steal target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+    const named = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: "p1" });
+    ok("naming an empty-handed neighbour is refused", named.error === "Cannot steal from them.", named.error);
+    const none = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "with no victim the wayfarer still moves and no hand changes",
+      !none.error && none.state.robberHex === target.id && none.state.phase !== "robber" && total(none.state) === total(g),
+      none.error ?? none.state.phase,
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p2", kind: "outpost" };
+    giveCards(g.players[1], {});
+    giveCards(g.players[2], { ore: 2 });
+    const auto = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "only the neighbour with cards is listed, and a null steal takes from them",
+      stealTargets(g, target.id, "p0").join() === "p2" && !auto.error && hand(auto.state.players[0]) === 1 && hand(auto.state.players[2]) === 1 && hand(auto.state.players[1]) === 0,
+      auto.error ?? auto.state.players.map(hand),
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p1", kind: "stronghold" };
+    giveCards(g.players[1], { ore: 2 });
+    ok("one opponent with two buildings on the hex is listed once", stealTargets(g, target.id, "p0").join() === "p1", stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p0", kind: "outpost" };
+    giveCards(g.players[0], { ore: 2 });
+    ok("the roller's own building never makes the roller a target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], { ore: 2 });
+    g.wayfarerMode = "off";
+    ok("wayfarer Off: no steal targets whatever the hands hold", stealTargets(g, target.id, "p0").length === 0);
+  }
 }
 {
   const g = fresh();

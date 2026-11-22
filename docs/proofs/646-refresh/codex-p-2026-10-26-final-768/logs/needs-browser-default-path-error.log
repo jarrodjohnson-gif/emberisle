@@ -1,0 +1,19 @@
+First serialized browser attempt at integrated HEAD 7686967, with no CHROMIUM_PATH:
+
+> needs-prove
+> node --import ./server/register.mjs scripts/needs-prove.mjs
+
+browserType.launch: Executable doesn't exist at /home/agent/.cache/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+╚════════════════════════════════════════════════════════════╝
+    at /tmp/emberisle-873-final-validation/scripts/needs-prove.mjs:30:25 {
+  log: [],
+  name: 'Error'
+}
+
+Node.js v24.19.0
+Command exit: 1. No browser assertions ran on this first attempt. The subsequent single rerun used installed /usr/bin/chromium under the same team lock; its actual browser version was Chromium 154.0.8037.57 built on Debian GNU/Linux 13 (trixie).

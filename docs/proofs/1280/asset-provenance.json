@@ -1,0 +1,40 @@
+{
+  "source_commit": "c56fbcc",
+  "capture": {
+    "renderer": "Ruffle from pinned @ruffle-rs/ruffle",
+    "browser": "Chromium 153.0.8010.12",
+    "node": "22.23.4",
+    "game_css_size": [
+      600,
+      450
+    ],
+    "crop_css": [
+      0,
+      0,
+      480,
+      420
+    ],
+    "device_scale_factor": 0.5,
+    "editing": "direct browser screenshot crop; no redraw/recolour"
+  },
+  "files": [
+    {
+      "path": "docs/spike/928/sandwichStacker.swf",
+      "bytes": 183738,
+      "sha256": "d4f3897d3db66b2a531646e94bf8635e68e95017ef25e1fcc6139928a42e9ece"
+    },
+    {
+      "path": "public/images/sandwich-stacker-logo.png",
+      "bytes": 39017,
+      "sha256": "ad45f7cd77e1867436cbff5b2219f07d03d9c3cba254a63f0e839a6279f3cfd4"
+    }
+  ],
+  "image": {
+    "size": [
+      240,
+      210
+    ],
+    "mode": "RGB",
+    "alpha_extrema": null
+  }
+}

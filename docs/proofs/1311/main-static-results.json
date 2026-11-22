@@ -1,0 +1,27 @@
+[
+  {
+    "check": "main-base-build",
+    "exit": 0,
+    "seconds": 2.65
+  },
+  {
+    "check": "main-build",
+    "exit": 0,
+    "seconds": 2.25
+  },
+  {
+    "check": "main-size-growth",
+    "exit": 0,
+    "seconds": 0.57
+  },
+  {
+    "check": "main-equivalence",
+    "exit": 0,
+    "seconds": 1.0
+  },
+  {
+    "check": "main-types",
+    "exit": 0,
+    "seconds": 2.49
+  }
+]

@@ -1,0 +1,58 @@
+{
+  "base": "28628f39b0610deecc18d571454b01d086789275",
+  "sourceCommit": "8d7a5f2c58c080e2919e0d2572e63f75cb283313",
+  "sourceSha256": "da82ae439d265d167b37e5dcc9bbea3d46a3a21d192b19165ccef69272229f7f",
+  "allOriginalLinesRetainedInOrder": true,
+  "originalProofLineCount": 189,
+  "originalCheckAndAssertLinesRetainedExactly": 13,
+  "originalNativeWaitBlockByteIdentical": true,
+  "originalNativeTimeoutMs": 8000,
+  "originalPollingMs": 50,
+  "originalWatchdogMs": 120000,
+  "newReadinessUsesExistingWaitHelperDefaultMs": 10000,
+  "runtimeAssetsBudgetRegistrationLockFlakyDiffEmpty": true,
+  "finalRuns": [
+    {
+      "kind": "final-native",
+      "run": 1,
+      "exit": 0,
+      "seconds": 7.299473998995381
+    },
+    {
+      "kind": "final-cpu2",
+      "run": 1,
+      "exit": 0,
+      "seconds": 8.255673724997905
+    },
+    {
+      "kind": "final-cpu2",
+      "run": 2,
+      "exit": 0,
+      "seconds": 8.260888456999965
+    },
+    {
+      "kind": "final-cpu2",
+      "run": 3,
+      "exit": 0,
+      "seconds": 8.175940275003086
+    },
+    {
+      "kind": "no-readiness",
+      "run": 1,
+      "exit": 0,
+      "seconds": 8.564025528998172
+    },
+    {
+      "kind": "no-readiness",
+      "run": 2,
+      "exit": 1,
+      "seconds": 6.766576608999458
+    },
+    {
+      "kind": "no-host-bong",
+      "run": 1,
+      "exit": 1,
+      "seconds": 7.536268769996241
+    }
+  ]
+}

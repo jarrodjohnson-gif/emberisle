@@ -6,8 +6,8 @@
 // - under reduced motion nothing animates and a still outline marks the button instead.
 // Zero console errors. Saves docs/design/829-fortune-cue/<size>.png when SHOTS=1. Run: npm run fortune-cue-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8424;
@@ -21,7 +21,6 @@ if (process.env.SHOTS) mkdirSync("docs/design/829-fortune-cue", { recursive: tru
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -58,7 +57,8 @@ try {
         }, { hidden, bought, newTurn, ore, phase, playedCard });
       const button = page.getByTestId("fortunes-button");
       const glow = page.getByTestId("fortune-cue-glow");
-      const label = async () => (await button.textContent()).trim();
+      // #1539: outside the sideways-phone column the button shows "Fortune · N"; its read-out keeps Play fortune or Fortunes.
+      const label = async () => `${(await button.textContent()).trim()} (${await button.getAttribute("aria-label")})`;
       const noBadge = () => button.evaluate((el) => ({ attr: el.dataset.playable ?? null, content: getComputedStyle(el, "::after").content }));
       const mark = () => glow.evaluate(async (el) => { el.__cue = (el.__cue ?? 0) + 1; await Promise.all(el.getAnimations().map((a) => a.ready)); return el.getAnimations().map((a) => a.startTime); });
       const marked = () => glow.evaluate((el) => ({ cue: el.__cue ?? 0, starts: el.getAnimations().map((a) => a.startTime) }));
@@ -69,7 +69,7 @@ try {
       await glow.waitFor({ timeout: STEP_MS });
       let b = await noBadge();
       assert.deepEqual(b, { attr: null, content: "none" }, `${tag}: no count badge, got ${JSON.stringify(b)}`);
-      assert.equal(await label(), "Play fortune · 3", `${tag}: a playable fortune reads Play fortune with the number held`);
+      assert.equal(await label(), "Fortune · 3 (Play fortune, 3 held)", `${tag}: a playable fortune reads Play fortune with the number held`);
       assert.equal(await button.getAttribute("aria-label"), "Play fortune, 3 held");
       if (process.env.SHOTS && !reduced) await page.screenshot({ path: `docs/design/829-fortune-cue/${v.tag}.png` });
 
@@ -87,7 +87,7 @@ try {
         await craft({ hidden: { knight: 1, plenty: 1, vp: 1 }, ore: 4 });
         await page.waitForTimeout(300);
         await craft({ hidden: { knight: 1, vp: 1 }, ore: 1 });
-        assert.equal(await label(), "Play fortune · 2", `${tag}: the held count follows a played fortune`);
+        assert.equal(await label(), "Fortune · 2 (Play fortune, 2 held)", `${tag}: the held count follows a played fortune`);
         const after = await marked();
         assert.equal(after.cue, 1, `${tag}: the ring was replaced by a state change`);
         assert.deepEqual(after.starts, before, `${tag}: the animation restarted on a state change`);
@@ -105,16 +105,16 @@ try {
       // Bought this turn: no badge, no glow, and the bought one is not counted.
       await craft({ hidden: { knight: 1 }, bought: { knight: 1 }, newTurn: true });
       await button.waitFor({ timeout: STEP_MS });
-      assert.equal(await label(), "Fortunes · 1", `${tag}: a fortune bought this turn reads Fortunes`);
+      assert.equal(await label(), "Fortune · 1 (Fortunes, 1 held)", `${tag}: a fortune bought this turn reads Fortunes`);
       assert.equal(await button.getAttribute("aria-label"), "Fortunes, 1 held");
       assert.equal(await glow.count(), 0, `${tag}: no glow for a fortune bought this turn`);
             // A fortune already played this turn: nothing more can be played, so no badge and no ring.
       await craft({ hidden: { knight: 1, plenty: 1 }, playedCard: true });
       await button.waitFor({ timeout: STEP_MS });
-      assert.equal(await label(), "Fortunes · 2", `${tag}: a fortune already played this turn reads Fortunes`);
+      assert.equal(await label(), "Fortune · 2 (Fortunes, 2 held)", `${tag}: a fortune already played this turn reads Fortunes`);
       assert.equal(await glow.count(), 0, `${tag}: no ring once a fortune was played this turn`);
       await craft({ hidden: { knight: 2, vp: 1 }, bought: { knight: 1, vp: 1 } });
-      assert.equal(await label(), "Play fortune · 3", `${tag}: one held since before is playable, label keeps the held count`);
+      assert.equal(await label(), "Fortune · 3 (Play fortune, 3 held)", `${tag}: one held since before is playable, label keeps the held count`);
 
       if (!reduced) {
         // The next turn glows again, on a new ring.

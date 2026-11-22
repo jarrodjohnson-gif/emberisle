@@ -1,15 +1,16 @@
 name: CI
 
-# The README "Run it" checks, on every pull request and every push to main.
+# Non-draft pull requests run the full suite; main pushes run build and server checks.
 # build, server and browser-a run on separate runners; browser-b has eight matrix legs after build's dist/:
 # flows-a, flows-b, flows-c, presentation, presentation-2, presentation-3, scene-life and scene-water.
 # The four existing required browser-b names stay; checks gates the result of the entire matrix.
 # Heavy scene proofs are isolated from UI proofs; #1034 tracks measured timing and full-green-run acceptance.
 # browser-a is split three ways (a1, a2, a3) by measured step time, about 8-12 minutes each (the whole was ~29);
 # the browser-a job itself only reports whether all three passed, because the ruleset requires that name.
-# `checks` is the required merge check: it requires every job, including every browser-a and browser-b suite,
-# except the advisory `loosen` job.
+# `checks` requires every browser suite on pull requests and verifies browsers are skipped on main pushes.
+# The advisory `loosen` job is not required.
 # Docs-only PRs (see changes job) skip the heavy steps but still report success so required checks stay green.
+# #1174: non-runtime PRs (changes job, `browser` output) also skip the browser-a and browser-b steps, the same way.
 on:
   pull_request:
     # Drafts skip the suites; marking a PR ready starts its run.
@@ -29,6 +30,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       docs_only: ${{ steps.check.outputs.docs_only }}
+      # #1174: 'false' only when every changed file is one no browser leg can fail on.
+      browser: ${{ steps.check.outputs.browser }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,16 +44,19 @@ jobs:
           set -euo pipefail
           if [ "$EVENT_NAME" != "pull_request" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "browser=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           BASE=$(git merge-base "origin/$BASE_REF" HEAD || true)
           if [ -z "$BASE" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "browser=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           LIST=$(git diff --no-renames --name-only "$BASE" HEAD)
           if [ -z "$LIST" ]; then
             echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "browser=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           mapfile -t CHANGED <<< "$LIST"
@@ -69,8 +75,31 @@ jobs:
             esac
           done
           echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+          # #1174 (owner, 2026-11-06): the browser legs skip their steps only for docs and non-runtime changes.
+          # A docs-only PR skips them. So does a PR whose every file is a doc, a top-level .md other than README.md,
+          # AGENTS.md and CLAUDE.md, a GitHub workflow other than ci.yml, .github/flaky.json or under .claude/.
+          # Anything else runs them: src/, public/, server/ (browser proofs run the host), scripts/, ci.yml itself,
+          # package files, config, and every file in a folder or at the top level not named here.
+          BROWSER=false
+          if [ "$DOCS_ONLY" != true ]; then
+            for path in "${CHANGED[@]}"; do
+              case "$path" in
+                README.md|AGENTS.md|CLAUDE.md|.github/workflows/ci.yml) BROWSER=true; break;;
+                docs/*|.github/ISSUE_TEMPLATE/*|.github/workflows/*|.github/flaky.json|.claude/*|LICENSE)
+                  ;;
+                */*) BROWSER=true; break;;
+                *.md)
+                  ;;
+                *)
+                  BROWSER=true
+                  break
+                  ;;
+              esac
+            done
+          fi
+          echo "browser=$BROWSER" >> "$GITHUB_OUTPUT"
 
-  build:
+  dependencies:
     needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -79,6 +108,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -86,8 +116,45 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci --prefix server
+
+  build:
+    needs: [changes, dependencies]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/checkout@v4
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/setup-node@v4
+        id: node
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+      - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
+        run: npm ci
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run typecheck
@@ -119,17 +186,71 @@ jobs:
         run: npm run size-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run size-delta-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run named-tunnel-test
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run tunnel-reconnect-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run scene-motion-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run nearest-coast-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run profiles-lifecycle-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run store-lifecycle-guards-prove
+      # #1817: apt mirror flakes kept turning main red. Cache a pinned static ffmpeg; the apt step below is the fallback.
+      - if: needs.changes.outputs.docs_only != 'true'
+        id: ffmpeg-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/ffmpeg-static
+          key: ffmpeg-static-7.0.2-amd64-v2
+      - if: needs.changes.outputs.docs_only != 'true' && steps.ffmpeg-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 3
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          name=ffmpeg-7.0.2-amd64-static
+          for dir in releases old-releases; do
+            curl -fsSL --retry 3 --max-time 120 -o "$tmp/ffmpeg.tar.xz" "https://johnvansickle.com/ffmpeg/$dir/$name.tar.xz" && break
+          done
+          echo "abda8d77ce8309141f83ab8edf0596834087c52467f6badf376a6a2a4c87cf67  $tmp/ffmpeg.tar.xz" | sha256sum -c -
+          mkdir "$tmp/out"
+          tar -xJf "$tmp/ffmpeg.tar.xz" --strip-components=1 -C "$tmp/out" "$name/ffmpeg" "$name/ffprobe"
+          mkdir -p ~/ffmpeg-static
+          mv "$tmp/out/ffmpeg" "$tmp/out/ffprobe" ~/ffmpeg-static/
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: '[ ! -x ~/ffmpeg-static/ffmpeg ] || [ ! -x ~/ffmpeg-static/ffprobe ] || echo "$HOME/ffmpeg-static" >> "$GITHUB_PATH"'
+      # #1073: measures every file in public/audio with ffmpeg.
+      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
+      # #1782: runs in build so slow apt mirrors cannot push the server job past 15 minutes.
+      - if: needs.changes.outputs.docs_only != 'true'
+        timeout-minutes: 6
+        run: |
+          command -v ffmpeg >/dev/null && command -v ffprobe >/dev/null || { echo "::warning::ffmpeg static download unavailable, using apt"; for attempt in 1 2 3; do
+            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
+              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
+              && break
+            echo "apt attempt $attempt failed"
+            sleep 5
+          done; }
+          command -v ffmpeg && command -v ffprobe
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run audio-level-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ambience-loop-prove
 
   server:
-    needs: changes
+    needs: [changes, dependencies]
     runs-on: ubuntu-latest
     # dice-prove's sampling took 99 s on CI (#926, a349dbf); the whole job took under 6 minutes.
     timeout-minutes: 15
     steps:
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/checkout@v4
-      - if: needs.changes.outputs.docs_only != 'true'
-        uses: actions/setup-node@v4
+      # desk-gate-prove uses Node built-ins and runs even for docs-only PRs.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -137,44 +258,144 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
       # Before the suites, so it still reports when a test fails.
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ci-install-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run ci-changes-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run registered-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run land-layout-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run proof-host-port-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run roll-off-oracle-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run readme-server-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run spiral-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run expanded-board-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run engine-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run board-math-bounds-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run paired-needs-guards-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run wayfarer-modes-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run game-text-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run stickers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run sticker-host-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run bug-report-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run lib-helpers-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run client-haptics-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run bot-harbor-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm test
+        run: npm run bot-action-order-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-pin-queue-prove
+        run: npm run bot-moments-event-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-unknown-cap-prove
+        run: npm run rules-view-helpers-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-reservation-recovery-prove
+        run: npm run trade-counter-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-derive-error-prove
+        run: npm run hud-helpers-guards-prove
+      # #1673, #1682, #1782: run independent Node and host proofs in two bounded side lanes beside npm test.
+      # Each lane uses isolated temp dirs and per-proof time limits so hangs fail loudly and logs always print.
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-permissions-prove
+        name: npm test, with side Node and standalone host proofs
+        run: |
+          side1="$RUNNER_TEMP/side-node-proofs.log"
+          side2="$RUNNER_TEMP/side-host-proofs.log"
+          mkdir -p "$RUNNER_TEMP/main-host" "$RUNNER_TEMP/side-host"
+          (
+            status=0
+            timeout -k 10 300 npm run dice-prove || status=$?
+            timeout -k 10 120 npm run expanded-bots-prove || status=$?
+            timeout -k 10 60 npm run expanded-turns-prove || status=$?
+            exit "$status"
+          ) > "$side1" 2>&1 &
+          pid1=$!
+          (
+            export ROOMS_DIR="$RUNNER_TEMP/side-host/rooms"
+            export PROFILES_DIR="$RUNNER_TEMP/side-host/profiles"
+            export RESULTS_DIR="$RUNNER_TEMP/side-host/results"
+            status=0
+            timeout -k 10 60 npm run profile-songs-prove || status=$?
+            timeout -k 10 60 npm run profile-pin-queue-prove || status=$?
+            timeout -k 10 60 npm run profile-unknown-cap-prove || status=$?
+            timeout -k 10 60 npm run profile-reservation-recovery-prove || status=$?
+            timeout -k 10 60 npm run profile-derive-error-prove || status=$?
+            timeout -k 10 60 npm run profile-permissions-prove || status=$?
+            timeout -k 10 60 npm run profile-socket-rate-prove || status=$?
+            timeout -k 10 60 npm run profile-lock-prove || status=$?
+            timeout -k 10 60 npm run profile-expiry-prove || status=$?
+            timeout -k 10 60 npm run profile-pin-race-prove || status=$?
+            timeout -k 10 90 npm run profile-results-prove || status=$?
+            timeout -k 10 60 npm run profile-deletion-prove || status=$?
+            timeout -k 10 60 npm run profile-rename-cap-prove || status=$?
+            timeout -k 10 60 npm run profile-rename-unknown-prove || status=$?
+            timeout -k 10 60 npm run profile-race-guards-prove || status=$?
+            timeout -k 10 120 npm run profile-recovery-prove || status=$?
+            timeout -k 10 60 npm run server-needs-prove || status=$?
+            timeout -k 10 60 npm run submodules-guards-prove || status=$?
+            timeout -k 10 60 npm run server-award-tally-prove || status=$?
+            timeout -k 10 60 npm run results-story-prove || status=$?
+            timeout -k 10 60 npm run server-play-again-prove || status=$?
+            timeout -k 10 60 npm run expanded-persist-prove || status=$?
+            timeout -k 10 90 npm run expanded-lobby-prove || status=$?
+            timeout -k 10 120 npm run expanded-timers-prove || status=$?
+            timeout -k 10 60 npm run rolloff-extension-prove || status=$?
+            timeout -k 10 60 npm run rematch-extension-prove || status=$?
+            timeout -k 10 60 npm run online-sync-reset-prove || status=$?
+            timeout -k 10 60 npm run finish-takeover-prove || status=$?
+            exit "$status"
+          ) > "$side2" 2>&1 &
+          pid2=$!
+          status=0
+          ROOMS_DIR="$RUNNER_TEMP/main-host/rooms" \
+          PROFILES_DIR="$RUNNER_TEMP/main-host/profiles" \
+          RESULTS_DIR="$RUNNER_TEMP/main-host/results" \
+          npm test || status=$?
+          wait "$pid1" || status=$?
+          wait "$pid2" || status=$?
+          echo "----- dice-prove, expanded-bots-prove and expanded-turns-prove -----"
+          cat "$side1"
+          echo "----- standalone server, profile and expanded proofs -----"
+          cat "$side2"
+          exit "$status"
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-socket-rate-prove
+        run: npm run sound-lifecycle-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-lock-prove
+        run: npm run host-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-expiry-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run profile-pin-race-prove
+        run: npm run server-lifecycle-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run next-up-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run touch-place-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run camera-fit-guards-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run stale-pr-sweeper-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -190,26 +411,11 @@ jobs:
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run auto-merge-prove
       - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run pr-signal-prove
+      - if: needs.changes.outputs.docs_only != 'true'
         run: npm run label-commands-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run dice-prove
-      # #1073: measures every file in public/audio with ffmpeg.
-      # #1186: the apt mirror sometimes hangs; bound each attempt, retry, and fail loudly if ffmpeg is still missing.
-      - if: needs.changes.outputs.docs_only != 'true'
-        timeout-minutes: 6
-        run: |
-          command -v ffmpeg >/dev/null || for attempt in 1 2 3; do
-            sudo timeout 90 apt-get -o Acquire::Retries=3 update \
-              && sudo timeout 150 apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg \
-              && break
-            echo "apt attempt $attempt failed"
-            sleep 5
-          done
-          command -v ffmpeg
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run audio-level-prove
-      - if: needs.changes.outputs.docs_only != 'true'
-        run: npm run ambience-loop-prove
+      - name: Desk gate proof
+        run: npm run desk-gate-prove
 
   # #924: advisory, so it is not in `checks.needs`. The desk reads it for REVIEWING.md item 4.
   # It diffs this PR's proofs against the commit it merges onto (the merge commit's first parent, as in build), using the
@@ -235,10 +441,32 @@ jobs:
             echo "The base $BASE_SHA has no scripts/loosen-prove.mjs yet, so this runs the PR's copy."
             node scripts/loosen-prove.mjs --base "$BASE_SHA"
           fi
+          # #947: exercise the proposed guard and its self-tests too; the base check above still judges this PR.
+          echo "Testing the PR's guard copy in the same advisory job."
+          node scripts/loosen-prove.mjs --base "$BASE_SHA"
+      - run: npm run proof-retirement-prove
+
+  # #1653: advisory, like `loosen`, so it is not in `checks.needs`. Flags a commit in this PR that changes nothing
+  # (docs/LOOPING.md: do not make empty commits to kick CI). HEAD is the merge commit: its first parent is the base and its
+  # second is the PR's head. Commits only (no trees' files or blobs), so the full history is a small fetch.
+  empty-commits:
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run empty-commit-prove -- --base "$(git rev-parse HEAD^1)" --head "$(git rev-parse HEAD^2)"
 
   browser-a-suites:
     name: browser-a (${{ matrix.suite }})
-    needs: changes
+    needs: [changes, dependencies]
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     # The browser jobs run about 19-20 minutes on a busy runner; 20 cancelled them mid-proof.
     timeout-minutes: 30
@@ -251,6 +479,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -258,61 +487,125 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
-      - if: needs.changes.outputs.docs_only != 'true'
+      # #1174: the steps above keep the docs-only gate. From here on a step also skips on a non-runtime PR
+      # (changes job, `browser` output), and the leg still reports success. ci-changes-prove checks this.
+      - if: needs.changes.outputs.browser != 'false'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.browser != 'false'
         run: npx playwright install --with-deps chromium
       # Give a new proof one suite's condition (the shortest: a3, then a1); without one it runs in all three.
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run client-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run dock-rates-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run dpr-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run ssao-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run hotseat-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run tabs-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run countdown-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run turn-extension-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run vote-and-bubble-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run announcer-a11y-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run steal-picker-push-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run steal-picker-lifecycle-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run trade-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-map-test
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run needs-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-tabs-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-backdrop-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run trade-contrast-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run practice-trade-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
+        run: npm run lazy-hud-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run hud-safe-area-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a1'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run tray-offers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run game-log-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profiles-client-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profiles-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-recovery-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-recovery-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run profile-records-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-records-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run first-game-coach-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run render-recovery-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run webgl-recovery-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a2'
         run: npm run rotate-overlays-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run fortune-count-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run fortune-cue-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run lobby-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-wait-box-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run lobby-tictactoe-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run secondary-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run sheets-focus-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run turn-timer-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run my-numbers-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run my-numbers-glow-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run invite-night-prove
       # pages-prove rebuilds dist/ under /emberisle/; browser-a has no later dist/ reader.
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'a3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run pages-prove
       - if: always()
         uses: actions/upload-artifact@v4
@@ -325,7 +618,7 @@ jobs:
   # A draft skips it (grey), like every other job; ready_for_review starts the run that must pass.
   browser-a:
     needs: browser-a-suites
-    if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
+    if: always() && github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -333,6 +626,7 @@ jobs:
 
   browser-b:
     needs: [changes, build]
+    if: github.event_name == 'pull_request' && !github.event.pull_request.draft
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -345,6 +639,7 @@ jobs:
         uses: actions/checkout@v4
       - if: needs.changes.outputs.docs_only != 'true'
         uses: actions/setup-node@v4
+        id: node
         with:
           node-version: 22
           cache: npm
@@ -352,159 +647,274 @@ jobs:
             package-lock.json
             server/package-lock.json
       - if: needs.changes.outputs.docs_only != 'true'
+        uses: actions/cache@v4
+        id: dependencies
+        with:
+          path: |
+            node_modules
+            server/node_modules
+          key: installed-v1-${{ runner.os }}-${{ runner.arch }}-${{ steps.node.outputs.node-version }}-${{ hashFiles('package.json', 'package-lock.json', 'server/package.json', 'server/package-lock.json') }}
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.docs_only != 'true' && steps.dependencies.outputs.cache-hit != 'true'
         run: npm ci --prefix server
-      - if: needs.changes.outputs.docs_only != 'true'
+      # #1174: the steps above keep the docs-only gate. From here on a step also skips on a non-runtime PR
+      # (changes job, `browser` output), and the leg still reports success. ci-changes-prove checks this.
+      - if: needs.changes.outputs.browser != 'false'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.browser != 'false'
         run: npx playwright install --with-deps chromium
-      - if: needs.changes.outputs.docs_only != 'true'
+      - if: needs.changes.outputs.browser != 'false'
         uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run hand-cards-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run hand-offer-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run served-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run chunk-fail-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run restore-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run night-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run chat-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run chat-text-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run hud-chat-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run game-helper-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run dice-resource-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run sticker-tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run sticker-motion-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run quick-react-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run react-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run seat-gains-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run wayfarer-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run robber-hex-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run robber-prompt-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run sounds-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run audio-recovery-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run sound-mixer-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run sound-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run your-turn-cue-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run music-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run ambience-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run ore-tokens-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-life'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run climber-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run tokens-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run pieces-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run pieces-land-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run legal-edge-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run bot-cues-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run landing-dust-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
+        run: npm run classic-builder-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run classic-switch-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run idle-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run chrome-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run issue-1274-proposal-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run contrast-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run button-system-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run duo-viewport-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run duo-layout-options-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run keyboard-place-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run placement-glow-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run stronghold-upgrade-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run upgrade-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run flash-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run haptics-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run haptics-startup-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run reflow-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run rotate-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run pan-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run board-touch-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run hole-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run banner-stable-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run howto-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run help-sheets-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run backdrop-close-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run title-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run first-minute-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run join-link-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run storage-blocked-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run open-table-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run title-chunks-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run loading-screen-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run open-host-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run wayfarer-setup-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-b'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run victory-target-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run watch-ui-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run tabs-prove-4
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-life'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run visual-direction-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-life'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run jelly-ocean-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
         run: npm run waves-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
         run: npm run splash-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'scene-water'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
         run: npm run polish-tokens-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run roll-moment-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run goods-log-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run stage-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run turn-gain-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+        run: npm run your-turn-stay-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-action-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run results-story-ui-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run win-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run play-again-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run lobby-overflow-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run lobby-layout-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run lobby-code-copy-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run lobby-profile-card-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run turn-copy-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run table-menu-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run version-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run build-ready-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run board-look-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run hex-variety-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run harbor-access-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run dock-piles-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-3'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run dock-piles-many-seeds-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+        run: npm run dock-piles-visibility-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
+        run: npm run dock-marks-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run seat-rail-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-a'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run player-menu-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run title-setup-guards-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run seat-tray-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run six-seats-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run paired-hud-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run expanded-lobby-ui-prove
+      # #1612: a whole six-tab game, about 6 minutes here; scene-life is the shortest leg (3 minutes of 30).
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run six-tab-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run seat-dot-ring-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run longest-army-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run roll-log-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation-2'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run hud-roll-line-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run public-score-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'presentation'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run seat-menu-sheet-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run upright-table-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run expanded-fit-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
         run: npm run hand-hidden-prove
-      - if: needs.changes.outputs.docs_only != 'true' && matrix.suite == 'flows-c'
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'
+        run: npm run hand-focus-ring-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
         run: npm run install-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-c'
+        run: npm run hand-placelist-guards-prove
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -512,18 +922,25 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
-  # always() so a failed or cancelled job above fails this check instead of skipping it (a skipped required check passes).
+  # always() so a failed or cancelled required job fails this check instead of skipping it (a skipped required check passes).
   # A draft skips it (grey): GitHub never merges a draft, and marking it ready starts a fresh run on the same head SHA,
-  # whose checks must each pass. Every other run keeps always() and the explicit tests below.
+  # whose checks must each pass. Main pushes require build/server success and skipped browser jobs.
+  # Every other run keeps always() and the explicit tests below.
   checks:
-    needs: [changes, build, server, browser-a, browser-b]
+    needs: [changes, dependencies, build, server, browser-a, browser-b]
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          echo 'build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          echo 'dependencies=${{ needs.dependencies.result }} build=${{ needs.build.result }} server=${{ needs.server.result }} browser-a=${{ needs.browser-a.result }} browser-b=${{ needs.browser-b.result }}'
+          test '${{ needs.dependencies.result }}' = success
           test '${{ needs.build.result }}' = success
           test '${{ needs.server.result }}' = success
-          test '${{ needs.browser-a.result }}' = success
-          test '${{ needs.browser-b.result }}' = success
+          if [ '${{ github.event_name }}' = 'pull_request' ]; then
+            test '${{ needs.browser-a.result }}' = success
+            test '${{ needs.browser-b.result }}' = success
+          else
+            test '${{ needs.browser-a.result }}' = skipped
+            test '${{ needs.browser-b.result }}' = skipped
+          fi

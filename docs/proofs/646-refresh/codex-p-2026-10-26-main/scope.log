@@ -1,0 +1,45 @@
+{
+  "main": "9bde9861490662ef3e95e90db5cfa2dc7874fd55",
+  "old_head": "18f6794c01059051108f913016522751a4b61b89",
+  "checks": {
+    "all_other_main_files_exact": true,
+    "own_need_modules_proofs_mounts_exact": true,
+    "all_main_fixture_values_exact": true,
+    "original_fixture_1780_exact": true,
+    "package.json_all_main_values_exact": true,
+    "server/package.json_all_main_values_exact": true,
+    "locks_exact_main": true,
+    "ci_exact_main_plus_needs_once": true,
+    "size_policy_exact_main_plus_original1900": true,
+    "host_exact_main_except_original_need_hooks": true,
+    "table_exact_main_except_original_need_contract": true
+  },
+  "main_files_count": 1575,
+  "own_exact_files": [
+    "server/needs.mjs",
+    "server/needs-prove.mjs",
+    "scripts/needs-prove.mjs",
+    "src/lib/game/needs.ts",
+    "src/components/game/SeatNeeds.tsx",
+    "src/components/game/need-state.ts",
+    "src/components/game/SeatRail.tsx",
+    "src/components/game/TradePanel.tsx"
+  ],
+  "exception_files": [
+    ".github/workflows/ci.yml",
+    "package.json",
+    "scripts/fixtures/size/base-old.json",
+    "scripts/fixtures/size/base-with-legacy.json",
+    "scripts/fixtures/size/base.json",
+    "scripts/fixtures/size/fail.json",
+    "scripts/fixtures/size/new-chunk.json",
+    "scripts/fixtures/size/over-ceiling.json",
+    "scripts/fixtures/size/pass.json",
+    "scripts/size-prove.mjs",
+    "server/host.mjs",
+    "server/package.json",
+    "src/components/game/SeatRail.tsx",
+    "src/components/game/TradePanel.tsx",
+    "src/lib/net/table.ts"
+  ]
+}

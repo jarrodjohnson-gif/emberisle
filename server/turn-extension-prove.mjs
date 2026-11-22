@@ -68,7 +68,7 @@ async function until(check, label, ms = 3000) {
 async function start(extra = EXTRA, vote = VOTE) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, TURN_MS: String(TURN), TURN_TOTAL_MS: String(TOTAL), TURN_EXTENSION_MS: extra === null ? "" : String(extra), TURN_VOTE_MS: vote === null ? "" : String(vote), SAVE_MS: "20", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "60000", HOLD_MS: "60000" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, TURN_MS: String(TURN), TURN_TOTAL_MS: String(TOTAL), TURN_EXTENSION_MS: extra === null ? "" : String(extra), TURN_VOTE_MS: vote === null ? "" : String(vote), SAVE_MS: "20", ACT_CAP: "1000", ACT_RATE: "1000", GRACE_MS: "60000", HOLD_MS: "60000" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   host.stderr.on("data", (d) => { stderr += String(d); });

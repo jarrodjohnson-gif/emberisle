@@ -19,7 +19,7 @@ for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 function boot(env = {}) {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR, SAVE_MS: "20", ACT_RATE: "1000", ACT_CAP: "1000", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, SAVE_MS: "20", ACT_RATE: "1000", ACT_CAP: "1000", ...env },
   });
   return new Promise((resolve, reject) => {
     host.stdout.on("data", (d) => {
@@ -133,7 +133,7 @@ const port = await boot({ RENAME_MS: "0" });
   assert.ok(!withBot.seats.slice(0, 2).some((s) => s.color === bot.color), "the bot took a free colour");
   await settle();
   assert.equal(roomFile(code).seats[2].bot, true);
-  assert.equal(roomFile(code).shape, 2, "the room shape is unchanged: a bot is one more optional seat field");
+  assert.equal(roomFile(code).shape, 3, "the room shape is unchanged by a bot: a bot is one more optional seat field");
 
   // Remove it, add again, fill the table: a fifth seat is refused.
   ember.send({ type: "removeBot", id: bot.id });

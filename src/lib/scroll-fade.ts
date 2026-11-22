@@ -6,7 +6,10 @@ export function useMoreBelow(): [(el: HTMLElement | null) => void, boolean] {
   const [el, setEl] = useState<HTMLElement | null>(null);
   const [more, setMore] = useState(false);
   useLayoutEffect(() => {
-    if (!el) return;
+    if (!el) {
+      setMore(false);
+      return;
+    }
     const update = () => setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 1);
     update();
     el.addEventListener("scroll", update, { passive: true });

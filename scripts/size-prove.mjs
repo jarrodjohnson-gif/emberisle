@@ -21,13 +21,31 @@ const DIR = "dist/assets";
 // Hard ceilings, set 2026-10-19 (#868) from main's gzip sizes (index 122150 B, IslandCanvas 199470 B) plus generous room:
 // +3 kB on the two big chunks, about +1 kB on the lazy ones.
 const CEILINGS = [
-  { name: "LobbyView", gzipBytes: 2500 },
+  // #646: lazy public needs and picker; reviewed ceiling retained.
+  { name: "SeatNeeds", gzipBytes: 1900 },
+  // #1611: raised from 2,500 B to 2,600 B by the owner (q1656-online-six A, 2026-11-14): six lobby rows with seat numbers;
+  // measured 2,527 B.
+  { name: "LobbyView", gzipBytes: 2600 },
+  // #1262: Sandwich Stacker shelf and player, measured 1867 B gzip. The owner must OK this new ceiling before merge.
+  { name: "LobbyWaitBox", gzipBytes: 2100 }, // #1366, 2026-11-07: back to 2,100 B after the trim in PR #1373
+  // #1263: tic-tac-toe tile and board, loaded with the shelf; measured 1390 B gzip. Decided 2026-11-07, q-size-standing.
+  { name: "LobbyTicTacToe", gzipBytes: 1600 },
   // #553: shared on-demand table transport, measured 2.08 kB; existing caps stay fixed.
-  { name: "table", gzipBytes: 2200 },
+  // #1611: raised from 2,200 B to 2,300 B by the owner (q1656-online-six A, 2026-11-14): the capability in every hello and
+  // the rematch choice; measured 2,222 B.
+  { name: "table", gzipBytes: 2300 }, // #1366, 2026-11-07: back to 2,200 B after the trim in PR #1373
   // #542: optional phone motor/preferences/menu, loaded before the first interactive tap; measured 1.09 kB.
   { name: "haptics", gzipBytes: 1200 },
-  { name: "index", gzipBytes: 125200 },
-  { name: "IslandCanvas", gzipBytes: 202500 },
+  // #1283: raised from 125,200 B to 127,000 B per owner decision 2026-11-03.
+  // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
+  // start from the Play page; index measured 127,203 B.
+  { name: "index", gzipBytes: 128000 },
+  { name: "IslandCanvas", gzipBytes: 204500 }, // #1857, 2026-11-22: raised from 203,500 B to 204,500 B (was #1307, 2026-11-04)
+  // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
+  { name: "classic-board", gzipBytes: 19500 },
+  // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)
+  // and shared by jelly-board and classic-board; measured 1,370 B gzip. New chunk only; the desk set this ceiling on 2026-11-17.
+  { name: "appearance-controller", gzipBytes: 1500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
@@ -48,16 +66,91 @@ const CEILINGS = [
   // #538: coast inspection UI loads separately; measured 1030 B.
   { name: "DockInspection", gzipBytes: 1200 },
   { name: "HandRates", gzipBytes: 800 },
+  // #831: shared quantity cards load separately.
+  { name: "TradeResource", gzipBytes: 1650 },
   // #833: title open-table list; measured ~1.1 kB after extract from index.
   { name: "OpenTables", gzipBytes: 1300 },
   // #833: the existing closed title settings body loads separately; new chunk only.
   { name: "WayfarerOptions", gzipBytes: 500 },
   // #832: the online-only timer ballot loads separately (2026-10-20; measured 1.20 kB).
   { name: "TurnExtensionVote", gzipBytes: 1400 },
+  // #1285: trade toast, loss bars (discard/steal) and shared trade-panel helper chunk (ceilings per owner/Opus decision 2026-11-06).
+  { name: "TradeToast", gzipBytes: 3000 },
+  { name: "losses", gzipBytes: 1600 },
+  // #766: the shared lucide X icon chunk, named trade-panel until the profile sheet also used it; same 300 B ceiling.
+  { name: "x", gzipBytes: 300 },
+  // #766: the title's profile sheet with its profile client, measured 5481 B; focus-trap now shared by it and the sheets,
+  // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
+  { name: "ProfileSheet", gzipBytes: 6000 },
+  { name: "focus-trap", gzipBytes: 550 },
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
+  { name: "ProfileForms", gzipBytes: 2350 },
+  { name: "eye-off", gzipBytes: 310 },
+  // #767, 2026-11-07: the Profile sheet's Wins and Your games views; measured 2,248 B. New chunk, per q-size-standing.
+  { name: "ProfileRecords", gzipBytes: 2350 },
+  // #1437, 2026-11-09: the Profile sheet's recovery code screens (Save your recovery code, Forgot your PIN, New recovery
+  // code, the sign-in link and the summary row); measured 3,029 B gzip. New chunk only; the desk set this ceiling (2026-11-09).
+  { name: "ProfileRecovery", gzipBytes: 3200 },
+  // #1281, 2026-11-07: startup loading screen, preloaded beside index; measured 2,420 B gzip. Decided per q-size-standing; paired trim to follow.
+  { name: "LoadingScreen", gzipBytes: 2600 },
+  // #669, 2026-11-07: the Sound panel in the Table menu, loaded as the menu opens; measured 1,872 B gzip. New chunk only; the owner must OK this ceiling.
+  { name: "SoundSheet", gzipBytes: 2000 },
+  // #669, 2026-11-07: the mute-list hook shared by the chat chunk and the Sound panel; measured 414 B gzip. New chunk only; the owner must OK this ceiling.
+  { name: "use-muted-seats", gzipBytes: 500 },
+  // #748, 2026-11-07: the win screen's compact list on phones, loaded on phones as the table starts; measured 1,253 B gzip. New chunk only; the desk sets this ceiling.
+  { name: "WinList", gzipBytes: 1360 },
+  // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
+  // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
+  { name: "Sticker", gzipBytes: 1050 },
+  // #1452 and #1453, 2026-11-09: the results screen's island awards and dice strip, one chunk the win screen fetches as the
+  // table starts; measured 2,048 B gzip. New chunk only; the desk set this ceiling on #1452 (q-size-standing, option A).
+  { name: "ResultsStory", gzipBytes: 2200 },
+  // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
+  // New chunk only; the desk sets this ceiling.
+  { name: "ambience", gzipBytes: 550 },
+  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
+  // 412 B gzip. New chunk only; the desk set this ceiling.
+  { name: "PlayAgain", gzipBytes: 450 },
+  // #1350, 2026-11-11: the read-only profile card for another lobby seat, loaded when a name is first pressed.
+  // New chunk only; the desk set this ceiling in its review of PR #1531.
+  { name: "OtherProfileCard", gzipBytes: 1550 },
+  // #1539, 2026-11-12: the Build list sheet, loaded on idle; measured 1,439 B gzip. New chunk only; proposed, the desk sets
+  // this ceiling.
+  { name: "BuildList", gzipBytes: 1600 },
+  // docs/design/end-of-game slice 1, 2026-11-12: the Game log sheet, loaded as the Table menu opens; measured 1,401 B gzip.
+  // New chunk only; proposed, the desk sets this ceiling. Raised to 1,750 B by the owner on 2026-11-13 (q1617-gamelog-ceiling,
+  // A): it sat at its 1,550 B ceiling and builds flipped on a byte of gzip variation.
+  { name: "GameLog", gzipBytes: 1750 },
+  // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
+  // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
+  { name: "expanded", gzipBytes: 3300 },
+  // #1665, 2026-11-14: the seat menu, loaded on idle and on the first seat press; measured 2,726 B gzip. New chunk; the desk
+  // set this ceiling (PR #1674).
+  { name: "PlayerMenu", gzipBytes: 3000 },
+  // #1665, 2026-11-14: the fortune card table the seat menu shares with the hand; measured 543 B gzip. New chunk; the desk set
+  // this ceiling (PR #1674).
+  { name: "fortunes", gzipBytes: 600 },
+  // #1665, 2026-11-14: the message icon the seat menu shares with chat; measured 248 B gzip. New chunk; the desk set this
+  // ceiling (PR #1674).
+  { name: "message-square", gzipBytes: 280 },
+  // #1592, 2026-11-17: shared tray focus helper for TradeToast and losses; measured 638 B gzip. New chunk; the desk set this ceiling (PR #1647).
+  { name: "tray-focus", gzipBytes: 700 },
+  // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
+  { name: "SeatPublicGains", gzipBytes: 1800 },
+  // #1593, 2026-11-17: the dock-mark atlas (painted-board white symbols/pips and lite planks), shared by harbor-jelly and the
+  // lite board; measured 1,090 B gzip. Desk set this 1,200 B ceiling on 2026-11-17 under q-size-standing A.
+  { name: "dock-marks", gzipBytes: 1200 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
-const ALLOWANCE = { index: 400 };
+const ALLOWANCE = {
+  index: 400,
+  // hex-jelly is 600 B per owner decision card q1255-size (2026-11-12).
+  "hex-jelly": 600,
+  // #1595, 2026-11-13: the tray polish may grow losses by up to 300 B, for this change only (owner, q1597-losses-size, A).
+  losses: 300,
+};
 const ALLOWANCE_RATE = 0.0033;
 const ALLOWANCE_MIN = 200;
 const allowanceFor = (name, baseBytes) => ALLOWANCE[name] ?? Math.max(ALLOWANCE_MIN, Math.round(baseBytes * ALLOWANCE_RATE));

@@ -1,0 +1,86 @@
+/* Design mock for #1303: one control look for the lobby's top two rows. Only the game's own tokens. Not game code.
+   Text is in rem (16 px = 1rem), so the 125% and 150% studies can grow it; every size below is the 100% value. */
+
+/* Today's code, Copy, Copy link, Invite, Table, Play games and Rules step aside. The hidden buttons still work. */
+:root[data-mock-lobby] .lobby-header > [data-testid="table-code"],
+:root[data-mock-lobby] .lobby-copy-controls,
+:root[data-mock-lobby] .lobby-rules > .lm,
+:root[data-mock-lobby] .lobby-rules > button { display: none !important; }
+
+:root:not([data-mock-lobby]) .lc-header, :root:not([data-mock-lobby]) .lc-views { display: none; }
+
+/* One control look, the same as the lobby's outline buttons (Ready, 7, 10, Add bot): 44 px tall, no fill, a 1 px
+   control-line edge, 8 px corners, 15 px semibold ink text. */
+.lc-btn, .lc-code {
+  box-sizing: border-box; min-height: 44px;
+  border: 1px solid var(--control-line); border-radius: var(--radius-control);
+  background: transparent; color: var(--ink);
+}
+.lobby-layout button.lc-btn, .lobby-layout button.lc-code {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 0 12px; font-size: 0.9375rem; line-height: 1.25rem; font-weight: 600; white-space: nowrap;
+}
+.lc-btn svg, .lc-code svg { width: 1rem; height: 1rem; flex: none; }
+.lc-btn:focus-visible, .lc-code:focus-visible, .lc-seg button:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
+
+/* Header: the code is the copy button, alone at the left. Copy, Copy link and Invite are gone (owner, 2026-11-07). */
+.lc-header { display: flex; flex: 1; min-width: 0; align-items: center; gap: 8px; }
+.lobby-layout button.lc-code { gap: 8px; min-width: 0; }
+/* The code is already display text, so it does not grow past its 100% size: the header row stays 44 px at any text size. */
+.lc-code-text { font-size: min(1.75rem, 28px); line-height: min(2.125rem, 34px); font-weight: 700; letter-spacing: 1px; }
+.lc-code-act { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); }
+.lc-code[data-copied] .lc-code-act { color: var(--gain); }
+/* "Copy" and "Copied" share one cell, so the button keeps the longer width and nothing moves when it changes. */
+.lc-both { display: inline-grid; }
+.lc-both > span { grid-area: 1 / 1; visibility: hidden; }
+.lc-both > [data-on] { visibility: visible; }
+
+/* Phone held sideways: with the three buttons gone, nothing sits top right, so the header keeps to the left column
+   and the chat (or Play games) runs from the top of the card. */
+@media (max-height: 600px) and (orientation: landscape) {
+  :root[data-mock-lobby] .lobby-header { grid-column: 1; }
+  :root[data-mock-lobby] .lobby-chat-panel, :root[data-mock-lobby] .lobby-layout .ly { grid-row: 1 / 4; }
+}
+
+/* Table and Play games: two tabs, each the same box, 8 px apart. The picked tab is filled white, with ink text and a
+   3 px ink bar along its bottom edge; the other has no fill, grey text and no bar. Rules is a plain button with ink text,
+   and a book where there is room. */
+.lobby-rules > .lc-views { display: flex; flex: 0 0 auto; gap: 8px; min-width: 0; }
+.lobby-layout .lc-seg { display: flex; gap: 8px; min-height: 0; border: 0; background: none; }
+.lobby-layout .lc-seg button {
+  position: relative; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+  min-height: 44px; padding: 0 8px;
+  border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent;
+  color: var(--muted); font-size: 0.9375rem; line-height: 1.25rem; font-weight: 500;
+}
+.lobby-layout .lc-seg button[aria-selected="true"] { background: var(--paper); color: var(--ink); font-weight: 600; box-shadow: inset 0 -3px 0 var(--ink); }
+.lobby-layout .lc-seg .lb { top: 2px; right: 2px; }
+
+/* The joined look, drawn for comparison: one track, the picked tab white, the other on the mist ground. The two tabs
+   touch, so they are 0 px apart, not 8. */
+:root[data-mock-tabs="joined"] .lobby-layout .lc-seg { gap: 0; border-radius: var(--radius-control); outline: 1px solid var(--control-line); outline-offset: -1px; overflow: hidden; background: var(--ground); }
+:root[data-mock-tabs="joined"] .lobby-layout .lc-seg button { border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+:root[data-mock-tabs="joined"] .lobby-layout .lc-seg button + button { border-left: 1px solid var(--control-line); }
+:root[data-mock-tabs="joined"] .lobby-layout .lc-seg button[aria-selected="true"] { background: var(--paper); }
+
+/* Phones and tablets: Play games on two lines, as today, and Rules drops its book so the Wayfarer line keeps its room. */
+@media (max-width: 900px) {
+  .lobby-layout .lc-seg button:last-child { width: 4.75rem; padding: 0 4px; white-space: normal; text-align: center; }
+  .lc-rules svg { display: none; }
+}
+@media (max-width: 600px) and (orientation: portrait) {
+  .lc-code-text { font-size: min(1.375rem, 22px); line-height: min(1.75rem, 28px); }
+}
+@media (max-width: 360px) and (orientation: portrait) {
+  .lc-code-text { font-size: min(1.125rem, 18px); line-height: min(1.75rem, 28px); letter-spacing: 0; }
+  .lobby-layout button.lc-btn, .lobby-layout button.lc-code { padding: 0 8px; }
+}
+
+/* The Table row at big text: under 12.5rem, Rules keeps only its book (its name stays "Rules"). Only 150% text on a
+   320 × 568 phone or a phone held sideways reaches it. */
+.lobby-rules { container-type: inline-size; }
+@container (max-width: 12.5rem) {
+  .lobby-layout button.lc-rules { width: 44px; padding: 0; }
+  .lobby-layout .lc-rules svg { display: block; }
+  .lc-rules-text { display: none; }
+}

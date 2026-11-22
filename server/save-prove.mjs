@@ -21,7 +21,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 function start(dir, env = {}) {
   const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL(".", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, SAVE_MS: String(SAVE_MS), ACT_CAP: "100000", ACT_RATE: "100000", ...env },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: dir, RESULTS_DIR: `${dir}/results`, SAVE_MS: String(SAVE_MS), ACT_CAP: "100000", ACT_RATE: "100000", ...env },
   });
   hosts.add(host);
   host.exited = new Promise((r) => host.once("exit", (code, signal) => r({ code, signal })));

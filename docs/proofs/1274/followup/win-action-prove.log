@@ -1,0 +1,11 @@
+
+> win-action-prove
+> node --import ./server/register.mjs scripts/win-action-prove.mjs
+
+ok 390x844: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 440x956: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 1280x720: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 844x390 reduced: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 956x440: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+ok 667x375 insets: five winning triggers, seven-/ten-point targets and overshoot, persisted restart and browser reload
+win-action-prove: all passed; all seat/watcher views omit trigger before the win

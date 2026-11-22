@@ -20,8 +20,8 @@ export const RESOURCE_PAINT: Record<Resource, string> = {
 
 // A gain or loss cue holds for FLASH_MS, then fades over FADE_MS (#773, docs/design/goods-cards-v1). The CSS keyframes in
 // hand-motion.css run for the same CUE_MS.
-const FLASH_MS = 2200;
-const FADE_MS = 300;
+const FLASH_MS = 2500;
+const FADE_MS = 500;
 const CUE_MS = FLASH_MS + FADE_MS;
 const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)";
 type ResourceFlash = { delta: number; id: number };
@@ -187,10 +187,32 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
           showRates(resource, e.currentTarget);
         }}
         onKeyDown={(e) => {
-          if (e.key !== "Enter" && e.key !== " ") return;
-          e.preventDefault();
-          e.stopPropagation();
-          showRates(resource, e.currentTarget);
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            showRates(resource, e.currentTarget);
+            return;
+          }
+          if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
+            const tray = e.currentTarget.closest(".goods-tray");
+            if (!tray) return;
+            const cards = Array.from(tray.querySelectorAll<HTMLElement>('[role="button"]'));
+            if (cards.length === 0) return;
+            if (cards.length === 1) {
+              cards[0]?.focus();
+              return;
+            }
+            const index = cards.indexOf(e.currentTarget);
+            if (index === -1) return;
+            let next = index;
+            if (e.key === "Home") next = 0;
+            else if (e.key === "End") next = cards.length - 1;
+            else if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (index + 1) % cards.length;
+            else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (index - 1 + cards.length) % cards.length;
+            cards[next]?.focus();
+          }
         }}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
@@ -207,7 +229,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
         onPointerCancel={cancelHold}
         onPointerLeave={cancelHold}
         className={cn(
-          `goods-card goods-${resource} relative h-[62px] rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg short:h-11`,
+          `goods-card goods-${resource} relative h-[62px] rounded-control focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg short:h-11`,
           count === 0 && "goods-empty",
         )}
       >
@@ -238,7 +260,7 @@ function ResourceCard({ resource, count, flash, offer, showRates, buildMode, own
             flash && "short:hidden",
           )}
         >
-          {offer > 0 ? `+${offer}` : String(offer)}
+          {offer > 0 ? `+${offer}` : `−${-offer}`}
         </span>
       ) : null}
     </div>

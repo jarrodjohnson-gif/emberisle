@@ -1,0 +1,13 @@
+
+> size-delta-prove
+> node scripts/size-delta-prove.mjs
+
+ok   +300 B on index passes
+ok   a second +300 B on top of it passes
+ok   +600 B on index fails and names chunk, base, PR, allowance
+ok   a new chunk is held to its ceiling only
+ok   a removed chunk passes and is reported
+ok   a chunk gone from the PR that still has a ceiling fails
+ok   without a base only the ceilings run and the delta command is printed
+ok   over the absolute ceiling fails even inside the allowance
+size-delta-prove: all cases behave

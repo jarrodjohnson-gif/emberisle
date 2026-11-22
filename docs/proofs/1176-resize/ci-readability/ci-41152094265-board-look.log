@@ -1,0 +1,1100 @@
+﻿2026-10-31T00:50:13.6983620Z Current runner version: '2.338.2'
+2026-10-31T00:50:13.7005149Z ##[group]Runner Image Provisioner
+2026-10-31T00:50:13.7005974Z Hosted Compute Agent
+2026-10-31T00:50:13.7006485Z Version: 20261021.618
+2026-10-31T00:50:13.7007013Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-31T00:50:13.7007722Z Build Date: 2026-10-21T00:45:21Z
+2026-10-31T00:50:13.7008295Z Worker ID: {248719b3-1642-46d1-a40d-16df9b39d849}
+2026-10-31T00:50:13.7008954Z Region: westus3
+2026-10-31T00:50:13.7009441Z Cloud: Azure
+2026-10-31T00:50:13.7009893Z ##[endgroup]
+2026-10-31T00:50:13.7011243Z ##[group]Operating System
+2026-10-31T00:50:13.7011781Z Ubuntu
+2026-10-31T00:50:13.7012317Z 24.04.5
+2026-10-31T00:50:13.7012784Z LTS
+2026-10-31T00:50:13.7013236Z ##[endgroup]
+2026-10-31T00:50:13.7013792Z ##[group]Runner Image
+2026-10-31T00:50:13.7014304Z Image: ubuntu-24.04
+2026-10-31T00:50:13.7014841Z Version: 20261025.353.1
+2026-10-31T00:50:13.7015913Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261025.353/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-31T00:50:13.7017261Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261025.353
+2026-10-31T00:50:13.7018064Z ##[endgroup]
+2026-10-31T00:50:13.7019086Z ##[group]GITHUB_TOKEN Permissions
+2026-10-31T00:50:13.7021044Z Contents: read
+2026-10-31T00:50:13.7021641Z Metadata: read
+2026-10-31T00:50:13.7022135Z Packages: read
+2026-10-31T00:50:13.7022646Z ##[endgroup]
+2026-10-31T00:50:13.7024336Z Secret source: Actions
+2026-10-31T00:50:13.7025233Z Cache mode: write
+2026-10-31T00:50:13.7026172Z Prepare workflow directory
+2026-10-31T00:50:13.7286222Z Prepare all required actions
+2026-10-31T00:50:13.7326203Z Getting action download info
+2026-10-31T00:50:14.0632599Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-10-31T00:50:14.1430524Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-10-31T00:50:14.2539025Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+2026-10-31T00:50:14.3939606Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+2026-10-31T00:50:15.0082219Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+2026-10-31T00:50:15.2842817Z Complete job name: browser-b (presentation-3)
+2026-10-31T00:50:15.4253466Z ##[group]Run actions/checkout@v4
+2026-10-31T00:50:15.4254567Z with:
+2026-10-31T00:50:15.4255298Z   repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:15.4263063Z   token: ***
+2026-10-31T00:50:15.4263758Z   ssh-strict: true
+2026-10-31T00:50:15.4264461Z   ssh-user: git
+2026-10-31T00:50:15.4265177Z   persist-credentials: true
+2026-10-31T00:50:15.4265962Z   clean: true
+2026-10-31T00:50:15.4266688Z   sparse-checkout-cone-mode: true
+2026-10-31T00:50:15.4267533Z   fetch-depth: 1
+2026-10-31T00:50:15.4268244Z   fetch-tags: false
+2026-10-31T00:50:15.4268980Z   show-progress: true
+2026-10-31T00:50:15.4269733Z   lfs: false
+2026-10-31T00:50:15.4270515Z   submodules: false
+2026-10-31T00:50:15.4271244Z   set-safe-directory: true
+2026-10-31T00:50:15.4272064Z   allow-unsafe-pr-checkout: false
+2026-10-31T00:50:15.4273092Z ##[endgroup]
+2026-10-31T00:50:15.6259628Z Syncing repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:15.6262171Z ##[group]Getting Git version info
+2026-10-31T00:50:15.6263369Z Working directory is '/home/runner/work/emberisle/emberisle'
+2026-10-31T00:50:15.6264967Z [command]/usr/bin/git version
+2026-10-31T00:50:15.6328487Z git version 2.56.0
+2026-10-31T00:50:15.6345802Z ##[endgroup]
+2026-10-31T00:50:15.6358418Z Temporarily overriding HOME='/home/runner/work/_temp/d7aec823-353a-4511-ba0e-bf212744b8c3' before making global git config changes
+2026-10-31T00:50:15.6362052Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-31T00:50:15.6364848Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-31T00:50:15.6411517Z Deleting the contents of '/home/runner/work/emberisle/emberisle'
+2026-10-31T00:50:15.6415296Z ##[group]Initializing the repository
+2026-10-31T00:50:15.6416660Z [command]/usr/bin/git init /home/runner/work/emberisle/emberisle
+2026-10-31T00:50:15.6504828Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-31T00:50:15.6507392Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-31T00:50:15.6509760Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-31T00:50:15.6511650Z hint: call:
+2026-10-31T00:50:15.6512578Z hint:
+2026-10-31T00:50:15.6513752Z hint: 	git config --global init.defaultBranch <name>
+2026-10-31T00:50:15.6515219Z hint:
+2026-10-31T00:50:15.6516579Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-31T00:50:15.6518773Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-31T00:50:15.6520644Z hint:
+2026-10-31T00:50:15.6521684Z hint: 	git branch -m <name>
+2026-10-31T00:50:15.6522767Z hint:
+2026-10-31T00:50:15.6523888Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-31T00:50:15.6525523Z Initialized empty Git repository in /home/runner/work/emberisle/emberisle/.git/
+2026-10-31T00:50:15.6529439Z [command]/usr/bin/git remote add origin https://github.com/jarrodjohnson-gif/emberisle
+2026-10-31T00:50:15.6562434Z ##[endgroup]
+2026-10-31T00:50:15.6564262Z ##[group]Disabling automatic garbage collection
+2026-10-31T00:50:15.6565929Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-31T00:50:15.6597230Z ##[endgroup]
+2026-10-31T00:50:15.6598921Z ##[group]Setting up auth
+2026-10-31T00:50:15.6603318Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-31T00:50:15.6636528Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-31T00:50:15.6968883Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-31T00:50:15.7010412Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-31T00:50:15.7219222Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-31T00:50:15.7256095Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-31T00:50:15.7458437Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-31T00:50:15.7504279Z ##[endgroup]
+2026-10-31T00:50:15.7505928Z ##[group]Fetching the repository
+2026-10-31T00:50:15.7516065Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +3b5500a2fce40e6020ede5e400fd0eee7b2075ad:refs/remotes/pull/1181/merge
+2026-10-31T00:50:18.9101222Z From https://github.com/jarrodjohnson-gif/emberisle
+2026-10-31T00:50:18.9101970Z  * [new ref]         3b5500a2fce40e6020ede5e400fd0eee7b2075ad -> pull/1181/merge
+2026-10-31T00:50:18.9106635Z ##[endgroup]
+2026-10-31T00:50:18.9107117Z ##[group]Determining the checkout info
+2026-10-31T00:50:18.9108366Z ##[endgroup]
+2026-10-31T00:50:18.9112327Z [command]/usr/bin/git sparse-checkout disable
+2026-10-31T00:50:18.9161139Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-31T00:50:18.9193567Z ##[group]Checking out the ref
+2026-10-31T00:50:18.9196540Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/1181/merge
+2026-10-31T00:50:19.2375913Z Note: switching to 'refs/remotes/pull/1181/merge'.
+2026-10-31T00:50:19.2380627Z 
+2026-10-31T00:50:19.2380921Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-10-31T00:50:19.2381464Z changes and commit them, and you can discard any commits you make in this
+2026-10-31T00:50:19.2382626Z state without impacting any branches by switching back to a branch.
+2026-10-31T00:50:19.2385333Z 
+2026-10-31T00:50:19.2385677Z If you want to create a new branch to retain commits you create, you may
+2026-10-31T00:50:19.2386278Z do so (now or later) by using -c with the switch command. Example:
+2026-10-31T00:50:19.2386642Z 
+2026-10-31T00:50:19.2386770Z   git switch -c <new-branch-name>
+2026-10-31T00:50:19.2386996Z 
+2026-10-31T00:50:19.2387150Z Or undo this operation with:
+2026-10-31T00:50:19.2387345Z 
+2026-10-31T00:50:19.2387466Z   git switch -
+2026-10-31T00:50:19.2387646Z 
+2026-10-31T00:50:19.2387948Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-10-31T00:50:19.2388344Z 
+2026-10-31T00:50:19.2388785Z HEAD is now at 3b5500a Merge 99a1d911bc7f7dda0b48462f573b6c74f7267c28 into 39e06ac3cc4547ad76763451e2fca1e7c8da3fdc
+2026-10-31T00:50:19.2402746Z ##[endgroup]
+2026-10-31T00:50:19.2450034Z [command]/usr/bin/git log -1 --format=%H
+2026-10-31T00:50:19.2478195Z 3b5500a2fce40e6020ede5e400fd0eee7b2075ad
+2026-10-31T00:50:19.2712857Z ##[group]Run actions/setup-node@v4
+2026-10-31T00:50:19.2713106Z with:
+2026-10-31T00:50:19.2713284Z   node-version: 22
+2026-10-31T00:50:19.2713469Z   cache: npm
+2026-10-31T00:50:19.2713732Z   cache-dependency-path: package-lock.json
+server/package-lock.json
+
+2026-10-31T00:50:19.2714040Z   always-auth: false
+2026-10-31T00:50:19.2714226Z   check-latest: false
+2026-10-31T00:50:19.2716325Z   token: ***
+2026-10-31T00:50:19.2716500Z ##[endgroup]
+2026-10-31T00:50:19.3898480Z Found in cache @ /opt/hostedtoolcache/node/22.23.4/x64
+2026-10-31T00:50:19.3902761Z (node:2130) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:19.3903489Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:19.3904892Z ##[group]Environment details
+2026-10-31T00:50:19.6751700Z node: v22.23.4
+2026-10-31T00:50:19.6752026Z npm: 10.9.9
+2026-10-31T00:50:19.6752285Z yarn: 1.22.22
+2026-10-31T00:50:19.6752948Z ##[endgroup]
+2026-10-31T00:50:19.6767527Z [command]/opt/hostedtoolcache/node/22.23.4/x64/bin/npm config get cache
+2026-10-31T00:50:19.7595422Z /home/runner/.npm
+2026-10-31T00:50:19.9980449Z Cache hit for: node-cache-Linux-x64-npm-49c9c2197aaa074bac6642d1c6c524e8bc63b921b50eb3440e9ab367d831c2b7
+2026-10-31T00:50:20.0065185Z (node:2130) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:21.2333626Z Received 46137344 of 87059028 (53.0%), 44.0 MBs/sec
+2026-10-31T00:50:21.4464688Z Received 87059028 of 87059028 (100.0%), 68.4 MBs/sec
+2026-10-31T00:50:21.4465143Z Cache Size: ~83 MB (87059028 B)
+2026-10-31T00:50:21.4485155Z [command]/usr/bin/tar -xf /home/runner/work/_temp/19a2a1ef-f2d0-4b06-af87-900ad58cb9db/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:21.5625340Z Cache restored successfully
+2026-10-31T00:50:21.5665012Z Cache restored from key: node-cache-Linux-x64-npm-49c9c2197aaa074bac6642d1c6c524e8bc63b921b50eb3440e9ab367d831c2b7
+2026-10-31T00:50:21.6464219Z ##[group]Run actions/cache@v4
+2026-10-31T00:50:21.6464441Z with:
+2026-10-31T00:50:21.6464625Z   path: node_modules
+server/node_modules
+
+2026-10-31T00:50:21.6465035Z   key: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:21.6465466Z   enableCrossOsArchive: false
+2026-10-31T00:50:21.6465683Z   fail-on-cache-miss: false
+2026-10-31T00:50:21.6465881Z   lookup-only: false
+2026-10-31T00:50:21.6466062Z   save-always: false
+2026-10-31T00:50:21.6466236Z ##[endgroup]
+2026-10-31T00:50:21.7377024Z (node:2190) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:21.7377911Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:21.9394098Z Cache hit for: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:21.9473694Z (node:2190) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:23.1440691Z Received 63048595 of 79825811 (79.0%), 60.1 MBs/sec
+2026-10-31T00:50:23.2233202Z Received 79825811 of 79825811 (100.0%), 70.5 MBs/sec
+2026-10-31T00:50:23.2235250Z Cache Size: ~76 MB (79825811 B)
+2026-10-31T00:50:23.2789037Z [command]/usr/bin/tar -xf /home/runner/work/_temp/4c29cdb6-a7ed-44bb-92ac-55596e034878/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:23.8156171Z Cache restored successfully
+2026-10-31T00:50:24.1247053Z Cache restored from key: installed-v1-Linux-X64-v22.23.4-165477924890a8021063c72bf9d4b6e77755d748c3fe9e81474a81e9bd4244ed
+2026-10-31T00:50:24.1907914Z ##[group]Run actions/cache@v4
+2026-10-31T00:50:24.1908147Z with:
+2026-10-31T00:50:24.1908328Z   path: ~/.cache/ms-playwright
+2026-10-31T00:50:24.1908695Z   key: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:24.1909074Z   enableCrossOsArchive: false
+2026-10-31T00:50:24.1909290Z   fail-on-cache-miss: false
+2026-10-31T00:50:24.1909491Z   lookup-only: false
+2026-10-31T00:50:24.1909675Z   save-always: false
+2026-10-31T00:50:24.1909858Z ##[endgroup]
+2026-10-31T00:50:24.2761953Z (node:2219) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:24.2762640Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:24.4888832Z Cache hit for: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:24.4979541Z (node:2219) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T00:50:25.7165474Z Received 46137344 of 284185847 (16.2%), 44.0 MBs/sec
+2026-10-31T00:50:26.7169646Z Received 150994944 of 284185847 (53.1%), 72.0 MBs/sec
+2026-10-31T00:50:27.7169856Z Received 268435456 of 284185847 (94.5%), 85.3 MBs/sec
+2026-10-31T00:50:27.9041188Z Received 284185847 of 284185847 (100.0%), 85.0 MBs/sec
+2026-10-31T00:50:27.9042454Z Cache Size: ~271 MB (284185847 B)
+2026-10-31T00:50:27.9131160Z [command]/usr/bin/tar -xf /home/runner/work/_temp/9811b410-e38a-46de-be7a-d728da4540ab/cache.tzst -P -C /home/runner/work/emberisle/emberisle --use-compress-program unzstd
+2026-10-31T00:50:28.8137908Z Cache restored successfully
+2026-10-31T00:50:28.8313606Z Cache restored from key: playwright-Linux-bcf554ecf856b82d17d36a206386fec07e0d6e51d01d425269ef0d723fac4c8f
+2026-10-31T00:50:28.8448044Z ##[group]Run npx playwright install --with-deps chromium
+2026-10-31T00:50:28.8448472Z [36;1mnpx playwright install --with-deps chromium[0m
+2026-10-31T00:50:28.8472519Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:50:28.8472756Z ##[endgroup]
+2026-10-31T00:50:29.7306518Z Installing dependencies...
+2026-10-31T00:50:29.7364639Z Switching to root user to install dependencies...
+2026-10-31T00:50:29.8028492Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-31T00:50:29.8309723Z Get:6 https://packages.microsoft.com/ubuntu/24.04/prod noble InRelease [3600 B]
+2026-10-31T00:50:29.8446941Z Hit:2 http://azure.archive.ubuntu.com/ubuntu noble InRelease
+2026-10-31T00:50:29.8468405Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble-updates InRelease [126 kB]
+2026-10-31T00:50:29.8499138Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble-backports InRelease [126 kB]
+2026-10-31T00:50:29.8533080Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble-security InRelease [126 kB]
+2026-10-31T00:50:29.9552681Z Get:7 https://packages.microsoft.com/ubuntu/24.04/prod noble/main amd64 Packages [682 kB]
+2026-10-31T00:50:29.9721385Z Get:8 https://packages.microsoft.com/ubuntu/24.04/prod noble/main arm64 Packages [617 kB]
+2026-10-31T00:50:30.0504398Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble-updates/main amd64 Packages [1408 kB]
+2026-10-31T00:50:30.0571778Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble-updates/main Translation-en [311 kB]
+2026-10-31T00:50:30.0611316Z Get:11 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe amd64 Packages [1708 kB]
+2026-10-31T00:50:30.0653619Z Get:12 http://azure.archive.ubuntu.com/ubuntu noble-updates/universe Translation-en [343 kB]
+2026-10-31T00:50:30.0739004Z Get:13 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted amd64 Packages [1813 kB]
+2026-10-31T00:50:30.0829173Z Get:14 http://azure.archive.ubuntu.com/ubuntu noble-updates/restricted Translation-en [412 kB]
+2026-10-31T00:50:30.0834997Z Get:15 http://azure.archive.ubuntu.com/ubuntu noble-updates/multiverse Translation-en [14.3 kB]
+2026-10-31T00:50:30.1422582Z Get:16 http://azure.archive.ubuntu.com/ubuntu noble-security/main amd64 Packages [1146 kB]
+2026-10-31T00:50:30.1471331Z Get:17 http://azure.archive.ubuntu.com/ubuntu noble-security/main Translation-en [231 kB]
+2026-10-31T00:50:30.1487845Z Get:18 http://azure.archive.ubuntu.com/ubuntu noble-security/universe amd64 Packages [1223 kB]
+2026-10-31T00:50:30.1978709Z Get:19 http://azure.archive.ubuntu.com/ubuntu noble-security/universe Translation-en [246 kB]
+2026-10-31T00:50:33.6069018Z Fetched 10.5 MB in 1s (11.1 MB/s)
+2026-10-31T00:50:34.4125051Z Reading package lists...
+2026-10-31T00:50:34.4388777Z Reading package lists...
+2026-10-31T00:50:34.6192566Z Building dependency tree...
+2026-10-31T00:50:34.6198564Z Reading state information...
+2026-10-31T00:50:34.7453929Z libasound2t64 is already the newest version (1.2.11-1ubuntu0.3).
+2026-10-31T00:50:34.7454619Z libasound2t64 set to manually installed.
+2026-10-31T00:50:34.7455359Z libatk-bridge2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:34.7456059Z libatk-bridge2.0-0t64 set to manually installed.
+2026-10-31T00:50:34.7456721Z libatk1.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:34.7457279Z libatk1.0-0t64 set to manually installed.
+2026-10-31T00:50:34.7457870Z libatspi2.0-0t64 is already the newest version (2.52.0-1build1).
+2026-10-31T00:50:34.7458403Z libatspi2.0-0t64 set to manually installed.
+2026-10-31T00:50:34.7458857Z libcairo2 is already the newest version (1.18.0-3build1).
+2026-10-31T00:50:34.7459374Z libcairo2 set to manually installed.
+2026-10-31T00:50:34.7459738Z libcups2t64 is already the newest version (2.4.7-1.2ubuntu7.14).
+2026-10-31T00:50:34.7460248Z libcups2t64 set to manually installed.
+2026-10-31T00:50:34.7460628Z libdbus-1-3 is already the newest version (1.14.10-4ubuntu4.1).
+2026-10-31T00:50:34.7461052Z libdbus-1-3 set to manually installed.
+2026-10-31T00:50:34.7461818Z libdrm2 is already the newest version (2.4.125-1ubuntu0.1~24.04.2).
+2026-10-31T00:50:34.7462408Z libdrm2 set to manually installed.
+2026-10-31T00:50:34.7462788Z libgbm1 is already the newest version (25.2.8-0ubuntu0.24.04.4).
+2026-10-31T00:50:34.7463180Z libgbm1 set to manually installed.
+2026-10-31T00:50:34.7463516Z libglib2.0-0t64 is already the newest version (2.80.0-6ubuntu3.10).
+2026-10-31T00:50:34.7463856Z libglib2.0-0t64 set to manually installed.
+2026-10-31T00:50:34.7464202Z libnspr4 is already the newest version (2:4.35-1.1build1).
+2026-10-31T00:50:34.7464516Z libnspr4 set to manually installed.
+2026-10-31T00:50:34.7464982Z libnss3 is already the newest version (2:3.98-1ubuntu0.3).
+2026-10-31T00:50:34.7465404Z libnss3 set to manually installed.
+2026-10-31T00:50:34.7465909Z libpango-1.0-0 is already the newest version (1.52.1+ds-1build1).
+2026-10-31T00:50:34.7466456Z libpango-1.0-0 set to manually installed.
+2026-10-31T00:50:34.7466947Z libx11-6 is already the newest version (2:1.8.7-1ubuntu0.1).
+2026-10-31T00:50:34.7467447Z libx11-6 set to manually installed.
+2026-10-31T00:50:34.7467764Z libxcb1 is already the newest version (1.15-1ubuntu2).
+2026-10-31T00:50:34.7468246Z libxcb1 set to manually installed.
+2026-10-31T00:50:34.7468769Z libxcomposite1 is already the newest version (1:0.4.5-1build3).
+2026-10-31T00:50:34.7469306Z libxcomposite1 set to manually installed.
+2026-10-31T00:50:34.7469835Z libxdamage1 is already the newest version (1:1.1.6-1build1).
+2026-10-31T00:50:34.7470454Z libxdamage1 set to manually installed.
+2026-10-31T00:50:34.7470795Z libxext6 is already the newest version (2:1.3.4-1build2).
+2026-10-31T00:50:34.7471112Z libxext6 set to manually installed.
+2026-10-31T00:50:34.7471491Z libxfixes3 is already the newest version (1:6.0.0-2build1).
+2026-10-31T00:50:34.7471972Z libxfixes3 set to manually installed.
+2026-10-31T00:50:34.7472516Z libxkbcommon0 is already the newest version (1.6.0-1build1).
+2026-10-31T00:50:34.7473064Z libxkbcommon0 set to manually installed.
+2026-10-31T00:50:34.7473598Z libxrandr2 is already the newest version (2:1.5.2-2build1).
+2026-10-31T00:50:34.7474104Z libxrandr2 set to manually installed.
+2026-10-31T00:50:34.7474633Z xvfb is already the newest version (2:21.1.12-1ubuntu1.9).
+2026-10-31T00:50:34.7475312Z fonts-noto-color-emoji is already the newest version (2.047-0ubuntu0.24.04.1).
+2026-10-31T00:50:34.7476026Z libfontconfig1 is already the newest version (2.15.0-1.1ubuntu2).
+2026-10-31T00:50:34.7476552Z libfontconfig1 set to manually installed.
+2026-10-31T00:50:34.7477127Z libfreetype6 is already the newest version (2.13.2+dfsg-1ubuntu0.2).
+2026-10-31T00:50:34.7477669Z libfreetype6 set to manually installed.
+2026-10-31T00:50:34.7478187Z fonts-liberation is already the newest version (1:2.1.5-3).
+2026-10-31T00:50:34.7478712Z fonts-liberation set to manually installed.
+2026-10-31T00:50:34.7479226Z The following additional packages will be installed:
+2026-10-31T00:50:34.7479690Z   xfonts-encodings xfonts-utils
+2026-10-31T00:50:34.7480196Z Recommended packages:
+2026-10-31T00:50:34.7480584Z   fonts-ipafont-mincho fonts-tlwg-loma
+2026-10-31T00:50:34.7616789Z The following NEW packages will be installed:
+2026-10-31T00:50:34.7617658Z   fonts-freefont-ttf fonts-ipafont-gothic fonts-tlwg-loma-otf fonts-unifont
+2026-10-31T00:50:34.7621770Z   fonts-wqy-zenhei xfonts-cyrillic xfonts-encodings xfonts-scalable
+2026-10-31T00:50:34.7622338Z   xfonts-utils
+2026-10-31T00:50:34.7788382Z 0 upgraded, 9 newly installed, 0 to remove and 6 not upgraded.
+2026-10-31T00:50:34.7788943Z Need to get 21.1 MB of archives.
+2026-10-31T00:50:34.7789511Z After this operation, 79.5 MB of additional disk space will be used.
+2026-10-31T00:50:34.7790296Z Get:1 file:/etc/apt/apt-mirrors.txt Mirrorlist [144 B]
+2026-10-31T00:50:34.8420763Z Get:2 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-ipafont-gothic all 00303-21ubuntu1 [3513 kB]
+2026-10-31T00:50:35.0330645Z Get:3 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 fonts-freefont-ttf all 20211204+svn4273-2 [5641 kB]
+2026-10-31T00:50:35.1701685Z Get:4 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-tlwg-loma-otf all 1:0.7.3-1 [107 kB]
+2026-10-31T00:50:35.2161952Z Get:5 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-unifont all 1:15.1.01-1build1 [2993 kB]
+2026-10-31T00:50:35.3080856Z Get:6 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 fonts-wqy-zenhei all 0.9.45-8 [7472 kB]
+2026-10-31T00:50:35.4549749Z Get:7 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-encodings all 1:1.0.5-0ubuntu2 [578 kB]
+2026-10-31T00:50:35.5030878Z Get:8 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-utils amd64 1:7.7+6build3 [94.4 kB]
+2026-10-31T00:50:35.5491091Z Get:9 http://azure.archive.ubuntu.com/ubuntu noble/universe amd64 xfonts-cyrillic all 1:1.0.5+nmu1 [384 kB]
+2026-10-31T00:50:35.5964417Z Get:10 http://azure.archive.ubuntu.com/ubuntu noble/main amd64 xfonts-scalable all 1:1.0.3-1.3 [304 kB]
+2026-10-31T00:50:35.8206687Z Fetched 21.1 MB in 1s (25.4 MB/s)
+2026-10-31T00:50:35.8410685Z Selecting previously unselected package fonts-ipafont-gothic.
+2026-10-31T00:50:35.8590843Z (Reading database ... 
+2026-10-31T00:50:35.8591589Z (Reading database ... 5%
+2026-10-31T00:50:35.8591857Z (Reading database ... 10%
+2026-10-31T00:50:35.8592088Z (Reading database ... 15%
+2026-10-31T00:50:35.8592378Z (Reading database ... 20%
+2026-10-31T00:50:35.8592686Z (Reading database ... 25%
+2026-10-31T00:50:35.8593010Z (Reading database ... 30%
+2026-10-31T00:50:35.8593235Z (Reading database ... 35%
+2026-10-31T00:50:35.8593459Z (Reading database ... 40%
+2026-10-31T00:50:35.8593686Z (Reading database ... 45%
+2026-10-31T00:50:35.8593891Z (Reading database ... 50%
+2026-10-31T00:50:35.8614737Z (Reading database ... 55%
+2026-10-31T00:50:35.9782441Z (Reading database ... 60%
+2026-10-31T00:50:36.1894148Z (Reading database ... 65%
+2026-10-31T00:50:36.3738632Z (Reading database ... 70%
+2026-10-31T00:50:36.5829067Z (Reading database ... 75%
+2026-10-31T00:50:36.7831143Z (Reading database ... 80%
+2026-10-31T00:50:36.8779892Z (Reading database ... 85%
+2026-10-31T00:50:36.9756572Z (Reading database ... 90%
+2026-10-31T00:50:37.0945003Z (Reading database ... 95%
+2026-10-31T00:50:37.0945434Z (Reading database ... 100%
+2026-10-31T00:50:37.0945826Z (Reading database ... 215504 files and directories currently installed.)
+2026-10-31T00:50:37.0986427Z Preparing to unpack .../0-fonts-ipafont-gothic_00303-21ubuntu1_all.deb ...
+2026-10-31T00:50:37.1136761Z Unpacking fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-31T00:50:37.3515242Z Selecting previously unselected package fonts-freefont-ttf.
+2026-10-31T00:50:37.3636299Z Preparing to unpack .../1-fonts-freefont-ttf_20211204+svn4273-2_all.deb ...
+2026-10-31T00:50:37.3642137Z Unpacking fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-31T00:50:37.4535329Z Selecting previously unselected package fonts-tlwg-loma-otf.
+2026-10-31T00:50:37.4657107Z Preparing to unpack .../2-fonts-tlwg-loma-otf_1%3a0.7.3-1_all.deb ...
+2026-10-31T00:50:37.4663011Z Unpacking fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-31T00:50:37.4854038Z Selecting previously unselected package fonts-unifont.
+2026-10-31T00:50:37.4972175Z Preparing to unpack .../3-fonts-unifont_1%3a15.1.01-1build1_all.deb ...
+2026-10-31T00:50:37.4978980Z Unpacking fonts-unifont (1:15.1.01-1build1) ...
+2026-10-31T00:50:37.6829017Z Selecting previously unselected package fonts-wqy-zenhei.
+2026-10-31T00:50:37.6950840Z Preparing to unpack .../4-fonts-wqy-zenhei_0.9.45-8_all.deb ...
+2026-10-31T00:50:37.7041084Z Unpacking fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-31T00:50:38.2416549Z Selecting previously unselected package xfonts-encodings.
+2026-10-31T00:50:38.2539234Z Preparing to unpack .../5-xfonts-encodings_1%3a1.0.5-0ubuntu2_all.deb ...
+2026-10-31T00:50:38.2545663Z Unpacking xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-31T00:50:38.3171909Z Selecting previously unselected package xfonts-utils.
+2026-10-31T00:50:38.3291398Z Preparing to unpack .../6-xfonts-utils_1%3a7.7+6build3_amd64.deb ...
+2026-10-31T00:50:38.3297073Z Unpacking xfonts-utils (1:7.7+6build3) ...
+2026-10-31T00:50:38.3764047Z Selecting previously unselected package xfonts-cyrillic.
+2026-10-31T00:50:38.3882247Z Preparing to unpack .../7-xfonts-cyrillic_1%3a1.0.5+nmu1_all.deb ...
+2026-10-31T00:50:38.3889277Z Unpacking xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-31T00:50:38.5010585Z Selecting previously unselected package xfonts-scalable.
+2026-10-31T00:50:38.5133655Z Preparing to unpack .../8-xfonts-scalable_1%3a1.0.3-1.3_all.deb ...
+2026-10-31T00:50:38.5139384Z Unpacking xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-31T00:50:38.6339311Z Setting up fonts-wqy-zenhei (0.9.45-8) ...
+2026-10-31T00:50:38.6959128Z Setting up fonts-freefont-ttf (20211204+svn4273-2) ...
+2026-10-31T00:50:38.6975744Z Setting up fonts-tlwg-loma-otf (1:0.7.3-1) ...
+2026-10-31T00:50:38.6991993Z Setting up xfonts-encodings (1:1.0.5-0ubuntu2) ...
+2026-10-31T00:50:38.7007076Z Setting up fonts-ipafont-gothic (00303-21ubuntu1) ...
+2026-10-31T00:50:38.7063423Z update-alternatives: using /usr/share/fonts/opentype/ipafont-gothic/ipag.ttf to provide /usr/share/fonts/truetype/fonts-japanese-gothic.ttf (fonts-japanese-gothic.ttf) in auto mode
+2026-10-31T00:50:38.7077465Z Setting up fonts-unifont (1:15.1.01-1build1) ...
+2026-10-31T00:50:38.7093241Z Setting up xfonts-utils (1:7.7+6build3) ...
+2026-10-31T00:50:38.7128148Z Setting up xfonts-cyrillic (1:1.0.5+nmu1) ...
+2026-10-31T00:50:38.7376787Z Setting up xfonts-scalable (1:1.0.3-1.3) ...
+2026-10-31T00:50:38.8865780Z Processing triggers for man-db (2.12.0-4build2) ...
+2026-10-31T00:50:38.9151153Z Not building database; man-db/auto-update is not 'true'.
+2026-10-31T00:50:38.9163407Z Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
+2026-10-31T00:50:39.6634863Z 
+2026-10-31T00:50:39.6635504Z Running kernel seems to be up-to-date.
+2026-10-31T00:50:39.6635827Z 
+2026-10-31T00:50:39.6636016Z No services need to be restarted.
+2026-10-31T00:50:39.6636234Z 
+2026-10-31T00:50:39.6636427Z No containers need to be restarted.
+2026-10-31T00:50:39.6636656Z 
+2026-10-31T00:50:39.6636872Z No user sessions are running outdated binaries.
+2026-10-31T00:50:39.6637155Z 
+2026-10-31T00:50:39.6637520Z No VM guests are running outdated hypervisor (qemu) binaries on this host.
+2026-10-31T00:50:40.5119347Z ##[group]Run actions/download-artifact@v4
+2026-10-31T00:50:40.5119599Z with:
+2026-10-31T00:50:40.5119770Z   name: dist
+2026-10-31T00:50:40.5119942Z   path: dist/
+2026-10-31T00:50:40.5120350Z   merge-multiple: false
+2026-10-31T00:50:40.5120568Z   repository: jarrodjohnson-gif/emberisle
+2026-10-31T00:50:40.5120802Z   run-id: 41152094265
+2026-10-31T00:50:40.5120995Z ##[endgroup]
+2026-10-31T00:50:40.6355153Z Downloading single artifact
+2026-10-31T00:50:40.6457618Z (node:2840) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T00:50:40.6458648Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T00:50:40.8667848Z Preparing to download the following artifacts:
+2026-10-31T00:50:40.8668545Z - dist (ID: 13023153396, Size: 3439210, Expected Digest: sha256:d2479e9b93986f842d8ce187243f8d441c4c408badb18e5e5758335fdf8f0d06)
+2026-10-31T00:50:41.1111077Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/24ce874e-0674-86f1-9ba5-807bbaca7d06/workflow-job-run-e8dd69d9-bf9e-5fb8-a958-7f234c70d772/artifacts/bcae0416621b3db43d8cba1e4454a792c7af9e4b7287e51056efc5a215d95839.zip
+2026-10-31T00:50:41.1112159Z Starting download of artifact to: /home/runner/work/emberisle/emberisle/dist
+2026-10-31T00:50:41.3676618Z (node:2840) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-31T00:50:41.8752467Z SHA256 digest of downloaded artifact is d2479e9b93986f842d8ce187243f8d441c4c408badb18e5e5758335fdf8f0d06
+2026-10-31T00:50:41.8753302Z Artifact download completed successfully.
+2026-10-31T00:50:41.8753767Z Total of 1 artifact(s) downloaded
+2026-10-31T00:50:41.8757302Z Download artifact has finished successfully
+2026-10-31T00:50:41.8902993Z ##[group]Run npm run hand-offer-prove
+2026-10-31T00:50:41.8903305Z [36;1mnpm run hand-offer-prove[0m
+2026-10-31T00:50:41.8921382Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:50:41.8921620Z ##[endgroup]
+2026-10-31T00:50:41.9701338Z 
+2026-10-31T00:50:41.9701861Z > hand-offer-prove
+2026-10-31T00:50:41.9702195Z > node scripts/hand-offer-prove.mjs
+2026-10-31T00:50:41.9702391Z 
+2026-10-31T00:50:45.9918141Z motion: received, answered, own and closed offers raise and clear the right cards
+2026-10-31T00:50:48.3541970Z reduced: received, answered, own and closed offers raise and clear the right cards
+2026-10-31T00:50:54.6693897Z short 844x390: a flash and an offer on one card never overlap, and the offer label returns
+2026-10-31T00:50:54.6811316Z hand offer prove ok
+2026-10-31T00:50:54.8360720Z ##[group]Run npm run chunk-fail-prove
+2026-10-31T00:50:54.8361050Z [36;1mnpm run chunk-fail-prove[0m
+2026-10-31T00:50:54.8378501Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:50:54.8378724Z ##[endgroup]
+2026-10-31T00:50:54.9156801Z 
+2026-10-31T00:50:54.9157323Z > chunk-fail-prove
+2026-10-31T00:50:54.9158327Z > node --import ./server/register.mjs scripts/chunk-fail-prove.mjs
+2026-10-31T00:50:54.9158732Z 
+2026-10-31T00:50:57.7301279Z ok   sheets: the title reloaded itself once on the failed prefetch and not again {"loads":2,"blocked":2}
+2026-10-31T00:51:00.7297287Z ok   sheets: Play renders the table with the chunk still failing {"screen":"play","header":true,"canvas":true,"rootChildren":1,"seats":4,"loads":2,"blocked":3}
+2026-10-31T00:51:01.2156032Z ok   sheets: How to play with the chunk failing opens nothing, closes its flag and leaves the table standing {"dialogs":0,"screen":"play","header":true}
+2026-10-31T00:51:03.3382229Z ok   sheets: once the route recovers, How to play opens on the next press {"loads":2}
+2026-10-31T00:51:03.4191551Z ok   sheets: no other page errors []
+2026-10-31T00:51:03.8075702Z ok   online: the session remembers the chunk URL it reloaded for ["http://127.0.0.1:8109/assets/online-ChXTrFOF.js"]
+2026-10-31T00:51:04.2422141Z ok   online: Host with the chunk failing shows the message and a Reload button, not a blank page {"screen":"lobby","text":"Couldn't load the table lobby.Reload","reload":true,"rootChildren":1,"loads":2,"blocked":3}
+2026-10-31T00:51:05.9001874Z ok   online: after Reload with the route recovered, the saved seat rejoins into a working lobby {"code":"PWZS","loads":3}
+2026-10-31T00:51:05.9034367Z ok   online: no other page errors []
+2026-10-31T00:51:07.2392699Z ok   join link: the code is still in the field after the stale-chunk reload {"value":"K7QP","loads":2}
+2026-10-31T00:51:10.9033286Z ok   title How to play: a refused press opens nothing and drops its flag
+2026-10-31T00:51:12.9501608Z ok   title How to play: the first press after the route recovers opens it
+2026-10-31T00:51:14.7354863Z ok   typing: no reload while focus is in the join-code input {"loads":1,"value":"K7","focused":true}
+2026-10-31T00:51:15.1709344Z ok   typing: the reload fires after focus leaves the field {"loads":2}
+2026-10-31T00:51:18.1996325Z ok   watch link: the field survived the reload; a later title starts empty with Play primary {"kept":"K7QP","value":"","watch":0}
+2026-10-31T00:51:18.1997627Z ok   watch link: the URL has no watch/code once Play left the title {"urlAfterPlay":"?host=ws%3A%2F%2F127.0.0.1%3A46527"}
+2026-10-31T00:51:19.1586870Z ok   watch link: a reload at the title does not refill the stale code {"value":""}
+2026-10-31T00:51:22.4449490Z ok   typing: a typed code is still in the field after the reload Join released {"before":1,"loads":2,"value":"K7QP"}
+2026-10-31T00:51:22.4490729Z ok   dev: chunkUrl matches .tsx URLs and still the built .js ones {"dev":"http://localhost:8080/src/components/game/online.tsx","built":"http://localhost/assets/online-AbCd1234.js"}
+2026-10-31T00:51:26.4329769Z ok   game over (practice): the chunk is asked for again, refused, and the winner line gets a focused Back to menu {"line":"Tide (bot) wins with 0 points.","button":"Back to menu","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true,"name":"Tide (bot)","blocked":4,"before":3,"loads":2}
+2026-10-31T00:51:27.5023835Z ok   game over (practice): failed How to play restores the same visible win fallback without reloading {"before":{"line":"Tide (bot) wins with 0 points.","button":"Back to menu","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true},"after":{"line":"Tide (bot) wins with 0 points.","button":"Back to menu","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true},"helpStates":[true,false,false,false],"blockedBefore":4,"blocked":6,"loadsBefore":2,"loads":2}
+2026-10-31T00:51:27.6877282Z ok   game over (practice): Back to menu reaches the title without a reload {"loads":2}
+2026-10-31T00:51:27.6881528Z ok   game over (practice): no other page errors []
+2026-10-31T00:51:31.6323253Z ok   game over (retry succeeds): the win screen opens with focus and the way-out button never mounts {"seen":["focus:win-menu"],"headline":"Tide (bot) wins","focusInside":true,"blocked":3,"before":3}
+2026-10-31T00:51:31.6324610Z ok   game over (retry succeeds): no other page errors []
+2026-10-31T00:51:33.5334982Z ok   game over (online): the rejoined seat finds the chunk refused, and the winner line gets a focused Reload inside the viewport {"line":"Sage wins with 0 points.","button":"Reload for the results","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true,"blocked":1,"loads":1}
+2026-10-31T00:51:34.4862992Z ok   game over (online): failed How to play restores the same visible win fallback without reloading {"before":{"line":"Sage wins with 0 points.","button":"Reload for the results","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true},"after":{"line":"Sage wins with 0 points.","button":"Reload for the results","focused":true,"inView":true,"dialogs":0,"screen":"play","header":true},"helpStates":[true,true,false,false,false],"blockedBefore":1,"blocked":3,"loadsBefore":1,"loads":1}
+2026-10-31T00:51:35.1896983Z ok   game over (online): Reload for the results rejoins into the finished table and the win screen shows the results {"headline":"Sage wins","rows":3,"fallback":0,"loads":2}
+2026-10-31T00:51:35.1897690Z ok   game over (online): no other page errors []
+2026-10-31T00:51:35.3977336Z chunk-fail prove ok
+2026-10-31T00:51:35.4352137Z ##[group]Run npm run idle-prove
+2026-10-31T00:51:35.4352416Z [36;1mnpm run idle-prove[0m
+2026-10-31T00:51:35.4369610Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:51:35.4369840Z ##[endgroup]
+2026-10-31T00:51:35.5146526Z 
+2026-10-31T00:51:35.5147029Z > idle-prove
+2026-10-31T00:51:35.5147401Z > node scripts/idle-prove.mjs
+2026-10-31T00:51:35.5147582Z 
+2026-10-31T00:51:40.8820742Z ok   title 30 fps gate (31..75 in 2 s) {"renders":60,"draws":60,"ms":2000}
+2026-10-31T00:51:44.2144652Z ok   idle: at most 30 renders in 2 s {"renders":24,"draws":24,"ms":2000}
+2026-10-31T00:51:44.2145548Z ok   window.__isle.renders counts every draw {"renders":24,"draws":24,"ms":2000}
+2026-10-31T00:51:46.2997024Z ok   drag: at least 3x idle in 2 s {"drag":{"draws":121,"ms":2069},"idle":24}
+2026-10-31T00:51:48.3020300Z ok   state push: at least 3x idle over its 1 s {"pushed":{"draws":60,"ms":1005,"held":1000.2999999999884},"idlePerSecond":12}
+2026-10-31T00:51:49.8834291Z ok   walk after idle: start is the real time (lag <= 10 ms) {"walking":true,"lagMs":0.2,"u":0.04133333333321332,"stale":68}
+2026-10-31T00:51:49.8835017Z ok   walk after idle: first frame progress < 50% {"walking":true,"lagMs":0.2,"u":0.04133333333321332,"stale":68}
+2026-10-31T00:51:51.1996039Z ok   reduced motion: a hop is in flight before the flip {"walk":true,"atTarget":false,"r0":498}
+2026-10-31T00:51:51.2283180Z ok   reduced motion: change event reached the page
+2026-10-31T00:51:51.2306862Z ok   reduced motion: the hop in flight lands at once {"walk":false,"atTarget":true}
+2026-10-31T00:51:54.2565662Z ok   reduced motion idle: at most 30 in 2 s {"renders":0,"draws":0,"ms":2000}
+2026-10-31T00:51:54.2566482Z ok   reduced motion idle: no mesh moved in 2 s {"meshes":230,"moved":[]}
+2026-10-31T00:51:54.2567262Z ok   reduced motion idle: at most 1 draw in 2 s {"renders":0,"draws":0,"ms":2000}
+2026-10-31T00:51:54.2806668Z ok   reduced motion: robber move places the wayfarer at once and draws {"walk":false,"atTarget":true,"r0":560}
+2026-10-31T00:51:57.3133725Z ok   reduced motion off: ambient motion resumes (more than 1 draw in 2 s) {"renders":24,"draws":24,"ms":2000}
+2026-10-31T00:51:57.3134195Z ok   no console errors []
+2026-10-31T00:51:57.3738342Z 
+2026-10-31T00:51:57.3739117Z idle-prove: all checks passed
+2026-10-31T00:51:57.4183349Z ##[group]Run npm run rotate-prove
+2026-10-31T00:51:57.4183652Z [36;1mnpm run rotate-prove[0m
+2026-10-31T00:51:57.4201848Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:51:57.4202085Z ##[endgroup]
+2026-10-31T00:51:57.4989616Z 
+2026-10-31T00:51:57.4990192Z > rotate-prove
+2026-10-31T00:51:57.4990602Z > node scripts/rotate-prove.mjs
+2026-10-31T00:51:57.4990778Z 
+2026-10-31T00:52:10.6702068Z ok   390x844 start: fitted to the hole {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:10.7300732Z ok   390x844 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:10.7986554Z ok   390x844 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+2026-10-31T00:52:10.7988368Z ok   390x844 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:10.8642386Z ok   390x844 -> 390x844: within 3 frames the fit is the one the new hole asks for {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:10.9301349Z ok   390x844 -> 390x844: island box within 10 % of a fresh load's {"got":{"x":42,"y":165,"w":306,"h":256},"fresh":{"x":42,"y":165,"w":306,"h":256},"ratio":[1,1]}
+2026-10-31T00:52:10.9311489Z ok   390x844 -> 390x844: settled, camera on the fit, not stretched, every corner in the hole {"size":"390x844","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:10.9929227Z ok   390x844 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:11.0675248Z ok   390x844 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+2026-10-31T00:52:11.0684578Z ok   390x844 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.1150729Z ok   360x640 start: fitted to the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.1677438Z ok   360x640 -> 640x360: within 3 frames the fit is the one the new hole asks for {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.2306327Z ok   360x640 -> 640x360: island box within 10 % of a fresh load's {"got":{"x":330,"y":102,"w":252,"h":211},"fresh":{"x":330,"y":102,"w":252,"h":211},"ratio":[1,1]}
+2026-10-31T00:52:23.2308036Z ok   360x640 -> 640x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.2814847Z ok   360x640 -> 360x640: within 3 frames the fit is the one the new hole asks for {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.3497910Z ok   360x640 -> 360x640: island box within 10 % of a fresh load's {"got":{"x":69,"y":98,"w":222,"h":186},"fresh":{"x":69,"y":98,"w":222,"h":186},"ratio":[1,1]}
+2026-10-31T00:52:23.3501413Z ok   360x640 -> 360x640: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.4005393Z ok   360x640 -> 640x360: within 3 frames the fit is the one the new hole asks for {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:23.4659267Z ok   360x640 -> 640x360: island box within 10 % of a fresh load's {"got":{"x":330,"y":102,"w":252,"h":211},"fresh":{"x":330,"y":102,"w":252,"h":211},"ratio":[1,1]}
+2026-10-31T00:52:23.4661307Z ok   360x640 -> 640x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"640x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.6182814Z ok   360x640 start: fitted to the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.6710843Z ok   360x640 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.7295248Z ok   360x640 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+2026-10-31T00:52:35.7296980Z ok   360x640 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.7822077Z ok   360x640 -> 360x640: within 3 frames the fit is the one the new hole asks for {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.8477811Z ok   360x640 -> 360x640: island box within 10 % of a fresh load's {"got":{"x":69,"y":98,"w":222,"h":186},"fresh":{"x":69,"y":98,"w":222,"h":186},"ratio":[1,1]}
+2026-10-31T00:52:35.8481194Z ok   360x640 -> 360x640: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x640","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.9068180Z ok   360x640 -> 844x390: within 3 frames the fit is the one the new hole asks for {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:35.9645135Z ok   360x640 -> 844x390: island box within 10 % of a fresh load's {"got":{"x":418,"y":106,"w":279,"h":234},"fresh":{"x":418,"y":106,"w":279,"h":234},"ratio":[1,1]}
+2026-10-31T00:52:35.9669262Z ok   360x640 -> 844x390: settled, camera on the fit, not stretched, every corner in the hole {"size":"844x390","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.2492389Z ok   430x932 start: fitted to the hole {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.3118663Z ok   430x932 -> 932x430: within 3 frames the fit is the one the new hole asks for {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.3800545Z ok   430x932 -> 932x430: island box within 10 % of a fresh load's {"got":{"x":454,"y":108,"w":297,"h":248},"fresh":{"x":454,"y":108,"w":297,"h":248},"ratio":[1,1]}
+2026-10-31T00:52:48.3830491Z ok   430x932 -> 932x430: settled, camera on the fit, not stretched, every corner in the hole {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.4492293Z ok   430x932 -> 430x932: within 3 frames the fit is the one the new hole asks for {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.5179364Z ok   430x932 -> 430x932: island box within 10 % of a fresh load's {"got":{"x":45,"y":220,"w":339,"h":284},"fresh":{"x":45,"y":220,"w":339,"h":284},"ratio":[1,1]}
+2026-10-31T00:52:48.5215340Z ok   430x932 -> 430x932: settled, camera on the fit, not stretched, every corner in the hole {"size":"430x932","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:52:48.5982223Z ok   430x932 -> 932x430: within 3 frames the fit is the one the new hole asks for {"size":"932x430","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+2026-10-31T00:52:48.9301709Z ok   430x932 -> 932x430: island box within 10 % of a fresh load's {"got":{"x":454,"y":108,"w":297,"h":248},"fresh":{"x":454,"y":108,"w":297,"h":248},"ratio":[1,1]}
+2026-10-31T00:52:48.9337986Z ok   430x932 -> 932x430: settled, camera on the fit, not stretched, every corner in the hole {"size":"932x430","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.0521997Z ok   360x740 start: fitted to the hole {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.1125399Z ok   360x740 -> 740x360: within 3 frames the fit is the one the new hole asks for {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.1814754Z ok   360x740 -> 740x360: island box within 10 % of a fresh load's {"got":{"x":380,"y":102,"w":252,"h":211},"fresh":{"x":380,"y":102,"w":252,"h":211},"ratio":[1,1]}
+2026-10-31T00:53:01.1816706Z ok   360x740 -> 740x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.2312646Z ok   360x740 -> 360x740: within 3 frames the fit is the one the new hole asks for {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.2969853Z ok   360x740 -> 360x740: island box within 10 % of a fresh load's {"got":{"x":40,"y":124,"w":281,"h":235},"fresh":{"x":40,"y":124,"w":281,"h":235},"ratio":[1,1]}
+2026-10-31T00:53:01.2985348Z ok   360x740 -> 360x740: settled, camera on the fit, not stretched, every corner in the hole {"size":"360x740","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.3464836Z ok   360x740 -> 740x360: within 3 frames the fit is the one the new hole asks for {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:01.4113567Z ok   360x740 -> 740x360: island box within 10 % of a fresh load's {"got":{"x":380,"y":102,"w":252,"h":211},"fresh":{"x":380,"y":102,"w":252,"h":211},"ratio":[1,1]}
+2026-10-31T00:53:01.4117756Z ok   360x740 -> 740x360: settled, camera on the fit, not stretched, every corner in the hole {"size":"740x360","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:13.6709331Z ok   414x896 start: fitted to the hole {"size":"414x896","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:13.7489300Z ok   414x896 -> 896x414: within 3 frames the fit is the one the new hole asks for {"size":"896x414","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+2026-10-31T00:53:14.0632124Z ok   414x896 -> 896x414: island box within 10 % of a fresh load's {"got":{"x":443,"y":107,"w":282,"h":236},"fresh":{"x":443,"y":107,"w":282,"h":236},"ratio":[1,1]}
+2026-10-31T00:53:14.0635575Z ok   414x896 -> 896x414: settled, camera on the fit, not stretched, every corner in the hole {"size":"896x414","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:14.1303207Z ok   414x896 -> 414x896: within 3 frames the fit is the one the new hole asks for {"size":"414x896","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:14.1995204Z ok   414x896 -> 414x896: island box within 10 % of a fresh load's {"got":{"x":44,"y":207,"w":326,"h":273},"fresh":{"x":44,"y":207,"w":326,"h":273},"ratio":[1,1]}
+2026-10-31T00:53:14.2004446Z ok   414x896 -> 414x896: settled, camera on the fit, not stretched, every corner in the hole {"size":"414x896","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:14.2601873Z ok   414x896 -> 896x414: within 3 frames the fit is the one the new hole asks for {"size":"896x414","view":"overhead","fresh":true,"onCamera":false,"stretched":false,"outside":0,"due":false,"glide":true}
+2026-10-31T00:53:14.5979856Z ok   414x896 -> 896x414: island box within 10 % of a fresh load's {"got":{"x":443,"y":107,"w":282,"h":236},"fresh":{"x":443,"y":107,"w":282,"h":236},"ratio":[1,1]}
+2026-10-31T00:53:14.5989951Z ok   414x896 -> 896x414: settled, camera on the fit, not stretched, every corner in the hole {"size":"896x414","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.6873170Z ok   375x667 start: fitted to the hole {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.7442210Z ok   375x667 -> 667x375: within 3 frames the fit is the one the new hole asks for {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.8106492Z ok   375x667 -> 667x375: island box within 10 % of a fresh load's {"got":{"x":337,"y":104,"w":266,"h":223},"fresh":{"x":337,"y":104,"w":266,"h":223},"ratio":[1,1]}
+2026-10-31T00:53:26.8107865Z ok   375x667 -> 667x375: settled, camera on the fit, not stretched, every corner in the hole {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.8711823Z ok   375x667 -> 375x667: within 3 frames the fit is the one the new hole asks for {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.9323275Z ok   375x667 -> 375x667: island box within 10 % of a fresh load's {"got":{"x":64,"y":102,"w":246,"h":206},"fresh":{"x":64,"y":102,"w":246,"h":206},"ratio":[1,1]}
+2026-10-31T00:53:26.9326382Z ok   375x667 -> 375x667: settled, camera on the fit, not stretched, every corner in the hole {"size":"375x667","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:26.9812589Z ok   375x667 -> 667x375: within 3 frames the fit is the one the new hole asks for {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:27.0472731Z ok   375x667 -> 667x375: island box within 10 % of a fresh load's {"got":{"x":337,"y":104,"w":266,"h":223},"fresh":{"x":337,"y":104,"w":266,"h":223},"ratio":[1,1]}
+2026-10-31T00:53:27.0486577Z ok   375x667 -> 667x375: settled, camera on the fit, not stretched, every corner in the hole {"size":"667x375","view":"overhead","fresh":true,"onCamera":true,"stretched":false,"outside":0,"due":false,"glide":false}
+2026-10-31T00:53:27.0650826Z ok   zero console errors []
+2026-10-31T00:53:27.0653214Z rotate-prove: ok
+2026-10-31T00:53:27.2152573Z ##[group]Run npm run banner-stable-prove
+2026-10-31T00:53:27.2152913Z [36;1mnpm run banner-stable-prove[0m
+2026-10-31T00:53:27.2170564Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:53:27.2170800Z ##[endgroup]
+2026-10-31T00:53:27.2967818Z 
+2026-10-31T00:53:27.2968315Z > banner-stable-prove
+2026-10-31T00:53:27.2968678Z > node scripts/banner-stable-prove.mjs
+2026-10-31T00:53:27.2968873Z 
+2026-10-31T00:53:30.9832016Z ok   1280x720 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":18,"w":247.15625,"h":32,"over":false},"shown":{"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}}
+2026-10-31T00:53:30.9834209Z ok   1280x720 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000},"clearedAgain":{"x":12,"y":18,"w":247.15625,"h":32,"over":false}}
+2026-10-31T00:53:30.9836261Z ok   1280x720 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}
+2026-10-31T00:53:30.9838094Z ok   1280x720 motion: the status line stays inside the safe area {"left":280,"right":1000,"safeRight":1280}
+2026-10-31T00:53:35.4606644Z ok   1280x720 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":18,"w":247.15625,"h":32,"over":false},"shown":{"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}}
+2026-10-31T00:53:35.4622395Z ok   1280x720 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000},"clearedAgain":{"x":12,"y":18,"w":247.15625,"h":32,"over":false}}
+2026-10-31T00:53:35.4627866Z ok   1280x720 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":18,"w":247.15625,"h":32,"over":false,"pillLeft":280,"pillRight":1000}
+2026-10-31T00:53:35.4629816Z ok   1280x720 reduced motion: the status line stays inside the safe area {"left":280,"right":1000,"safeRight":1280}
+2026-10-31T00:53:37.7892153Z ok   390x844 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":582,"w":366,"h":32,"over":false},"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}}
+2026-10-31T00:53:37.7894166Z ok   390x844 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378},"clearedAgain":{"x":12,"y":582,"w":366,"h":32,"over":false}}
+2026-10-31T00:53:37.7895923Z ok   390x844 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}
+2026-10-31T00:53:37.7897065Z ok   390x844 motion: the status line stays inside the safe area {"left":12,"right":378,"safeRight":390}
+2026-10-31T00:53:41.6592382Z ok   390x844 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":582,"w":366,"h":32,"over":false},"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}}
+2026-10-31T00:53:41.6596624Z ok   390x844 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378},"clearedAgain":{"x":12,"y":582,"w":366,"h":32,"over":false}}
+2026-10-31T00:53:41.6600298Z ok   390x844 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":582,"w":366,"h":32,"over":false,"pillLeft":12,"pillRight":378}
+2026-10-31T00:53:41.6601564Z ok   390x844 reduced motion: the status line stays inside the safe area {"left":12,"right":378,"safeRight":390}
+2026-10-31T00:53:43.6095816Z ok   844x390 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":146,"w":260,"h":32,"over":false},"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760}}
+2026-10-31T00:53:43.6097576Z ok   844x390 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760},"clearedAgain":{"x":12,"y":146,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:43.6098638Z ok   844x390 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760}
+2026-10-31T00:53:43.6099345Z ok   844x390 motion: the status line stays inside the safe area {"left":284,"right":760,"safeRight":844}
+2026-10-31T00:53:46.3860969Z ok   844x390 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":146,"w":260,"h":32,"over":false},"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760}}
+2026-10-31T00:53:46.3863234Z ok   844x390 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760},"clearedAgain":{"x":12,"y":146,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:46.3866072Z ok   844x390 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":146,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":760}
+2026-10-31T00:53:46.3869978Z ok   844x390 reduced motion: the status line stays inside the safe area {"left":284,"right":760,"safeRight":844}
+2026-10-31T00:53:48.6120725Z ok   667x375 motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":131,"w":260,"h":32,"over":false},"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}}
+2026-10-31T00:53:48.6122277Z ok   667x375 motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583},"clearedAgain":{"x":12,"y":131,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:48.6123438Z ok   667x375 motion: the status line covers neither the turn banner nor the hand {"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}
+2026-10-31T00:53:48.6124146Z ok   667x375 motion: the status line stays inside the safe area {"left":284,"right":583,"safeRight":667}
+2026-10-31T00:53:52.4395042Z ok   667x375 reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":12,"y":131,"w":260,"h":32,"over":false},"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}}
+2026-10-31T00:53:52.4435289Z ok   667x375 reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583},"clearedAgain":{"x":12,"y":131,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:52.4532164Z ok   667x375 reduced motion: the status line covers neither the turn banner nor the hand {"x":12,"y":131,"w":260,"h":32,"over":false,"pillLeft":284,"pillRight":583}
+2026-10-31T00:53:52.4535574Z ok   667x375 reduced motion: the status line stays inside the safe area {"left":284,"right":583,"safeRight":667}
+2026-10-31T00:53:54.2836363Z ok   667x375 notched motion: turn banner box unchanged when the status line appears {"cleared":{"x":44,"y":122,"w":260,"h":32,"over":false},"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}}
+2026-10-31T00:53:54.2838493Z ok   667x375 notched motion: turn banner box unchanged when the status line clears {"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551},"clearedAgain":{"x":44,"y":122,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:54.2840436Z ok   667x375 notched motion: the status line covers neither the turn banner nor the hand {"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}
+2026-10-31T00:53:54.2841713Z ok   667x375 notched motion: the status line stays inside the safe area {"left":316,"right":551,"safeRight":623}
+2026-10-31T00:53:58.1807805Z ok   667x375 notched reduced motion: turn banner box unchanged when the status line appears {"cleared":{"x":44,"y":122,"w":260,"h":32,"over":false},"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}}
+2026-10-31T00:53:58.1810364Z ok   667x375 notched reduced motion: turn banner box unchanged when the status line clears {"shown":{"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551},"clearedAgain":{"x":44,"y":122,"w":260,"h":32,"over":false}}
+2026-10-31T00:53:58.1812048Z ok   667x375 notched reduced motion: the status line covers neither the turn banner nor the hand {"x":44,"y":122,"w":260,"h":32,"over":false,"pillLeft":316,"pillRight":551}
+2026-10-31T00:53:58.1813210Z ok   667x375 notched reduced motion: the status line stays inside the safe area {"left":316,"right":551,"safeRight":623}
+2026-10-31T00:53:58.1922787Z ok   zero console errors []
+2026-10-31T00:53:58.1960890Z banner-stable-prove: ok
+2026-10-31T00:53:58.3031375Z ##[group]Run npm run roll-moment-prove
+2026-10-31T00:53:58.3031687Z [36;1mnpm run roll-moment-prove[0m
+2026-10-31T00:53:58.3049163Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:53:58.3049395Z ##[endgroup]
+2026-10-31T00:53:58.3864329Z 
+2026-10-31T00:53:58.3865188Z > roll-moment-prove
+2026-10-31T00:53:58.3865654Z > node scripts/roll-moment-prove.mjs
+2026-10-31T00:53:58.3865941Z 
+2026-10-31T00:54:18.3442216Z ok   practice 1280x720: through the roll-off and setup, one moment per bot roll and no other (3 for 3)
+2026-10-31T00:54:18.8284660Z practice 1280x720: guaranteed owned 6/8 overlap, rolled 3+3
+2026-10-31T00:54:19.9610731Z practice 1280x720 your roll: rolled 3+3=6; up 158 ms after the roll was applied (stalled 148), frame 0 after it; gone at 1343 ms (stalled 588); centre 640/1280, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+2026-10-31T00:54:19.9612683Z ok   practice 1280x720 your roll: the moment mounts in the same frame the roll is applied (0 frames later)
+2026-10-31T00:54:19.9613758Z ok   practice 1280x720 your roll: up within 200 ms of the roll being applied (158 ms, 148 of them stalled)
+2026-10-31T00:54:19.9614759Z ok   practice 1280x720 your roll: the raw time up is within a loose 350 ms cap (158 ms), stall included
+2026-10-31T00:54:19.9615706Z ok   practice 1280x720 your roll: the moment shows the rolled faces 3,3 and sum 6
+2026-10-31T00:54:19.9617061Z ok   practice 1280x720 your roll: centred horizontally (640 of 1280, ±10 %)
+2026-10-31T00:54:19.9619672Z ok   practice 1280x720 your roll: centred vertically (360 of 720, ±10 %)
+2026-10-31T00:54:19.9620822Z ok   practice 1280x720 your roll: the sum is 56px (≥ 48)
+2026-10-31T00:54:19.9621726Z ok   practice 1280x720 your roll: the sum is ink (rgb(38, 61, 60))
+2026-10-31T00:54:19.9622781Z ok   practice 1280x720 your roll: while it is up the roll is on screen once (["roll-sum"])
+2026-10-31T00:54:19.9623782Z ok   practice 1280x720 your roll: gone by 1400 ms of the roll being applied (1343 ms, 588 of them stalled)
+2026-10-31T00:54:19.9624648Z ok   practice 1280x720 your roll: the resting row shows the same faces (3,3)
+2026-10-31T00:54:19.9625516Z ok   practice 1280x720 your roll: afterwards the sum is on screen once, in the row (["dice-row"])
+2026-10-31T00:54:19.9626287Z ok   practice 1280x720 your roll: one persistent roll event and no duplicate goods banner
+2026-10-31T00:54:19.9627628Z practice 1280x720 your roll: flight {"hold":"1122","stalledHold":"588","flight":"221","stalledFlight":"0","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[246,96],"landed":["92.3","36.0"],"row":["96.9","36.0"],"off":"0.0"}
+2026-10-31T00:54:19.9628553Z ok   practice 1280x720 your roll: one flight: 220 ms, no delay, --ease-out, fill forwards
+2026-10-31T00:54:19.9629106Z ok   practice 1280x720 your roll: the flight starts after the 900 ms hold (1122 ms, 588 stalled)
+2026-10-31T00:54:19.9629668Z ok   practice 1280x720 your roll: the moment goes when its 220 ms flight ends (221 ms, 0 stalled)
+2026-10-31T00:54:19.9630448Z ok   practice 1280x720 your roll: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+2026-10-31T00:54:19.9631152Z ok   practice 1280x720 your roll: it starts large and shrinks into the row (246 → 97 px)
+2026-10-31T00:54:26.0713784Z practice 1280x720: 7 rolls, moments for rolls [1,2,3,4,5,6,7], read out ["Tide (bot) rolled 2 and 3: 5.","Dune (bot) rolled 4 and 6: 10.","Pine (bot) rolled 6 and 3: 9.","You rolled 3 and 3: 6.","Tide (bot) rolled 5 and 3: 8.","Dune (bot) rolled 1 and 3: 4.","Pine (bot) rolled 4 and 6: 10."]
+2026-10-31T00:54:26.0715631Z ok   practice 1280x720: exactly one moment per roll, the person's and the bots' (7 for 7)
+2026-10-31T00:54:26.0716509Z ok   practice 1280x720: each roll read out once, "You" for the person's, the name for a bot's
+2026-10-31T00:54:26.6420814Z practice 1280x720: key skip, gone 2 ms after the press, page heard it 1×
+2026-10-31T00:54:26.6422318Z ok   practice 1280x720: a key press skips the moment and still reaches the page
+2026-10-31T00:54:26.6466340Z ok   practice 1280x720: after a skip the resting row shows
+2026-10-31T00:54:28.7228191Z practice 1280x720: pushed states {"loaded":0,"one":1,"jump":0,"seven":7,"color":"rgb(179, 38, 30)","said":["Ember rolled 6 and 1: 7."],"roller":"Ember"}
+2026-10-31T00:54:28.7231518Z ok   practice 1280x720: a table loaded with dice already on it shows no moment
+2026-10-31T00:54:28.7232330Z ok   practice 1280x720: a pushed roll shows one moment, a jump of two rolls none
+2026-10-31T00:54:28.7232933Z ok   practice 1280x720: a 7 shows in danger
+2026-10-31T00:54:28.7233571Z ok   practice 1280x720: a watcher hears the roll once, by the roller's name
+2026-10-31T00:54:44.7101539Z ok   practice 390x844: through the roll-off and setup, one moment per bot roll and no other (2 for 2)
+2026-10-31T00:54:45.1108498Z practice 390x844: guaranteed owned 6/8 overlap, rolled 4+4
+2026-10-31T00:54:46.2782678Z practice 390x844 your roll: rolled 4+4=8; up 98 ms after the roll was applied (stalled 88), frame 0 after it; gone at 1217 ms (stalled 412); centre 195/390, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+2026-10-31T00:54:46.2787611Z ok   practice 390x844 your roll: the moment mounts in the same frame the roll is applied (0 frames later)
+2026-10-31T00:54:46.2791830Z ok   practice 390x844 your roll: up within 200 ms of the roll being applied (98 ms, 88 of them stalled)
+2026-10-31T00:54:46.2799895Z ok   practice 390x844 your roll: the raw time up is within a loose 350 ms cap (98 ms), stall included
+2026-10-31T00:54:46.2803548Z ok   practice 390x844 your roll: the moment shows the rolled faces 4,4 and sum 8
+2026-10-31T00:54:46.2804855Z ok   practice 390x844 your roll: centred horizontally (195 of 390, ±10 %)
+2026-10-31T00:54:46.2806157Z ok   practice 390x844 your roll: centred vertically (422 of 844, ±10 %)
+2026-10-31T00:54:46.2809111Z ok   practice 390x844 your roll: the sum is 56px (≥ 48)
+2026-10-31T00:54:46.2811492Z ok   practice 390x844 your roll: the sum is ink (rgb(38, 61, 60))
+2026-10-31T00:54:46.2813894Z ok   practice 390x844 your roll: while it is up the roll is on screen once (["roll-sum"])
+2026-10-31T00:54:46.2815020Z ok   practice 390x844 your roll: gone by 1400 ms of the roll being applied (1217 ms, 412 of them stalled)
+2026-10-31T00:54:46.2815904Z ok   practice 390x844 your roll: the resting row shows the same faces (4,4)
+2026-10-31T00:54:46.2816818Z ok   practice 390x844 your roll: afterwards the sum is on screen once, in the row (["dice-row"])
+2026-10-31T00:54:46.2817882Z ok   practice 390x844 your roll: one persistent roll event and no duplicate goods banner
+2026-10-31T00:54:46.2819683Z practice 390x844 your roll: flight {"hold":"996","stalledHold":"412","flight":"221","stalledFlight":"0","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[246,96],"landed":["92.3","36.0"],"row":["96.9","36.0"],"off":"0.0"}
+2026-10-31T00:54:46.2821354Z ok   practice 390x844 your roll: one flight: 220 ms, no delay, --ease-out, fill forwards
+2026-10-31T00:54:46.2822265Z ok   practice 390x844 your roll: the flight starts after the 900 ms hold (996 ms, 412 stalled)
+2026-10-31T00:54:46.2823218Z ok   practice 390x844 your roll: the moment goes when its 220 ms flight ends (221 ms, 0 stalled)
+2026-10-31T00:54:46.2824227Z ok   practice 390x844 your roll: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+2026-10-31T00:54:46.2825328Z ok   practice 390x844 your roll: it starts large and shrinks into the row (246 → 97 px)
+2026-10-31T00:54:53.5741670Z practice 390x844: 6 rolls, moments for rolls [1,2,3,4,5,6], read out ["Pine (bot) rolled 1 and 3: 4.","Tide (bot) rolled 1 and 5: 6.","You rolled 4 and 4: 8.","Dune (bot) rolled 6 and 1: 7.","Pine (bot) rolled 5 and 3: 8.","Tide (bot) rolled 3 and 6: 9."]
+2026-10-31T00:54:53.5742611Z ok   practice 390x844: exactly one moment per roll, the person's and the bots' (6 for 6)
+2026-10-31T00:54:53.5743589Z ok   practice 390x844: each roll read out once, "You" for the person's, the name for a bot's
+2026-10-31T00:54:53.8162346Z practice 390x844: tap skip, gone 1 ms after the press, page heard it 1×
+2026-10-31T00:54:53.8166840Z ok   practice 390x844: a touch pointerdown skips the moment and still reaches the page
+2026-10-31T00:54:53.8197943Z ok   practice 390x844: after a skip the resting row shows
+2026-10-31T00:54:55.7060202Z practice 390x844: pushed states {"loaded":0,"one":1,"jump":0,"seven":7,"color":"rgb(179, 38, 30)","said":["Ember rolled 6 and 1: 7."],"roller":"Ember"}
+2026-10-31T00:54:55.7073386Z ok   practice 390x844: a table loaded with dice already on it shows no moment
+2026-10-31T00:54:55.7147437Z ok   practice 390x844: a pushed roll shows one moment, a jump of two rolls none
+2026-10-31T00:54:55.7240896Z ok   practice 390x844: a 7 shows in danger
+2026-10-31T00:54:55.7271063Z ok   practice 390x844: a watcher hears the roll once, by the roller's name
+2026-10-31T00:55:02.2101137Z hotseat 1280x720: rolled 1+3=4; up 102 ms after the roll was applied (stalled 92), frame 0 after it; gone at 1228 ms (stalled 104); centre 640/1280, sum 56px rgb(38, 61, 60), animation roll-in; shown then ["roll-sum"], after ["dice-row"]; banner null
+2026-10-31T00:55:02.2102788Z ok   hotseat 1280x720: the moment mounts in the same frame the roll is applied (0 frames later)
+2026-10-31T00:55:02.2103758Z ok   hotseat 1280x720: up within 200 ms of the roll being applied (102 ms, 92 of them stalled)
+2026-10-31T00:55:02.2104672Z ok   hotseat 1280x720: the raw time up is within a loose 350 ms cap (102 ms), stall included
+2026-10-31T00:55:02.2105466Z ok   hotseat 1280x720: the moment shows the rolled faces 1,3 and sum 4
+2026-10-31T00:55:02.2106451Z ok   hotseat 1280x720: centred horizontally (640 of 1280, ±10 %)
+2026-10-31T00:55:02.2107168Z ok   hotseat 1280x720: centred vertically (360 of 720, ±10 %)
+2026-10-31T00:55:02.2107796Z ok   hotseat 1280x720: the sum is 56px (≥ 48)
+2026-10-31T00:55:02.2108334Z ok   hotseat 1280x720: the sum is ink (rgb(38, 61, 60))
+2026-10-31T00:55:02.2108984Z ok   hotseat 1280x720: while it is up the roll is on screen once (["roll-sum"])
+2026-10-31T00:55:02.2109811Z ok   hotseat 1280x720: gone by 1400 ms of the roll being applied (1228 ms, 104 of them stalled)
+2026-10-31T00:55:02.2110713Z ok   hotseat 1280x720: the resting row shows the same faces (1,3)
+2026-10-31T00:55:02.2111490Z ok   hotseat 1280x720: afterwards the sum is on screen once, in the row (["dice-row"])
+2026-10-31T00:55:02.2112293Z ok   hotseat 1280x720: one persistent roll event and no duplicate goods banner
+2026-10-31T00:55:02.2114891Z hotseat 1280x720: flight {"hold":"1007","stalledHold":"104","flight":"221","stalledFlight":"0","duration":220,"delay":0,"easing":"cubic-bezier(0.22, 1, 0.36, 1)","fill":"forwards","from":[246,96],"landed":["92.3","36.0"],"row":["96.9","36.0"],"off":"0.0"}
+2026-10-31T00:55:02.2116308Z ok   hotseat 1280x720: one flight: 220 ms, no delay, --ease-out, fill forwards
+2026-10-31T00:55:02.2117101Z ok   hotseat 1280x720: the flight starts after the 900 ms hold (1007 ms, 104 stalled)
+2026-10-31T00:55:02.2117942Z ok   hotseat 1280x720: the moment goes when its 220 ms flight ends (221 ms, 0 stalled)
+2026-10-31T00:55:02.2118819Z ok   hotseat 1280x720: the last keyframe lands on the resting row (centre off 0.0 px, size fits)
+2026-10-31T00:55:02.2119607Z ok   hotseat 1280x720: it starts large and shrinks into the row (246 → 97 px)
+2026-10-31T00:55:02.2152404Z ok   hotseat 1280x720: read out once by the seat's name (["Seat 2 rolled 1 and 3: 4."])
+2026-10-31T00:55:08.4831087Z animate throws 1280x720: gone at 1218 ms
+2026-10-31T00:55:08.4842049Z ok   animate throws 1280x720: animate was called and threw
+2026-10-31T00:55:08.4842859Z ok   animate throws 1280x720: the moment still goes when the flight cannot start (1218 ms)
+2026-10-31T00:55:30.8803289Z reduced motion 1280x720: rolled 2+4=6; up 109 ms after the roll was applied (stalled 99), frame 0 after it; gone at 1005 ms (stalled 168); centre 640/1280, sum 56px rgb(38, 61, 60), animation none; shown then ["roll-sum"], after ["dice-row"]; banner null
+2026-10-31T00:55:30.8822840Z ok   reduced motion 1280x720: the moment mounts in the same frame the roll is applied (0 frames later)
+2026-10-31T00:55:30.8823804Z ok   reduced motion 1280x720: up within 200 ms of the roll being applied (109 ms, 99 of them stalled)
+2026-10-31T00:55:30.8824952Z ok   reduced motion 1280x720: the raw time up is within a loose 350 ms cap (109 ms), stall included
+2026-10-31T00:55:30.8825717Z ok   reduced motion 1280x720: the moment shows the rolled faces 2,4 and sum 6
+2026-10-31T00:55:30.8826714Z ok   reduced motion 1280x720: centred horizontally (640 of 1280, ±10 %)
+2026-10-31T00:55:30.8827424Z ok   reduced motion 1280x720: centred vertically (360 of 720, ±10 %)
+2026-10-31T00:55:30.8828064Z ok   reduced motion 1280x720: the sum is 56px (≥ 48)
+2026-10-31T00:55:30.8828565Z ok   reduced motion 1280x720: the sum is ink (rgb(38, 61, 60))
+2026-10-31T00:55:30.8829208Z ok   reduced motion 1280x720: while it is up the roll is on screen once (["roll-sum"])
+2026-10-31T00:55:30.8830010Z ok   reduced motion 1280x720: gone by 1400 ms of the roll being applied (1005 ms, 168 of them stalled)
+2026-10-31T00:55:30.8845146Z ok   reduced motion 1280x720: the resting row shows the same faces (2,4)
+2026-10-31T00:55:30.8845895Z ok   reduced motion 1280x720: afterwards the sum is on screen once, in the row (["dice-row"])
+2026-10-31T00:55:30.8846660Z ok   reduced motion 1280x720: one persistent roll event and no duplicate goods banner
+2026-10-31T00:55:30.8847370Z ok   reduced motion 1280x720: reduced motion, no flight (0)
+2026-10-31T00:55:30.8847946Z ok   reduced motion 1280x720: reduced motion, no entry animation (none)
+2026-10-31T00:55:30.8848672Z ok   reduced motion 1280x720: reduced motion, it holds about 900 ms and goes (1005 ms)
+2026-10-31T00:55:30.8926953Z ok   zero console errors
+2026-10-31T00:55:34.6665488Z roll-moment-prove: all passed
+2026-10-31T00:55:34.7028035Z ##[group]Run npm run goods-log-prove
+2026-10-31T00:55:34.7028336Z [36;1mnpm run goods-log-prove[0m
+2026-10-31T00:55:34.7045995Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:55:34.7046221Z ##[endgroup]
+2026-10-31T00:55:34.7797378Z 
+2026-10-31T00:55:34.7797921Z > goods-log-prove
+2026-10-31T00:55:34.7798415Z > node scripts/goods-log-prove.mjs
+2026-10-31T00:55:34.7798700Z 
+2026-10-31T00:55:39.1515736Z ok 390x844: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+2026-10-31T00:55:42.0907615Z ok 1280x720: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+2026-10-31T00:55:45.9668201Z ok 390x844 reduced: ten ordered events, one line each; all four public fortunes; private theft/discard/bought-kind protected; 200 rows; latest HUD line
+2026-10-31T00:55:45.9783527Z goods-log-prove: all passed
+2026-10-31T00:55:46.5539328Z ##[group]Run npm run stage-prove
+2026-10-31T00:55:46.5539606Z [36;1mnpm run stage-prove[0m
+2026-10-31T00:55:46.5557371Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:55:46.5557614Z ##[endgroup]
+2026-10-31T00:55:46.6321657Z 
+2026-10-31T00:55:46.6322239Z > stage-prove
+2026-10-31T00:55:46.6322638Z > node scripts/stage-prove.mjs
+2026-10-31T00:55:46.6322822Z 
+2026-10-31T00:55:48.1394718Z ok  initial clear centre: no cover {"label":"initial clear centre","area":{"x":12,"y":100,"width":366,"height":288,"top":100,"bottom":388,"left":12,"right":378},"moment":{"x":85,"y":210.5,"width":220,"height":67,"top":210.5,"bottom":277.5,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+2026-10-31T00:55:48.1396929Z ok  initial clear centre: visible cue stays inside hole {"top":210.5,"bottom":277.5}
+2026-10-31T00:55:48.1397652Z ok  initial clear centre: centre restored "centre"
+2026-10-31T00:55:48.1399342Z ok  same-size position refit: first frame: no cover {"label":"same-size position refit: first frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+2026-10-31T00:55:48.1402092Z ok  same-size position refit: first frame: visible cue stays inside hole {"top":545,"bottom":612}
+2026-10-31T00:55:48.1403045Z ok  same-size position refit: first frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+2026-10-31T00:55:48.1405681Z ok  same-size position refit: next frame: no cover {"label":"same-size position refit: next frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+2026-10-31T00:55:48.1407816Z ok  same-size position refit: next frame: visible cue stays inside hole {"top":545,"bottom":612}
+2026-10-31T00:55:48.1408778Z ok  same-size position refit: next frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+2026-10-31T00:55:48.1411687Z ok  React dependency update while moved: no cover {"label":"React dependency update while moved","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+2026-10-31T00:55:48.1414170Z ok  React dependency update while moved: visible cue stays inside hole {"top":545,"bottom":612}
+2026-10-31T00:55:48.1415186Z ok  React dependency update while moved: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+2026-10-31T00:55:48.1418342Z ok  restore observed pre-refit hole: no cover {"label":"restore observed pre-refit hole","area":{"x":12,"y":103,"width":366,"height":381,"top":103,"bottom":484,"left":12,"right":378},"moment":{"x":85,"y":260,"width":220,"height":67,"top":260,"bottom":327,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+2026-10-31T00:55:48.1420623Z ok  restore observed pre-refit hole: visible cue stays inside hole {"top":260,"bottom":327}
+2026-10-31T00:55:48.1423326Z ok  size-changing refit: first frame: no cover {"label":"size-changing refit: first frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+2026-10-31T00:55:48.1425501Z ok  size-changing refit: first frame: visible cue stays inside hole {"top":545,"bottom":612}
+2026-10-31T00:55:48.1426487Z ok  size-changing refit: first frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+2026-10-31T00:55:48.1429203Z ok  size-changing refit: next frame: no cover {"label":"size-changing refit: next frame","area":{"x":12,"y":500,"width":366,"height":288,"top":500,"bottom":788,"left":12,"right":378},"moment":{"x":85,"y":545,"width":220,"height":67,"top":545,"bottom":612,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"moved","shift":-65.5,"text":"Your turn"}
+2026-10-31T00:55:48.1448351Z ok  size-changing refit: next frame: visible cue stays inside hole {"top":545,"bottom":612}
+2026-10-31T00:55:48.1449449Z ok  size-changing refit: next frame: existing least-move clearance {"stage":"moved","shift":-65.5,"bottom":612}
+2026-10-31T00:55:48.1452881Z ok  restore clear centre: first frame: no cover {"label":"restore clear centre: first frame","area":{"x":12,"y":100,"width":366,"height":288,"top":100,"bottom":388,"left":12,"right":378},"moment":{"x":85,"y":210.5,"width":220,"height":67,"top":210.5,"bottom":277.5,"left":85,"right":305},"hud":{"x":12,"y":620,"width":366,"height":190,"top":620,"bottom":810,"left":12,"right":378},"gain":{"x":248,"y":640,"width":34,"height":22,"top":640,"bottom":662,"left":248,"right":282},"stage":"centre","shift":0,"text":"Your turn"}
+2026-10-31T00:55:48.1455315Z ok  restore clear centre: first frame: visible cue stays inside hole {"top":210.5,"bottom":277.5}
+2026-10-31T00:55:48.1456133Z ok  restore clear centre: first frame: centre restored "centre"
+2026-10-31T00:55:48.1456706Z ok  position-only refit retains area size 288
+2026-10-31T00:55:48.1457132Z ok  no browser errors []
+2026-10-31T00:55:48.2181087Z ##[group]Run npm run turn-gain-prove
+2026-10-31T00:55:48.2181394Z [36;1mnpm run turn-gain-prove[0m
+2026-10-31T00:55:48.2199922Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:55:48.2200313Z ##[endgroup]
+2026-10-31T00:55:48.2976431Z 
+2026-10-31T00:55:48.2977000Z > turn-gain-prove
+2026-10-31T00:55:48.2977342Z > node scripts/turn-gain-prove.mjs
+2026-10-31T00:55:48.2977532Z 
+2026-10-31T00:56:07.8808848Z ok   1280x720: no turn moment in the roll-off or setup 0
+2026-10-31T00:56:11.9601472Z ok   1280x720: the roll's +N tabs sit on their own goods' cards [["grain","resource-grain"]]
+2026-10-31T00:56:11.9602625Z ok   1280x720: the roll's +N tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"]]
+2026-10-31T00:56:11.9631095Z ok   1280x720: the roll's +N tabs inside the safe area [{"x":713.25,"y":514,"width":37.484375,"height":22,"top":514,"right":750.734375,"bottom":536,"left":713.25}]
+2026-10-31T00:56:11.9658364Z ok   1280x720: nothing covers or clips the roll's +N tabs [["grain",true]]
+2026-10-31T00:56:14.0174394Z 1280x720: rolled 12; own ["grain+1"]; cues ["Wheat +1"]
+2026-10-31T00:56:14.0234955Z ok   1280x720: one cue per good the roll paid, right good and amount {"want":["grain+1"],"got":["grain+1"]}
+2026-10-31T00:56:14.0265467Z ok   1280x720: each reads "+N" in white on its good's side colour [["grain","+1","rgb(255, 255, 255)","rgb(140, 114, 45)"]]
+2026-10-31T00:56:14.0303108Z ok   1280x720: each gained card fills with its good's colour [["grain","rgb(227, 196, 98)"]]
+2026-10-31T00:56:14.0316564Z ok   1280x720: no "+N Good" text over the island
+2026-10-31T00:56:14.0386873Z ok   1280x720: each cue readable for at least 1.2 s ["2290"]
+2026-10-31T00:56:14.0388080Z ok   1280x720: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+2026-10-31T00:56:14.0411311Z ok   1280x720: the batch has left within 2.6 s, excluding measured stalls [{"raw":2501.8000000000466,"stalled":33.89999999990687,"running":2467.9000000001397}]
+2026-10-31T00:56:14.0441123Z ok   1280x720: raw expiry stays below the 3.5 s guard [{"raw":2501.8000000000466,"stalled":33.89999999990687,"running":2467.9000000001397}]
+2026-10-31T00:56:14.0470624Z ok   1280x720: gained cards lift (a translateY keyframe)
+2026-10-31T00:56:17.4691633Z ok   1280x720 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+2026-10-31T00:56:17.4692934Z ok   1280x720 trade: the trade's tabs are centred on their cards and grow out of the top edge [["-0.01","18.00"],["-0.01","19.00"]]
+2026-10-31T00:56:17.4721764Z ok   1280x720 trade: the trade's tabs inside the safe area [{"x":713.25,"y":514,"width":37.484375,"height":22,"top":514,"right":750.734375,"bottom":536,"left":713.25},{"x":805.25,"y":519,"width":37.484375,"height":22,"top":519,"right":842.734375,"bottom":541,"left":805.25}]
+2026-10-31T00:56:17.4750926Z ok   1280x720 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+2026-10-31T00:56:18.2823833Z ok   1280x720: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+2026-10-31T00:56:18.2827009Z ok   1280x720: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+2026-10-31T00:56:18.2829214Z ok   1280x720: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+2026-10-31T00:56:18.2831682Z ok   1280x720: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":264}
+2026-10-31T00:56:18.2832949Z ok   1280x720: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":264}
+2026-10-31T00:56:19.8773096Z ok   1280x720: another seat's gain shows no cue
+2026-10-31T00:56:19.9897444Z ok   1280x720: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Tide (bot) to roll","bot":"Tide (bot)","roll":false}
+2026-10-31T00:56:28.1941677Z ok   1280x720 refit: "Your turn" after the hole changed under it found room (moved)
+2026-10-31T00:56:28.1971934Z ok   1280x720 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["592","485"],"hole":["592","550"],"shift":-65.5}
+2026-10-31T00:56:28.2004774Z ok   1280x720 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+2026-10-31T00:56:28.2039916Z ok   1280x720 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":481.84375,"top":451,"right":702.140625,"bottom":518},"safe":{"left":0,"top":0,"right":1280,"bottom":720}}
+2026-10-31T00:56:28.2061674Z ok   1280x720 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":481.84375,"top":451,"right":702.140625,"bottom":518},"hole":{"x":216,"y":406,"width":752,"height":288,"top":406,"right":968,"bottom":694,"left":216}}
+2026-10-31T00:56:28.2063642Z ok   1280x720 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+2026-10-31T00:56:28.2064870Z ok   1280x720: on the person's roll, Roll is the one filled primary ["Roll"]
+2026-10-31T00:56:28.2066308Z ok   1280x720: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+2026-10-31T00:56:28.2671407Z ok   1280x720: the moment reads "Your turn" "Your turn"
+2026-10-31T00:56:28.2769049Z ok   1280x720: "Your turn" found room (centre)
+2026-10-31T00:56:28.2770888Z ok   1280x720: "Your turn" centred on the island's hole {"centre":["592","284"],"hole":["592","284"],"shift":0}
+2026-10-31T00:56:28.2772217Z ok   1280x720: "Your turn" inside the safe area {"box":{"left":481.84375,"top":250.5,"right":702.140625,"bottom":317.5},"safe":{"left":0,"top":0,"right":1280,"bottom":720}}
+2026-10-31T00:56:28.2773696Z ok   1280x720: "Your turn" inside the hole {"box":{"left":481.84375,"top":250.5,"right":702.140625,"bottom":317.5},"hole":{"left":216,"top":68,"right":968,"bottom":500}}
+2026-10-31T00:56:28.2774784Z ok   1280x720: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+2026-10-31T00:56:28.2776082Z ok   1280x720: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+2026-10-31T00:56:38.4191822Z ok   1280x720: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1808","readable":"1600"}
+2026-10-31T00:56:38.4212595Z ok   1280x720: every turn moment was on the person's own roll 3
+2026-10-31T00:56:38.4213494Z ok   1280x720: every cue shown was one of the person's own hand changes []
+2026-10-31T00:56:38.4230239Z ok   1280x720: "Your turn" never covers a hand tab []
+2026-10-31T00:56:38.4238104Z ok   1280x720: over the whole game, no gain text ever mounted over the island
+2026-10-31T00:56:40.0205646Z ok   1280x720: a watcher sees no cues
+2026-10-31T00:56:53.4995227Z ok   390x844: no turn moment in the roll-off or setup 0
+2026-10-31T00:56:57.8888707Z ok   390x844: the roll's +N tabs sit on their own goods' cards [["ore","resource-ore"]]
+2026-10-31T00:56:57.8889874Z ok   390x844: the roll's +N tabs are centred on their cards and grow out of the top edge [["0.00","18.00"]]
+2026-10-31T00:56:57.8891469Z ok   390x844: the roll's +N tabs inside the safe area [{"x":317.859375,"y":580,"width":37.484375,"height":22,"top":580,"right":355.34375,"bottom":602,"left":317.859375}]
+2026-10-31T00:56:57.8893001Z ok   390x844: nothing covers or clips the roll's +N tabs [["ore",true]]
+2026-10-31T00:56:59.9535289Z 390x844: rolled 10; own ["ore+1"]; cues ["Stone +1"]
+2026-10-31T00:56:59.9544090Z ok   390x844: one cue per good the roll paid, right good and amount {"want":["ore+1"],"got":["ore+1"]}
+2026-10-31T00:56:59.9561196Z ok   390x844: each reads "+N" in white on its good's side colour [["ore","+1","rgb(255, 255, 255)","rgb(65, 77, 91)"]]
+2026-10-31T00:56:59.9592040Z ok   390x844: each gained card fills with its good's colour [["ore","rgb(99, 116, 138)"]]
+2026-10-31T00:56:59.9623904Z ok   390x844: no "+N Good" text over the island
+2026-10-31T00:56:59.9652196Z ok   390x844: each cue readable for at least 1.2 s ["2290"]
+2026-10-31T00:56:59.9681152Z ok   390x844: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+2026-10-31T00:56:59.9700938Z ok   390x844: the batch has left within 2.6 s, excluding measured stalls [{"raw":2503.5999999999767,"stalled":28.70000000006985,"running":2474.899999999907}]
+2026-10-31T00:56:59.9711340Z ok   390x844: raw expiry stays below the 3.5 s guard [{"raw":2503.5999999999767,"stalled":28.70000000006985,"running":2474.899999999907}]
+2026-10-31T00:56:59.9712394Z ok   390x844: gained cards lift (a translateY keyframe)
+2026-10-31T00:57:03.3280599Z ok   390x844 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+2026-10-31T00:57:03.3283962Z ok   390x844 trade: the trade's tabs are centred on their cards and grow out of the top edge [["0.00","18.00"],["0.00","19.00"]]
+2026-10-31T00:57:03.3307322Z ok   390x844 trade: the trade's tabs inside the safe area [{"x":247.0625,"y":580,"width":37.484375,"height":22,"top":580,"right":284.546875,"bottom":602,"left":247.0625},{"x":317.859375,"y":587,"width":37.484375,"height":22,"top":587,"right":355.34375,"bottom":609,"left":317.859375}]
+2026-10-31T00:57:03.3313704Z ok   390x844 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+2026-10-31T00:57:03.7979835Z ok   390x844: a bank trade shows −4 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]},{"r":"ore","text":"−4","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+2026-10-31T00:57:03.8019021Z ok   390x844: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+2026-10-31T00:57:03.8021472Z ok   390x844: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+2026-10-31T00:57:03.8023973Z ok   390x844: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":264}
+2026-10-31T00:57:03.8046362Z ok   390x844: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":275}
+2026-10-31T00:57:05.4040651Z ok   390x844: another seat's gain shows no cue
+2026-10-31T00:57:05.5139372Z ok   390x844: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Tide (bot) to roll","bot":"Tide (bot)","roll":false}
+2026-10-31T00:57:13.9178644Z ok   390x844 refit: "Your turn" after the hole changed under it found room (moved)
+2026-10-31T00:57:13.9192731Z ok   390x844 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["195","579"],"hole":["195","644"],"shift":-65.5}
+2026-10-31T00:57:13.9245360Z ok   390x844 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+2026-10-31T00:57:13.9270922Z ok   390x844 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":84.84375,"top":545,"right":305.140625,"bottom":612},"safe":{"left":0,"top":47,"right":390,"bottom":810}}
+2026-10-31T00:57:13.9303534Z ok   390x844 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":84.84375,"top":545,"right":305.140625,"bottom":612},"hole":{"x":12,"y":500,"width":366,"height":288,"top":500,"right":378,"bottom":788,"left":12}}
+2026-10-31T00:57:13.9324171Z ok   390x844 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+2026-10-31T00:57:13.9361215Z ok   390x844: on the person's roll, Roll is the one filled primary ["Roll"]
+2026-10-31T00:57:13.9372075Z ok   390x844: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+2026-10-31T00:57:13.9743804Z ok   390x844: the moment reads "Your turn" "Your turn"
+2026-10-31T00:57:13.9745399Z ok   390x844: "Your turn" found room (centre)
+2026-10-31T00:57:13.9746123Z ok   390x844: "Your turn" centred on the island's hole {"centre":["195","294"],"hole":["195","294"],"shift":0}
+2026-10-31T00:57:13.9747267Z ok   390x844: "Your turn" inside the safe area {"box":{"left":84.84375,"top":260,"right":305.140625,"bottom":327},"safe":{"left":0,"top":47,"right":390,"bottom":810}}
+2026-10-31T00:57:13.9748537Z ok   390x844: "Your turn" inside the hole {"box":{"left":84.84375,"top":260,"right":305.140625,"bottom":327},"hole":{"left":12,"top":103,"right":378,"bottom":484}}
+2026-10-31T00:57:13.9750510Z ok   390x844: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+2026-10-31T00:57:13.9751747Z ok   390x844: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+2026-10-31T00:57:21.6726599Z ok   390x844: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1809","readable":"1600"}
+2026-10-31T00:57:21.6769711Z ok   390x844: every turn moment was on the person's own roll 3
+2026-10-31T00:57:21.6770871Z ok   390x844: every cue shown was one of the person's own hand changes []
+2026-10-31T00:57:21.6821010Z ok   390x844: "Your turn" never covers a hand tab []
+2026-10-31T00:57:21.6841155Z ok   390x844: over the whole game, no gain text ever mounted over the island
+2026-10-31T00:57:23.2501380Z ok   390x844: a watcher sees no cues
+2026-10-31T00:57:38.7716031Z ok   360x640: no turn moment in the roll-off or setup 0
+2026-10-31T00:57:42.7599758Z ok   360x640: the roll's +N tabs sit on their own goods' cards [["timber","resource-timber"]]
+2026-10-31T00:57:42.7613736Z ok   360x640: the roll's +N tabs are centred on their cards and grow out of the top edge [["0.00","18.00"]]
+2026-10-31T00:57:42.7654598Z ok   360x640: the roll's +N tabs inside the safe area [{"x":31.65625,"y":394,"width":37.484375,"height":22,"top":394,"right":69.140625,"bottom":416,"left":31.65625}]
+2026-10-31T00:57:42.7656114Z ok   360x640: nothing covers or clips the roll's +N tabs [["timber",true]]
+2026-10-31T00:57:44.8062779Z 360x640: rolled 8; own ["timber+2"]; cues ["Wood +2"]
+2026-10-31T00:57:44.8076059Z ok   360x640: one cue per good the roll paid, right good and amount {"want":["timber+2"],"got":["timber+2"]}
+2026-10-31T00:57:44.8096092Z ok   360x640: each reads "+N" in white on its good's side colour [["timber","+2","rgb(255, 255, 255)","rgb(23, 61, 53)"]]
+2026-10-31T00:57:44.8144282Z ok   360x640: each gained card fills with its good's colour [["timber","rgb(47, 106, 79)"]]
+2026-10-31T00:57:44.8145952Z ok   360x640: no "+N Good" text over the island
+2026-10-31T00:57:44.8206998Z ok   360x640: each cue readable for at least 1.2 s ["2290"]
+2026-10-31T00:57:44.8228085Z ok   360x640: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+2026-10-31T00:57:44.8247248Z ok   360x640: the batch has left within 2.6 s, excluding measured stalls [{"raw":2508.600000000093,"stalled":10.300000000046566,"running":2498.3000000000466}]
+2026-10-31T00:57:44.8255879Z ok   360x640: raw expiry stays below the 3.5 s guard [{"raw":2508.600000000093,"stalled":10.300000000046566,"running":2498.3000000000466}]
+2026-10-31T00:57:44.8304773Z ok   360x640: gained cards lift (a translateY keyframe)
+2026-10-31T00:57:48.0999572Z ok   360x640 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+2026-10-31T00:57:48.1001081Z ok   360x640 trade: the trade's tabs are centred on their cards and grow out of the top edge [["0.00","18.00"],["0.00","19.00"]]
+2026-10-31T00:57:48.1003154Z ok   360x640 trade: the trade's tabs inside the safe area [{"x":226.0625,"y":394,"width":37.484375,"height":22,"top":394,"right":263.546875,"bottom":416,"left":226.0625},{"x":290.859375,"y":401,"width":37.484375,"height":22,"top":401,"right":328.34375,"bottom":423,"left":290.859375}]
+2026-10-31T00:57:48.1004738Z ok   360x640 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+2026-10-31T00:57:48.5013542Z ok   360x640: a bank trade shows −2 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]},{"r":"ore","text":"−2","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+2026-10-31T00:57:48.5041552Z ok   360x640: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+2026-10-31T00:57:48.5054813Z ok   360x640: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-6px)","translateY(-6px)","translateY(0px)"]}
+2026-10-31T00:57:48.5063896Z ok   360x640: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":264}
+2026-10-31T00:57:48.5065568Z ok   360x640: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":275}
+2026-10-31T00:57:50.1020977Z ok   360x640: another seat's gain shows no cue
+2026-10-31T00:57:50.2062203Z ok   360x640: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Pine (bot) to roll","bot":"Pine (bot)","roll":false}
+2026-10-31T00:57:59.2689709Z ok   360x640 refit: "Your turn" after the hole changed under it found room (moved)
+2026-10-31T00:57:59.2690819Z ok   360x640 refit: "Your turn" after the hole changed under it centred on the island's hole, moved -66 px to clear the HUD {"centre":["180","393"],"hole":["180","458"],"shift":-65.5}
+2026-10-31T00:57:59.2692160Z ok   360x640 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+2026-10-31T00:57:59.2693136Z ok   360x640 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":69.84375,"top":359,"right":290.140625,"bottom":426},"safe":{"left":0,"top":24,"right":360,"bottom":624}}
+2026-10-31T00:57:59.2694342Z ok   360x640 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":69.84375,"top":359,"right":290.140625,"bottom":426},"hole":{"x":12,"y":314,"width":336,"height":288,"top":314,"right":348,"bottom":602,"left":12}}
+2026-10-31T00:57:59.2695426Z ok   360x640 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":-65.5}
+2026-10-31T00:57:59.2701249Z ok   360x640: on the person's roll, Roll is the one filled primary ["Roll"]
+2026-10-31T00:57:59.2702235Z ok   360x640: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+2026-10-31T00:57:59.3035908Z ok   360x640: the moment reads "Your turn" "Your turn"
+2026-10-31T00:57:59.3041474Z ok   360x640: "Your turn" found room (centre)
+2026-10-31T00:57:59.3042605Z ok   360x640: "Your turn" centred on the island's hole {"centre":["180","189"],"hole":["180","189"],"shift":0}
+2026-10-31T00:57:59.3044796Z ok   360x640: "Your turn" inside the safe area {"box":{"left":69.84375,"top":155.5,"right":290.140625,"bottom":222.5},"safe":{"left":0,"top":24,"right":360,"bottom":624}}
+2026-10-31T00:57:59.3047952Z ok   360x640: "Your turn" inside the hole {"box":{"left":69.84375,"top":155.5,"right":290.140625,"bottom":222.5},"hole":{"left":12,"top":80,"right":348,"bottom":298}}
+2026-10-31T00:57:59.3054888Z ok   360x640: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+2026-10-31T00:57:59.3111350Z ok   360x640: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+2026-10-31T00:58:08.6124135Z ok   360x640: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1808","readable":"1600"}
+2026-10-31T00:58:08.6154031Z ok   360x640: every turn moment was on the person's own roll 3
+2026-10-31T00:58:08.6183691Z ok   360x640: every cue shown was one of the person's own hand changes []
+2026-10-31T00:58:08.6187049Z ok   360x640: "Your turn" never covers a hand tab []
+2026-10-31T00:58:08.6239480Z ok   360x640: over the whole game, no gain text ever mounted over the island
+2026-10-31T00:58:10.2047961Z ok   360x640: a watcher sees no cues
+2026-10-31T00:58:22.8899083Z ok   844x390: no turn moment in the roll-off or setup 0
+2026-10-31T00:58:27.2762952Z ok   844x390: the roll's +N tabs sit on their own goods' cards [["clay","resource-clay"]]
+2026-10-31T00:58:27.2783390Z ok   844x390: the roll's +N tabs are centred on their cards and grow out of the top edge [["0.00","18.00"]]
+2026-10-31T00:58:27.2789366Z ok   844x390: the roll's +N tabs inside the safe area [{"x":107.046875,"y":155,"width":37.484375,"height":22,"top":155,"right":144.53125,"bottom":177,"left":107.046875}]
+2026-10-31T00:58:27.2821278Z ok   844x390: nothing covers or clips the roll's +N tabs [["clay",true]]
+2026-10-31T00:58:29.3525820Z 844x390: rolled 3; own ["clay+1"]; cues ["Brick +1"]
+2026-10-31T00:58:29.3530309Z ok   844x390: one cue per good the roll paid, right good and amount {"want":["clay+1"],"got":["clay+1"]}
+2026-10-31T00:58:29.3545870Z ok   844x390: each reads "+N" in white on its good's side colour [["clay","+1","rgb(255, 255, 255)","rgb(116, 55, 43)"]]
+2026-10-31T00:58:29.3547061Z ok   844x390: each gained card fills with its good's colour [["clay","rgb(184, 83, 61)"]]
+2026-10-31T00:58:29.3547957Z ok   844x390: no "+N Good" text over the island
+2026-10-31T00:58:29.3548693Z ok   844x390: each cue readable for at least 1.2 s ["2290"]
+2026-10-31T00:58:29.3549712Z ok   844x390: the tab, the fill and the lift each run exactly 2500 ms (2200 ms held, 300 ms fade) [[2500,2500]]
+2026-10-31T00:58:29.3551844Z ok   844x390: the batch has left within 2.6 s, excluding measured stalls [{"raw":2513,"stalled":2.300000000046566,"running":2510.6999999999534}]
+2026-10-31T00:58:29.3553074Z ok   844x390: raw expiry stays below the 3.5 s guard [{"raw":2513,"stalled":2.300000000046566,"running":2510.6999999999534}]
+2026-10-31T00:58:29.3553990Z ok   844x390: gained cards lift (a translateY keyframe)
+2026-10-31T00:58:32.6954378Z ok   844x390 trade: the trade's tabs sit on their own goods' cards [["grain","resource-grain"],["ore","resource-ore"]]
+2026-10-31T00:58:32.6991672Z ok   844x390 trade: the trade's tabs are centred on their cards and grow out of the top edge [["0.00","18.00"],["0.00","19.00"]]
+2026-10-31T00:58:32.7008226Z ok   844x390 trade: the trade's tabs inside the safe area [{"x":209.453125,"y":155,"width":37.484375,"height":22,"top":155,"right":246.9375,"bottom":177,"left":209.453125},{"x":260.65625,"y":160,"width":37.484375,"height":22,"top":160,"right":298.140625,"bottom":182,"left":260.65625}]
+2026-10-31T00:58:32.7031090Z ok   844x390 trade: nothing covers or clips the trade's tabs [["grain",true],["ore",true]]
+2026-10-31T00:58:33.2034461Z ok   844x390: a bank trade shows −3 on Stone as a hollow red tab, the card ringed red [{"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]},{"r":"ore","text":"−3","color":"rgb(138, 34, 25)","bg":"rgb(255, 249, 240)","lit":null,"lost":true,"move":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"]}]
+2026-10-31T00:58:33.2040622Z ok   844x390: and +1 on the filled Wheat card {"r":"grain","text":"+1","color":"rgb(255, 255, 255)","bg":"rgb(140, 114, 45)","lit":"rgb(227, 196, 98)","lost":false,"move":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+2026-10-31T00:58:33.2042404Z ok   844x390: the given card dips and the received card lifts {"stone":["translateY(0px)","translateY(2px)","translateY(2px)","translateY(0px)"],"wheat":["translateY(0px)","translateY(-4px)","translateY(-4px)","translateY(0px)"]}
+2026-10-31T00:58:33.2044164Z ok   844x390: gain tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(255, 255, 255)","min":"4.61","pixels":264}
+2026-10-31T00:58:33.2045318Z ok   844x390: loss tab text ≥ 4.5:1 against the pixels behind it {"color":"rgb(138, 34, 25)","min":"8.63","pixels":275}
+2026-10-31T00:58:34.8011335Z ok   844x390: another seat's gain shows no cue
+2026-10-31T00:58:34.9107491Z ok   844x390: on a bot's turn the banner says whom the person waits for, and there is no Roll {"banner":"Wait for Tide (bot) to roll","bot":"Tide (bot)","roll":false}
+2026-10-31T00:58:43.5744180Z ok   844x390 refit: "Your turn" after the hole changed under it found room (moved)
+2026-10-31T00:58:43.5763328Z ok   844x390 refit: "Your turn" after the hole changed under it centred on the island's hole, moved 18 px to clear the HUD {"centre":["558","110"],"hole":["558","92"],"shift":17.5}
+2026-10-31T00:58:43.5767975Z ok   844x390 refit: "Your turn" after the hole changed under it moved only because the centre was covered when it showed
+2026-10-31T00:58:43.5769018Z ok   844x390 refit: "Your turn" after the hole changed under it inside the safe area {"box":{"left":447.84375,"top":76,"right":668.140625,"bottom":143},"safe":{"left":47,"top":0,"right":797,"bottom":369}}
+2026-10-31T00:58:43.5770562Z ok   844x390 refit: "Your turn" after the hole changed under it inside the hole {"box":{"left":447.84375,"top":76,"right":668.140625,"bottom":143},"hole":{"x":331,"y":-52,"width":454,"height":288,"top":-52,"right":785,"bottom":236,"left":331}}
+2026-10-31T00:58:43.5774266Z ok   844x390 refit: "Your turn" after the hole changed under it covers no HUD control or chip {"hit":[],"how":"moved","shift":17.5}
+2026-10-31T00:58:43.5775365Z ok   844x390: on the person's roll, Roll is the one filled primary ["Roll"]
+2026-10-31T00:58:43.5777221Z ok   844x390: the person's seat card wears the turn ring and the banner leads with Roll {"primaries":["Roll"],"seatTurn":true,"current":true,"banner":"Roll the dice"}
+2026-10-31T00:58:43.6111858Z ok   844x390: the moment reads "Your turn" "Your turn"
+2026-10-31T00:58:43.6118349Z ok   844x390: "Your turn" found room (centre)
+2026-10-31T00:58:43.6119509Z ok   844x390: "Your turn" centred on the island's hole {"centre":["558","213"],"hole":["558","213"],"shift":0}
+2026-10-31T00:58:43.6121333Z ok   844x390: "Your turn" inside the safe area {"box":{"left":447.84375,"top":179,"right":668.140625,"bottom":246},"safe":{"left":47,"top":0,"right":797,"bottom":369}}
+2026-10-31T00:58:43.6152321Z ok   844x390: "Your turn" inside the hole {"box":{"left":447.84375,"top":179,"right":668.140625,"bottom":246},"hole":{"left":331,"top":68,"right":785,"bottom":357}}
+2026-10-31T00:58:43.6195022Z ok   844x390: "Your turn" covers no HUD control or chip {"hit":[],"how":"centre","shift":0}
+2026-10-31T00:58:43.6236997Z ok   844x390: "Your turn" text ≥ 3:1 against the pixels behind it {"color":"rgb(38, 61, 60)","min":"11.05"}
+2026-10-31T00:58:55.5887742Z ok   844x390: untouched, "Your turn" is up about 1.6 s and gone within 2 s {"up":"1808","readable":"1600"}
+2026-10-31T00:58:55.5922577Z ok   844x390: every turn moment was on the person's own roll 3
+2026-10-31T00:58:55.5939030Z ok   844x390: every cue shown was one of the person's own hand changes []
+2026-10-31T00:58:55.5956892Z ok   844x390: "Your turn" never covers a hand tab []
+2026-10-31T00:58:55.5966234Z ok   844x390: over the whole game, no gain text ever mounted over the island
+2026-10-31T00:58:57.2085471Z ok   844x390: a watcher sees no cues
+2026-10-31T00:59:27.5874354Z 1280x720 reduced: [{"text":"+1","at":"19192","gone":"21701","anim":null}]
+2026-10-31T00:59:27.5929543Z ok   1280x720 reduced: all cues are fully static under reduced motion ["none","none"]
+2026-10-31T00:59:27.5991419Z ok   1280x720 reduced: no card lifts or dips (no WAAPI transform) [null]
+2026-10-31T00:59:27.6061945Z ok   1280x720 reduced: the gain's fill is a still highlight in the good's colour [{"name":"none","opacity":"1","animations":0,"fill":"rgb(47, 106, 79)"}]
+2026-10-31T00:59:27.6063148Z ok   1280x720 reduced: no gain text over the island
+2026-10-31T00:59:27.6063877Z ok   1280x720 reduced: no fade, rise or scale on any frame
+2026-10-31T00:59:27.6064673Z ok   1280x720 reduced: static cues retain a readable hold [2508.3000000000466,1802.0999999999767]
+2026-10-31T00:59:27.6065463Z ok   1280x720 reduced: each line readable for at least 1.2 s ["2508"]
+2026-10-31T00:59:36.3355324Z ok   1280x720 hotseat: the moment names the seat taking the device {"text":"Seat 4's turn","next":"Seat 4"}
+2026-10-31T00:59:37.8094364Z ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+2026-10-31T00:59:39.0038579Z ok   390x844 reconnect: the seat was re-welcomed through the redial {"welcomes":2}
+2026-10-31T00:59:39.0109618Z ok   390x844 reconnect: the restored hand holds timber +2 over the last seen 4
+2026-10-31T00:59:39.9109036Z ok   390x844 rejoin onto own roll at seq 22 (no Your turn, no +2 on Wood, the cue from before the drop gone): nothing shown {"turns":0,"lines":1,"up":false}
+2026-10-31T00:59:39.9137778Z ok   390x844 reconnect: the cue from before the drop was cancelled
+2026-10-31T00:59:39.9752280Z ok   390x844 reconnect: a live gain after the rejoin shows "+1" on Wood
+2026-10-31T00:59:40.0611987Z ok   390x844 reconnect: a live turn after the rejoin shows "Your turn"
+2026-10-31T00:59:40.0681650Z ok   zero console errors []
+2026-10-31T00:59:40.2007125Z turn-gain-prove: all passed
+2026-10-31T00:59:40.2432603Z ##[group]Run npm run board-look-prove
+2026-10-31T00:59:40.2432912Z [36;1mnpm run board-look-prove[0m
+2026-10-31T00:59:40.2450384Z shell: /usr/bin/bash -e {0}
+2026-10-31T00:59:40.2450616Z ##[endgroup]
+2026-10-31T00:59:40.3204769Z 
+2026-10-31T00:59:40.3205257Z > board-look-prove
+2026-10-31T00:59:40.3205675Z > node scripts/board-look-prove.mjs
+2026-10-31T00:59:40.3205869Z 
+2026-10-31T00:59:44.2767060Z ok   one key lamp casts the shadows, no flat ambient ["HemisphereLight #e9e4da x0.55","DirectionalLight #ffe3bd x2.1","DirectionalLight #d9e4ea x0.3"]
+2026-10-31T00:59:44.2768553Z ok   the key carries the light: at least 3x the bounce {"keyOverBounce":3.82}
+2026-10-31T00:59:44.2769933Z ok   the key is warm (linear r/b at least 1.5) and the bounce near grey (sky spread <= 0.1, ground <= 0.3) {"keyWarm":1.97,"skySpread":0.06,"groundSpread":0.26}
+2026-10-31T00:59:44.2771456Z ok   soft shadows: PCF blurred at least 4 texels, from a map of at most 1024 {"type":1,"radius":6,"map":1024}
+2026-10-31T00:59:44.2772520Z ok   exposure at most 1.1 {"exposure":1.05}
+2026-10-31T00:59:44.2773341Z ok   the title keeps the free camera and its orbit {"view":"free","autoRotate":true}
+2026-10-31T00:59:49.8112701Z ok   1280x720 crystal: a coast edge with open water beside it inside the hole {"shore":{"x":810.7970901619864,"y":290.277916890374},"deep":{"x":927.2267360166284,"y":290.277916890374}}
+2026-10-31T00:59:52.1158356Z ok   1280x720 crystal: deep water is a light blue-green, no darker or more saturated than #4ab9b5 {"deep":[138,211,213]}
+2026-10-31T00:59:52.1159698Z FAIL 1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep {"shore":[197,223,211],"deep":[138,211,213]}
+2026-10-31T00:59:54.4479165Z ok   1280x720 crystal, zoomed out: the sea fills the canvas to its corner (teal, no paper) {"rgb":[138,211,213]}
+2026-10-31T00:59:59.5286829Z ok   1280x720 crystal, free view tilted low: the far horizon is the studio paper #f1efe9 (within 6/255) {"rgb":[241,239,233]}
+2026-10-31T01:00:03.5453151Z ok   1280x720: the diorama camera is on in play (the default for the screen's shape) {"view":"diorama"}
+2026-10-31T01:00:03.5454361Z ok   1280x720: every corner and dock inside the measured HUD hole {"hole":{"l":216,"t":68,"r":968,"b":500},"dockIn":0,"out":[]}
+2026-10-31T01:00:03.5455323Z ok   1280x720: every corner lands on the canvas (clear of the HUD) []
+2026-10-31T01:00:03.5464480Z ok   1280x720: nine piers and nine boats, one per dock, each boat on its dock's two corners {"piers":9,"boats":9,"corners":18,"mismatched":0}
+2026-10-31T01:00:03.5465424Z ok   1280x720: every number token is at least 24 px across {"smallest":31.7}
+2026-10-31T01:00:03.5485895Z ok   1280x720: the default view is at its fitted home, 38° above the horizon {"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}
+2026-10-31T01:00:04.3529679Z ok   1280x720: a drag orbits the camera {"polar":0.489,"azimuth":-0.698,"zoom":1,"target":[0,0.35,0],"glide":false}
+2026-10-31T01:00:04.3550882Z ok   1280x720: a drag from a legal corner places nothing {"seq":[6,6],"pieces":[0,0],"mark":"-2.91,-0.56"}
+2026-10-31T01:00:04.8725186Z ok   1280x720: an out-and-back drag ending on the corner places nothing {"seq":[6,6],"pieces":[0,0]}
+2026-10-31T01:00:05.2656914Z ok   1280x720: a wheel zooms in {"zoom":1.131}
+2026-10-31T01:00:05.8002127Z ok   1280x720: Home glides back to the fitted view {"startedGlide":true,"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}
+2026-10-31T01:00:06.2214995Z ok   1280x720: the two clicks land inside the 350 ms double-tap window {"downMs":3,"upMs":3}
+2026-10-31T01:00:06.9011267Z ok   1280x720: a double click on empty board returns to the fitted view and places nothing {"before":{"polar":0.646,"azimuth":1.396,"zoom":1,"target":[0,0.35,0],"glide":false},"after":{"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false},"seq":[6,6],"gaps":{"downMs":3,"upMs":3}}
+2026-10-31T01:00:06.9733540Z ok   1280x720: a click on the legal corner still places {"seq":[6,7],"pieces":[0,1]}
+2026-10-31T01:00:07.2173035Z ok   1280x720: under reduced motion Home snaps at once {"before":{"polar":0.908,"azimuth":-0.698,"zoom":1,"target":[0,0.35,0],"glide":false},"noGlide":true,"after":{"polar":0.908,"azimuth":0.349,"zoom":1,"target":[0,0.35,0],"glide":false}}
+2026-10-31T01:00:11.2959415Z ok   1280x720: mid-game with the hand shown and an armed path every token is at least 24 px across {"phase":"main","armed":"path","hand":true,"insets":{"top":68,"right":312,"bottom":220,"left":216},"token":31.7}
+2026-10-31T01:00:12.7849251Z ok   1280x720: closed-chat lines are one seat bubble, not a rail: no preview pills, taps pass through, the right inset is the rail the wide layout always keeps (312) and the camera stays put {"previews":0,"bubbles":1,"bubbleW":192,"passes":true,"right":312,"target":[0,0.35,0],"before":[0,0.35,0]}
+2026-10-31T01:00:13.3046183Z ok   1280x720: View > Overhead shows the fitted 25° overhead view, every corner and dock in the hole, and is saved {"view":"overhead","polar":0.436,"azimuth":0,"zoom":1,"target":[1.2,0.35,2.09],"glide":false,"out":[],"covered":[],"saved":"overhead"}
+2026-10-31T01:00:13.6320383Z ok   1280x720: the overhead view still orbits on a drag {"polar":0.175,"azimuth":-1.047,"zoom":1,"target":[1.2,0.35,2.09],"glide":false}
+2026-10-31T01:00:14.5691485Z ok   1280x720: the overhead choice outlives a reload
+2026-10-31T01:00:14.7446670Z ok   1280x720: View > Diorama switches back and is saved
+2026-10-31T01:00:17.9175027Z ok   390x844 touch: the overhead camera is on in play (the default for the screen's shape) {"view":"overhead"}
+2026-10-31T01:00:17.9182230Z ok   390x844 touch: every corner and dock inside the measured HUD hole {"hole":{"l":12,"t":68,"r":378,"b":518},"dockIn":7.9,"out":[]}
+2026-10-31T01:00:17.9185452Z ok   390x844 touch: every corner lands on the canvas (clear of the HUD) []
+2026-10-31T01:00:17.9192256Z ok   390x844 touch: nine piers and nine boats, one per dock, each boat on its dock's two corners {"piers":9,"boats":9,"corners":18,"mismatched":0}
+2026-10-31T01:00:17.9195010Z ok   390x844 touch: every number token is at least 18 px across {"smallest":21.5}
+2026-10-31T01:00:17.9215566Z ok   390x844 touch: the default view is at its fitted home, leaned 25° {"polar":0.436,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false}
+2026-10-31T01:00:18.2965871Z ok   390x844 touch: a one-finger drag orbits the camera {"polar":0.12,"azimuth":-0.893,"zoom":1,"target":[0,0.35,4.51],"glide":false}
+2026-10-31T01:00:18.2967221Z ok   390x844 touch: a drag from a legal corner places nothing {"seq":[4,4],"pieces":[0,0],"mark":"-2.91,-0.56"}
+2026-10-31T01:00:18.6304052Z ok   390x844 touch: an out-and-back drag ending on the corner places nothing {"seq":[4,4],"pieces":[0,0]}
+2026-10-31T01:00:18.9011493Z ok   390x844 touch: the two taps land inside the 350 ms double-tap window {"downMs":2,"upMs":1}
+2026-10-31T01:00:19.3483251Z ok   390x844 touch: a double tap on empty board returns to the fitted view and places nothing {"before":{"polar":0.12,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false},"after":{"polar":0.436,"azimuth":0,"zoom":1,"target":[0,0.35,4.51],"glide":false},"seq":[4,4],"gaps":{"downMs":2,"upMs":1}}
+2026-10-31T01:00:23.8205511Z ok   1024x768: the fit is the one the hole asks for {"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}
+2026-10-31T01:00:24.9451696Z ok   1024x768: a remeasure that changes nothing does not wake the loop {"before":2657.9000000000233,"after":2657.9000000000233}
+2026-10-31T01:00:25.1859351Z ok   1024x768: focusing the PlaceList leaves the fit where it was and the island clear of it {"base":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"list":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":724,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:25.4710500Z ok   1024x768: blurring the PlaceList leaves the fit where it was {"base":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"blurred":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:26.0984575Z ok   1024x768: opening the chat leaves the fit where it was and the island clear of the chat rail {"online":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"chat":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":712,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:26.3679117Z ok   1024x768: closing the chat leaves the fit where it was {"online":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"closed":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:26.9331033Z ok   1024x768: opening the table menu leaves the hole and the fit unchanged {"shut":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"menu":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:27.5364198Z ok   1024x768: opening a seat popover leaves the hole and the fit unchanged {"shut":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false},"seatMenu":{"seq":4,"ins":"{\"top\":68,\"right\":312,\"bottom\":220,\"left\":216}","pose":"{\"focal\":1129.111226274829,\"dist\":25.115055372017117,\"cx\":456.32705615278894,\"cy\":284.65365089958675}","right":312,"fresh":true,"railLeft":null,"rightmost":678,"covered":[],"glide":false}}
+2026-10-31T01:00:30.8058636Z ok   844x390 touch: main phase with the hand shown, the HUD a left column {"phase":"main","hand":true,"column":{"left":12,"right":272,"top":68,"bottom":378},"insets":{"top":68,"right":12,"bottom":12,"left":284},"holeH":310,"isle":"279x234","area":65376,"token":19.6,"apart":29.2,"view":"overhead","widthOverHoleH":0.9,"covered":[]}
+2026-10-31T01:00:30.8064842Z ok   844x390 touch: the island is larger than before #422 (8581 px²) {"area":65376,"isle":"279x234","token":19.6}
+2026-10-31T01:00:30.8084375Z ok   844x390 touch: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD {"widthOverHoleH":0.9,"holeH":310,"covered":[]}
+2026-10-31T01:00:30.8100741Z ok   844x390 touch: overhead by default (under 900 px wide) and adjacent corners at least 24 px apart {"view":"overhead","apart":29.2}
+2026-10-31T01:00:31.2088718Z ok   844x390 touch: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner {"armed":"path","row":{"l":12,"t":78,"r":272,"b":122},"hand":{"l":12,"t":182,"r":272,"b":234},"turn":{"l":12,"t":126,"r":272,"b":178},"onTop":true,"inView":true,"overHand":false,"overTurn":false}
+2026-10-31T01:00:31.4969477Z ok   844x390 touch: the diorama by choice keeps adjacent corners at least 18 px apart {"apart":22.6}
+2026-10-31T01:00:32.3050666Z ok   844x390 touch: a path on the far coast spans at least the 24 px touch slop on screen, and the touch pick at its corner reaches 24 px across {"edge":"-1.94,-4.48|-2.91,-3.92","path":{"w":34,"h":12.2},"outpost":{"w":24.3,"h":23.6},"reachPx":28,"seq":23}
+2026-10-31T01:00:35.3547779Z ok   667x375 touch: main phase with the hand shown, the HUD a left column {"phase":"main","hand":true,"column":{"left":12,"right":272,"top":68,"bottom":363},"insets":{"top":68,"right":12,"bottom":12,"left":284},"holeH":295,"isle":"266x223","area":59203,"token":18.6,"apart":27.8,"view":"overhead","widthOverHoleH":0.9,"covered":[]}
+2026-10-31T01:00:35.3553176Z ok   667x375 touch: the island is larger than before #422 (8569 px²) {"area":59203,"isle":"266x223","token":18.6}
+2026-10-31T01:00:35.3554343Z ok   667x375 touch: the island is at least 60 % as wide as the hole is tall, every corner clear of the HUD {"widthOverHoleH":0.9,"holeH":295,"covered":[]}
+2026-10-31T01:00:35.3555509Z ok   667x375 touch: overhead by default (under 900 px wide) and adjacent corners at least 24 px apart {"view":"overhead","apart":27.8}
+2026-10-31T01:00:35.6554514Z ok   667x375 touch: an armed Path's Place chip is the column's first row, in view, clear of the hand and the turn banner {"armed":"path","row":{"l":12,"t":68,"r":272,"b":112},"hand":{"l":12,"t":167,"r":272,"b":219},"turn":{"l":12,"t":116,"r":272,"b":163},"onTop":true,"inView":true,"overHand":false,"overTurn":false}
+2026-10-31T01:00:43.7911305Z ok   terrain: all six kinds are on the board, the full scenes {"kinds":["clay","grain","ore","timber","waste","wool"],"lite":false}
+2026-10-31T01:00:43.7912961Z ok   terrain clay: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":3,"pad":0,"rim":0,"spread":0.2374770804145716}
+2026-10-31T01:00:43.7914534Z ok   terrain grain: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.43337564449169264}
+2026-10-31T01:00:43.7916118Z ok   terrain ore: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":3,"pad":0,"rim":0,"spread":0.38094731013749106}
+2026-10-31T01:00:43.7917424Z ok   terrain timber: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.6395025786771268}
+2026-10-31T01:00:43.7918665Z ok   terrain waste: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":1,"pad":0,"rim":0,"spread":0.13756286539680795}
+2026-10-31T01:00:43.7920016Z ok   terrain wool: flat at topOf on the pad and at the corners and edges; a landform elsewhere (spread 0.02 to 0.8) {"hexes":4,"pad":0,"rim":0,"spread":0.3310232087844775}
+2026-10-31T01:00:43.7921594Z ok   terrain: every kind's block side shows its strata ["clay","grain","ore","timber","waste","wool"]
+2026-10-31T01:00:43.7922942Z ok   terrain: the scenes draw in at most 60 calls {"ready":true,"lite":false,"drawCalls":35,"triangles":330238,"kinds":6,"batches":9,"bakes":24,"sprites":2}
+2026-10-31T01:00:43.7944032Z ok   terrain: the scenes hold at most 600k triangles, the whole island at most 620k {"scenes":330238,"rest":62528}
+2026-10-31T01:00:43.7945702Z ok   terrain: nothing standing on a hex comes within 0.31 of its centre {"grain":"0.340 (hen)","ore":"0.341 (adit)","timber":"0.353 (jelly-blob#0)","wool":"0.383 (jelly-blob#21)","clay":"0.388 (jelly-blob#12)","waste":"0.394 (hyena)"}
+2026-10-31T01:00:52.4038509Z ok   terrain: the 390x844 phone is overhead
+2026-10-31T01:00:52.9882871Z ok   no console errors []
+2026-10-31T01:00:53.4715340Z 
+2026-10-31T01:00:53.4716497Z 1 failed: 1280x720 crystal: the shallow band is near-white aqua #cdf1ec (within 20/255), lighter than the deep
+2026-10-31T01:00:53.5101448Z ##[error]Process completed with exit code 1.
+2026-10-31T01:00:53.5183163Z ##[group]Run actions/upload-artifact@v4
+2026-10-31T01:00:53.5183423Z with:
+2026-10-31T01:00:53.5183642Z   name: browser-b-presentation-3-test-results
+2026-10-31T01:00:53.5183912Z   path: test-results/
+2026-10-31T01:00:53.5184122Z   if-no-files-found: ignore
+2026-10-31T01:00:53.5184340Z   compression-level: 6
+2026-10-31T01:00:53.5184543Z   overwrite: false
+2026-10-31T01:00:53.5184750Z   include-hidden-files: false
+2026-10-31T01:00:53.5184973Z ##[endgroup]
+2026-10-31T01:00:53.6570721Z (node:5173) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-31T01:00:53.6571415Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-31T01:00:53.6640644Z With the provided path, there will be 30 files uploaded
+2026-10-31T01:00:53.6644666Z Artifact name is valid!
+2026-10-31T01:00:53.6650872Z Root directory input is valid!
+2026-10-31T01:00:54.0051940Z Beginning upload of artifact content to blob storage
+2026-10-31T01:00:54.2364256Z (node:5173) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+2026-10-31T01:00:55.0209080Z Uploaded bytes 8175246
+2026-10-31T01:00:55.0841039Z Finished uploading artifact content to blob storage!
+2026-10-31T01:00:55.0842166Z SHA256 digest of uploaded artifact zip is f66af8d2cb0b81722f8d8085ce81ae33a4e0061c9675856c2388febabd076cc9
+2026-10-31T01:00:55.0842986Z Finalizing artifact upload
+2026-10-31T01:00:55.5501395Z Artifact browser-b-presentation-3-test-results.zip successfully finalized. Artifact ID 13023489537
+2026-10-31T01:00:55.5502764Z Artifact browser-b-presentation-3-test-results has been successfully uploaded! Final size is 8175246 bytes. Artifact ID is 13023489537
+2026-10-31T01:00:55.5507844Z Artifact download URL: https://github.com/jarrodjohnson-gif/emberisle/actions/runs/41152094265/artifacts/13023489537
+2026-10-31T01:00:55.5732306Z Post job cleanup.
+2026-10-31T01:00:55.6450788Z [command]/usr/bin/git version
+2026-10-31T01:00:55.6487857Z git version 2.56.0
+2026-10-31T01:00:55.6519409Z Temporarily overriding HOME='/home/runner/work/_temp/600bb9e7-6ab8-4162-a14a-0033fa45c33f' before making global git config changes
+2026-10-31T01:00:55.6521153Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-31T01:00:55.6524511Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/emberisle/emberisle
+2026-10-31T01:00:55.6559264Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-31T01:00:55.6592026Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-31T01:00:55.6844172Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-31T01:00:55.6870032Z http.https://github.com/.extraheader
+2026-10-31T01:00:55.6890527Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-10-31T01:00:55.6924396Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-31T01:00:55.7164386Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-31T01:00:55.7205338Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-31T01:00:55.7556057Z Cleaning up orphan processes
+2026-10-31T01:00:55.7814189Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4, actions/checkout@v4, actions/download-artifact@v4, actions/setup-node@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+

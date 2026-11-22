@@ -1,0 +1,7 @@
+{
+  "before": "6e818be527b50bc5bf7b4e4d79c3cc32d7d76702",
+  "method": "entire proof byte comparison after the sole additive APWG fixture-list replacement",
+  "assertionCallCountBefore": 44,
+  "assertionCallCountAfter": 44,
+  "allConditionsMessagesAndDeadlinesUnchanged": true
+}

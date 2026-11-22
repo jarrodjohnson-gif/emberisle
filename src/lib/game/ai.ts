@@ -122,7 +122,7 @@ function size(bag: Cost) {
 }
 
 // A table ask (#363) as its asker sent it: the asker gives `give` and wants `want`.
-export type TradeAsk = Pick<TradeOffer, "from" | "give" | "want">;
+type TradeAsk = Pick<TradeOffer, "from" | "give" | "want">;
 
 // Whether a bot says Yes to an ask (#363). It reads only its own hand and what every seat sees:
 // it can pay, it gets at least as many cards as it gives, the trade leaves it fewer cards short of
@@ -218,6 +218,7 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
   if (state.phase === "discard" && (state.discardNeeded[pid] ?? 0) > 0) {
     return { type: "discard", resources: discardHalf(me, state.discardNeeded[pid]!) };
   }
+  if (state.current !== pid) return null;
   if (state.phase === "setupSettle") {
     const opts = legalSettle(state, pid, true);
     opts.sort((a, b) => pipScore(state, b) - pipScore(state, a));
@@ -227,7 +228,6 @@ export function chooseBotAction(state: GameState, pid: string): Action | null {
     const opts = legalRoads(state, pid, true);
     if (opts[0]) return { type: "setupRoad", edgeId: opts[0] };
   }
-  if (state.current !== pid) return null;
   if (state.phase === "robber") {
     const m = bestRobberHex(state, pid);
     return { type: "moveRobber", hexId: m.hexId, stealFrom: m.stealFrom };

@@ -1,0 +1,272 @@
+{
+  "browser": "153.0.8010.12",
+  "source": "current proof codeFits extracted verbatim; runtime unchanged99a",
+  "results": [
+    {
+      "name": "native",
+      "family": "",
+      "error": null,
+      "fonts": [
+        {
+          "familyName": "Noto Sans",
+          "postScriptName": "NotoSans-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": {
+        "label": "390x844 native WWWW Copy → Copied",
+        "code": "WWWW",
+        "font": 21.9355,
+        "fontStyle": "700 21.9355px / 32px ui-rounded, \"SF Pro Rounded\", system-ui, sans-serif",
+        "letterSpacing": "1px",
+        "clientWidth": 89,
+        "scrollWidth": 89,
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "textLeft": 29,
+        "textRight": 117.796875,
+        "left": 29,
+        "right": 117.796875,
+        "focus": true,
+        "buttons": [
+          {
+            "text": "Copied",
+            "font": 15,
+            "width": 69.28125,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Copy link",
+            "font": 15,
+            "width": 86.78125,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Invite",
+            "font": 15,
+            "width": 62.1875,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          }
+        ]
+      }
+    },
+    {
+      "name": "Arial",
+      "family": "Arial, sans-serif",
+      "error": null,
+      "fonts": [
+        {
+          "familyName": "Liberation Sans",
+          "postScriptName": "LiberationSans-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": {
+        "label": "390x844 Arial WWWW Copy → Copied",
+        "code": "WWWW",
+        "font": 24,
+        "fontStyle": "700 24px / 32px Arial, sans-serif",
+        "letterSpacing": "1px",
+        "clientWidth": 95,
+        "scrollWidth": 95,
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "textLeft": 29,
+        "textRight": 123.609375,
+        "left": 29,
+        "right": 123.609375,
+        "focus": true,
+        "buttons": [
+          {
+            "text": "Copied",
+            "font": 15,
+            "width": 68.84375,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Copy link",
+            "font": 15,
+            "width": 85.515625,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Invite",
+            "font": 15,
+            "width": 57.1875,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          }
+        ]
+      }
+    },
+    {
+      "name": "Liberation Sans",
+      "family": "\"Liberation Sans\", sans-serif",
+      "error": null,
+      "fonts": [
+        {
+          "familyName": "Liberation Sans",
+          "postScriptName": "LiberationSans-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": {
+        "label": "390x844 Liberation Sans WWWW Copy → Copied",
+        "code": "WWWW",
+        "font": 24,
+        "fontStyle": "700 24px / 32px \"Liberation Sans\", sans-serif",
+        "letterSpacing": "1px",
+        "clientWidth": 95,
+        "scrollWidth": 95,
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "textLeft": 29,
+        "textRight": 123.609375,
+        "left": 29,
+        "right": 123.609375,
+        "focus": true,
+        "buttons": [
+          {
+            "text": "Copied",
+            "font": 15,
+            "width": 68.84375,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Copy link",
+            "font": 15,
+            "width": 85.515625,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Invite",
+            "font": 15,
+            "width": 57.1875,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          }
+        ]
+      }
+    },
+    {
+      "name": "DejaVu Sans",
+      "family": "\"DejaVu Sans\", sans-serif",
+      "error": {
+        "name": "AssertionError",
+        "message": "390x844 DejaVu Sans WWWW Copy → Copied: code remains at least as large as its control labels"
+      },
+      "fonts": [
+        {
+          "familyName": "DejaVu Sans",
+          "postScriptName": "DejaVuSans-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": null
+    },
+    {
+      "name": "DejaVu Serif",
+      "family": "\"DejaVu Serif\", serif",
+      "error": {
+        "name": "AssertionError",
+        "message": "390x844 DejaVu Serif WWWW Copy → Copied: code remains at least as large as its control labels"
+      },
+      "fonts": [
+        {
+          "familyName": "DejaVu Serif",
+          "postScriptName": "DejaVuSerif-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": null
+    },
+    {
+      "name": "monospace",
+      "family": "monospace",
+      "error": null,
+      "fonts": [
+        {
+          "familyName": "DejaVu Sans Mono",
+          "postScriptName": "DejaVuSansMono-Bold",
+          "isCustomFont": false,
+          "glyphCount": 4
+        }
+      ],
+      "measurement": {
+        "label": "390x844 monospace WWWW Copy → Copied",
+        "code": "WWWW",
+        "font": 24,
+        "fontStyle": "700 24px / 32px monospace",
+        "letterSpacing": "1px",
+        "clientWidth": 62,
+        "scrollWidth": 62,
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "dpr": 1
+        },
+        "textLeft": 29,
+        "textRight": 90.796875,
+        "left": 29,
+        "right": 90.796875,
+        "focus": true,
+        "buttons": [
+          {
+            "text": "Copied",
+            "font": 15,
+            "width": 72.1875,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Copy link",
+            "font": 15,
+            "width": 99.28125,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          },
+          {
+            "text": "Invite",
+            "font": 15,
+            "width": 72.1875,
+            "height": 44,
+            "left": 9,
+            "right": 9
+          }
+        ]
+      }
+    }
+  ]
+}

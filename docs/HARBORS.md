@@ -2,9 +2,9 @@
 
 How the nine coastal docks are dealt. The rule a player reads is on the README. This file is where the code does it.
 
-`src/lib/game/board.ts` builds `harborTypes` as four `any` and one of each resource, shuffles them, and walks the coastal edges in angle order. It places one type on every ninth of that walk, on both corners of the edge (`board.ts` around the `harborTypes` list).
+`src/lib/game/board.ts` builds `harborTypes` as four `any` docks and one dock for each resource. It shuffles them and walks the coastal edges in angle order. It places one type on every ninth of that walk, on both corners of the edge. See `board.ts` around the `harborTypes` list.
 
-The renderer draws one pier and one boat per dock (nine of each, at the edge midpoint), not one per corner; `proof: scripts/board-look-prove.mjs`.
+The renderer draws one pier and one boat per dock, nine of each, at the edge midpoint. It draws them once per dock, not once per corner; `proof: scripts/board-look-prove.mjs`.
 
 `harborRate` in `src/lib/game/rules.ts` looks at the acting player's buildings. A matching resource dock returns 2. Otherwise an `any` dock returns 3. Otherwise the bank rate is 4.
 

@@ -1,0 +1,43 @@
+from pathlib import Path
+import yaml,json,subprocess,tempfile,shutil,copy
+source=Path('.github/workflows/ci.yml').read_text()
+workflow=yaml.safe_load(source)
+steps=workflow['jobs']['server']['steps']
+
+def execute(steps,docs):
+    selected=[];node=False;calls=0
+    with tempfile.TemporaryDirectory(prefix='emberisle1226-yaml-') as d:
+        root=Path(d)
+        for step in steps:
+            relevant=step.get('uses') in ['actions/checkout@v4','actions/setup-node@v4'] or step.get('run')=='npm run desk-gate-prove'
+            if not relevant:continue
+            condition=step.get('if','true')
+            assert condition in ['true',"needs.changes.outputs.docs_only != 'true'"],condition
+            if condition!='true' and docs:continue
+            action=step.get('uses')
+            if action=='actions/checkout@v4':
+                (root/'scripts').mkdir()
+                for f in ['package.json','scripts/desk-gate.mjs','scripts/desk-gate-prove.mjs']:shutil.copyfile(f,root/f)
+                selected.append(action)
+            elif action=='actions/setup-node@v4':
+                assert step['with']['node-version']==22
+                node=True;selected.append(action+':22')
+            else:
+                calls+=1
+                result=subprocess.run(step['run'],shell=True,cwd=root,capture_output=True,text=True)
+                assert result.returncode==0,(result.returncode,result.stdout+result.stderr)
+                assert node,'declared Node setup must precede command'
+                assert 'desk-gate-prove: 38 checks passed' in result.stdout
+                selected.append(step['run'])
+        assert calls==1,'must execute desk proof'
+        return selected
+for docs in [True,False]:print('PASS real YAML docs_only='+str(docs).lower(),execute(steps,docs))
+original=copy.deepcopy(steps)
+for step in original:
+    if step.get('uses') in ['actions/checkout@v4','actions/setup-node@v4']:step['if']="needs.changes.outputs.docs_only != 'true'"
+try:execute(original,True)
+except AssertionError as error:
+    assert 'ENOENT' in str(error) and '254' in str(error)
+    print('PASS negative: original parsed YAML skips checkout/setup and real npm exits254 ENOENT')
+else:raise AssertionError('old path unexpectedly passed')
+print('PyYAML',yaml.__version__,'full workflow parse; prerequisite action behavior is projected; local node='+subprocess.check_output(['node','--version'],text=True).strip())

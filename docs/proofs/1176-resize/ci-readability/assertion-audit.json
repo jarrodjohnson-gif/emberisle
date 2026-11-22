@@ -1,0 +1,7 @@
+{
+  "method": "balanced-call text comparison; no AST API available",
+  "before": "99a1d91",
+  "beforeCount": 44,
+  "afterCount": 44,
+  "allAssertionConditionsAndMessagesIdentical": true
+}

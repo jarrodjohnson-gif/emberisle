@@ -1,11 +1,11 @@
 // Jelly Ocean hand, V1 Column goods cards (#773, docs/design/goods-cards-v1): paper faces with the symbol, count and name
 // centred on one axis (within 0.5 px, from getBoundingClientRect), stable counts and footprints, a gain's full-colour fill
-// with a +N tab from the top edge and a loss's hollow red −N tab, held FLASH_MS (2200 ms) and faded over 300 ms, bounded
+// with a +N tab from the top edge and a loss's −N tab (both a light pill, dark ink, outlined in the good's colour, #825), held FLASH_MS (2500 ms) and faded over 500 ms, bounded
 // lift/dip movement on actual game actions, isolated/restarting deltas, clipping, quiet reconnect/hotseat baselines and
 // fully static reduced motion. The tests hold WAAPI timelines and wait for cue cleanup between samples.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 8436;
@@ -36,16 +36,26 @@ const PAINT = {
   grain: ["#e3c462", "#8c722d", "#263d3c"],
   ore: ["#63748a", "#414d5b", "#ffffff"],
 };
-// The cue's whole life: FLASH_MS (2200) held, then a 300 ms fade (Hand.tsx CUE_MS).
-const CUE_MS = 2500;
+// The cue's whole life: FLASH_MS (2500) held, then a 500 ms fade (Hand.tsx CUE_MS).
+const CUE_MS = 3000;
 // Each layout's fixed card: upright and short as today; the wide, fine-pointer layout at 1.3x the upright mock.
+// #1539 one tray: five numbers in the tray, no card box; #1712: the 1 px divider sits in the gap, so a column after it
+// (`divided`) is as wide as the first. The desk tray is one row, the hand in 64 px columns beside the buttons: 20 px symbols, 26 px counts, 62 px tall; upright the tray's 14 px padding leaves
+// five equal 62.8 px columns; the sideways column's short card is 44.8 px wide. Names are 12 px sentence case (hand-motion.css).
 const SIZE = {
-  desk: { box: [88, 80], symbol: 22, count: 30, name: 12 },
-  port: { box: [66.8, 62], symbol: 18, count: 24, name: 10 },
-  short: { box: [47.2, 44], symbol: 14, count: 24, name: 0 },
+  desk: { box: [64, 62], divided: 64, symbol: 20, count: 26, name: 12 },
+  port: { box: [62.8, 62], divided: 62.8, symbol: 18, count: 24, name: 12 },
+  short: { box: [44.8, 44], divided: 44.8, symbol: 14, count: 24, name: 0 },
 };
 // A gain lifts by the tray's --goods-lift: 6 px upright, 4 px short and where the hand heads a wide screen's stack.
-const LIFT = { desk: -4, port: -6, short: -4 };
+// #1539: on desktop the status line now heads the tray, so the hand no longer heads the stack and lifts the full 6 px.
+const LIFT = { desk: -6, port: -6, short: -4 };
+// The +N / −N pill (#825): 24 px tall with 14 px text, 20 px above the card; 28 px, 17.5 px and 24 px on the wide fine-pointer layout.
+const TAB = {
+  desk: { font: ["17.5px", "700"], h: 28, above: 24 },
+  port: { font: ["14px", "700"], h: 24, above: 20 },
+  short: { font: ["14px", "700"], h: 24, above: 20 },
+};
 
 // The symbol, the count and the name of every card centre on the card's vertical axis within 0.5 px, and so do the lit
 // copy's when a gain lays one over it. Read from getBoundingClientRect, so a glyph box that is off-centre cannot hide.
@@ -180,8 +190,8 @@ async function proveResourceMotion(page, tag) {
   // The first change goes through the actual trade panel and the store's rules dispatcher.
   await page.getByRole("button", { name: "Trade", exact: true }).click();
   await page.getByTestId("trade-panel").waitFor();
-  for (let i = 0; i < 4; i++) await page.getByRole("button", { name: "More stone to give" }).click();
-  await page.getByRole("button", { name: "More sheep to want" }).click();
+  await page.getByRole("button", { name: "More Stone to give", exact: true }).click();
+  await page.getByRole("button", { name: "More Sheep to want", exact: true }).click();
   await page.getByRole("button", { name: /^(Bank 4|Dock 3|Dock 2):1$/ }).click();
   await page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"] [data-testid="hand-count"]')?.textContent.trim() === "2", null, { timeout: STEP_MS });
   await sampleCardMotion(page, { wool: { count: "2", flash: "+1", y: LIFT[tag] }, ore: { count: "4", flash: "\u22124", y: 2 } }, tag);
@@ -434,7 +444,6 @@ mkdirSync("test-results", { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;
@@ -458,14 +467,14 @@ async function open(v, reducedMotion) {
       }
       return animation;
     };
-    // A slow runner (software GL under CI load) can take longer than a cue's 2500 ms between finding a cue and reading it,
-    // and the cue is gone by then. While __holdCues is set, the hand's 2500 ms end-of-cue timer waits for __releaseCues(),
+    // A slow runner (software GL under CI load) can take longer than a cue's 3000 ms between finding a cue and reading it,
+    // and the cue is gone by then. While __holdCues is set, the hand's 3000 ms end-of-cue timer waits for __releaseCues(),
     // so a measured cue stays on the page until the proof has read it. clearTimeout still cancels a held timer.
     const later = window.setTimeout.bind(window);
     const clear = window.clearTimeout.bind(window);
     const held = new Map();
     window.setTimeout = function (fn, ms, ...args) {
-      if (window.__holdCues && ms === 2500 && typeof fn === "function") {
+      if (window.__holdCues && ms === 3000 && typeof fn === "function") {
         const id = later(() => {}, 2_147_000_000);
         held.set(id, () => fn(...args));
         return id;
@@ -487,7 +496,7 @@ async function open(v, reducedMotion) {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass and play" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });
@@ -529,8 +538,11 @@ try {
             .filter((e) => e.textContent.trim() && !e.querySelector("*"))
             .map((e) => ({ t: e.textContent.trim(), px: parseFloat(getComputedStyle(e).fontSize) }));
           const visible = [...el.querySelectorAll("*")].filter((e) => e.textContent.trim() && !e.querySelector("*") && e.getBoundingClientRect().width > 1);
+          // #1539: the card has no fill, so its count is read against the first opaque surface behind it.
+          let paper = null;
+          for (let n = el; n && !paper; n = n.parentElement) { const m = getComputedStyle(n).backgroundColor.match(/[\d.]+/g)?.map(Number) ?? []; if (m.length === 3 || m[3] >= 0.99) paper = `rgb(${m.slice(0, 3).join(", ")})`; }
           return [r, {
-            fill: cs.backgroundColor, opacity: cs.opacity, title: el.title, text: count.textContent, color: cc.color,
+            fill: cs.backgroundColor, paper, opacity: cs.opacity, title: el.title, text: count.textContent, color: cc.color,
             size: cc.fontSize, weight: cc.fontWeight, tabular: cc.fontVariantNumeric, sizes,
             visibleText: visible.map((e) => e.textContent.trim()), icon: !!el.querySelector("svg"),
             iconOpacity: el.querySelector("svg") && getComputedStyle(el.querySelector("svg")).opacity,
@@ -545,9 +557,9 @@ try {
     const want = { timber: 3, clay: 0, wool: 12, grain: 1, ore: 0 };
     for (const r of RESOURCES) {
       const c = cards[r];
-      const fill = parse(c.fill);
-      assert.deepEqual(fill, rgb(want[r] === 0 ? "#eeece7" : "#fff9f0"), `${v.tag} ${r}: fill ${c.fill}`);
-      assert.deepEqual(parse(c.color), rgb("#263d3c"), `${v.tag} ${r}: count colour ${c.color}`);
+      const fill = parse(c.paper);
+      assert.equal(c.fill, "rgba(0, 0, 0, 0)", `${v.tag} ${r}: no card fill ${c.fill}`);
+      assert.deepEqual(parse(c.color), rgb(want[r] === 0 ? "#64736f" : "#263d3c"), `${v.tag} ${r}: count colour ${c.color} (a zero is greyed)`);
       const cr = ratio(parse(c.color), fill);
       assert.ok(cr >= 4.5, `${v.tag} ${r}: count contrast ${cr.toFixed(2)}`);
       assert.equal(c.text, String(want[r]), `${v.tag} ${r}: count`);
@@ -556,10 +568,10 @@ try {
       assert.match(c.tabular, /tabular-nums/, `${v.tag} ${r}: tabular`);
       assert.ok(c.sizes.every((s) => s.px <= SIZE[v.tag].count), `${v.tag} ${r}: count is the largest text ${JSON.stringify(c.sizes)}`);
       assert.ok(c.sizes.filter((s) => s.px === parseFloat(c.size)).length === 1, `${v.tag} ${r}: only the count is ${c.size}`);
-      // V1: an 18 px symbol (14 px in the short card), a 24 px count, and a 10 px tracked uppercase name.
+      // #1539: the layout's symbol and count, and a 12 px sentence-case name.
       assert.deepEqual(c.symbol, [SIZE[v.tag].symbol, SIZE[v.tag].symbol], `${v.tag} ${r}: symbol size`);
-      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "700", spacing: `${+(SIZE[v.tag].name * 0.08).toFixed(2)}px`, transform: "uppercase" }, `${v.tag} ${r}: tracked name`);
-      assert.deepEqual(c.box, SIZE[v.tag].box, `${v.tag} ${r}: card footprint is its layout's fixed size`);
+      if (SIZE[v.tag].name) assert.deepEqual(c.label, { size: `${SIZE[v.tag].name}px`, weight: "500", spacing: "normal", transform: "none" }, `${v.tag} ${r}: sentence-case name`);
+      assert.deepEqual(c.box, [r === "timber" ? SIZE[v.tag].box[0] : SIZE[v.tag].divided, SIZE[v.tag].box[1]], `${v.tag} ${r}: card footprint is its layout's fixed size`);
       assert.equal(c.opacity, "1", `${v.tag} ${r}: opacity`);
       assert.ok(c.icon && c.iconOpacity === "1", `${v.tag} ${r}: icon at 70 % (${c.iconOpacity})`);
       assert.deepEqual(c.visibleText, v.tag === "short" ? [String(want[r])] : [String(want[r]), {timber:"Wood",clay:"Brick",wool:"Sheep",grain:"Wheat",ore:"Stone"}[r]], `${v.tag} ${r}: only the count is visible text`);
@@ -588,7 +600,7 @@ try {
     await page.waitForFunction(() => window.__cues.length === 2, null, { timeout: STEP_MS });
     await page.evaluate(() => { const g = window.__emberisle; g.setState({ state: structuredClone(g.getState().state) }); });
     await page.waitForTimeout(300);
-    // Hold the cue at full strength (1200 ms into its 2500 ms) and read the lit face and the tab.
+    // Hold the cue at full strength (1200 ms into its 3000 ms) and read the lit face and the tab.
     const gain = await page.evaluate(() => {
       const card = document.querySelector('[data-testid="resource-timber"]');
       // The card's own lift is held too, so the tab is probed where it really goes.
@@ -606,7 +618,7 @@ try {
         cues: window.__cues.slice(), fill: lc.backgroundColor, opacity: lc.opacity,
         count: getComputedStyle(lit.querySelector(".goods-count")).color, litText: lit.textContent,
         symbol: getComputedStyle(lit.querySelector("svg")).color,
-        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
+        tab: { font: [getComputedStyle(tab).fontSize, getComputedStyle(tab).fontWeight], h: t.height, text: tab.textContent, bg: getComputedStyle(tab).backgroundColor, color: getComputedStyle(tab).color, edge: getComputedStyle(tab).boxShadow, off: t.left + t.width / 2 - (c.left + c.width / 2), above: c.top - t.top, into: t.bottom - c.top, opacity: getComputedStyle(tab).opacity },
         tabOnTop: hit === tab || tab.contains(hit), lift: c.top - card.parentElement.getBoundingClientRect().top,
         hit: hit && `${hit.tagName}.${String(hit.className).slice(0, 60)} ${hit.dataset?.testid ?? ""}`,
         tabBox: [t.top, t.bottom, t.left, t.right], stackTop: card.closest("[data-hud-stack]")?.getBoundingClientRect().top,
@@ -614,7 +626,7 @@ try {
       };
     });
     assert.deepEqual(gain.cues.map((q) => [q.what, q.on]), [["goods-lit", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one gain, one fill and one tab on timber, none after a cloned setState`);
-    assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "2.5s"), `${v.tag}: the fill and the tab hold 2200 ms and fade over 300 ms (${JSON.stringify(gain.cues)})`);
+    assert.ok(gain.cues.every((q) => q.anim === "goods-cue" && q.duration === "3s"), `${v.tag}: the fill and the tab hold 2500 ms and fade over 500 ms (${JSON.stringify(gain.cues)})`);
     assert.deepEqual(parse(gain.fill), rgb(PAINT.timber[0]), `${v.tag}: gain fills the card with the good's colour`);
     assert.equal(gain.opacity, "1", `${v.tag}: the fill is at full strength while it holds`);
     assert.equal(gain.tab.opacity, "1", `${v.tag}: the tab is at full strength while it holds`);
@@ -623,13 +635,14 @@ try {
     assert.ok(ratio(parse(gain.count), parse(gain.fill)) >= 4.5, `${v.tag}: count on the fill ≥ 4.5:1 (${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)})`);
     assert.equal(gain.litText, "5Wood", `${v.tag}: the lit face shows the new count`);
     assert.equal(gain.tab.text, "+2", `${v.tag}: gain tab reads +N`);
-    assert.deepEqual(parse(gain.tab.bg), rgb(PAINT.timber[1]), `${v.tag}: gain tab is the good's side colour`);
-    assert.deepEqual(parse(gain.tab.color), rgb("#ffffff"), `${v.tag}: gain tab text is white`);
+    assert.deepEqual(parse(gain.tab.bg), rgb("#ffffff"), `${v.tag}: gain tab is the white pill`);
+    assert.deepEqual(parse(gain.tab.color), rgb("#263d3c"), `${v.tag}: gain tab text is the dark ink`);
     assert.ok(ratio(parse(gain.tab.color), parse(gain.tab.bg)) >= 4.5, `${v.tag}: gain tab ≥ 4.5:1`);
+    assert.match(gain.tab.edge, /rgb\(23, 61, 53\) 0px 0px 0px 1.5px inset/, `${v.tag}: gain tab has a 1.5 px outline in the good's side colour`);
     assert.ok(Math.abs(gain.tab.off) <= 0.5, `${v.tag}: the tab is centred on its card (off by ${gain.tab.off.toFixed(3)} px)`);
-    assert.deepEqual(gain.tab.font, ["14px", "700"], `${v.tag}: the +N tab is 14 px bold`);
-    assert.ok(Math.abs(gain.tab.h - 22) <= 0.5, `${v.tag}: the +N tab is 22 px tall (${gain.tab.h})`);
-    assert.ok(Math.abs(gain.tab.above - 18) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
+    assert.deepEqual(gain.tab.font, TAB[v.tag].font, `${v.tag}: the +N tab is ${TAB[v.tag].font[0]} bold`);
+    assert.ok(Math.abs(gain.tab.h - TAB[v.tag].h) <= 0.5, `${v.tag}: the +N tab is ${TAB[v.tag].h} px tall (${gain.tab.h})`);
+    assert.ok(Math.abs(gain.tab.above - TAB[v.tag].above) <= 0.5 && Math.abs(gain.tab.into - 4) <= 0.5, `${v.tag}: the tab grows out of the card's top edge (${gain.tab.above} px above, ${gain.tab.into} px into it)`);
     assert.ok(Math.abs(gain.lift - LIFT[v.tag]) <= 0.35, `${v.tag}: the gained card is lifted ${LIFT[v.tag]} px while the fill holds (${gain.lift})`);
     assert.equal(gain.tabOnTop, true, `${v.tag}: nothing covers or clips the tab (${JSON.stringify([gain.hit, gain.tabBox, gain.stackTop, gain.tray])})`);
     const lit = await centring(page, `${v.tag} gain`, { lit: true });
@@ -651,18 +664,18 @@ try {
     assert.deepEqual(loss.cues.map((q) => [q.what, q.on]), [["goods-lost", "resource-timber"], ["resource-flash", "resource-timber"]], `${v.tag}: one loss, one red ring and one tab on timber`);
     assert.equal(loss.lit, false, `${v.tag}: a loss does not fill the card`);
     assert.equal(loss.text, "−1", `${v.tag}: loss tab reads −N`);
-    assert.deepEqual(parse(loss.bg), rgb("#fff9f0"), `${v.tag}: loss tab is hollow (paper)`);
-    assert.deepEqual(parse(loss.color), rgb("#8a2219"), `${v.tag}: loss tab text is the loss red`);
-    assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1px inset/, `${v.tag}: loss tab has a 1 px red edge`);
+    assert.deepEqual(parse(loss.bg), rgb("#8a2219"), `${v.tag}: loss tab is the loss red`);
+    assert.deepEqual(parse(loss.color), rgb("#ffffff"), `${v.tag}: loss tab text is white`);
+    assert.match(loss.edge, /rgb\(138, 34, 25\) 0px 0px 0px 1.5px inset/, `${v.tag}: loss tab has a 1.5 px outline in the loss red`);
     assert.ok(ratio(parse(loss.color), parse(loss.bg)) >= 4.5, `${v.tag}: loss tab ≥ 4.5:1`);
     assert.ok(Math.abs(loss.off) <= 0.5, `${v.tag}: the loss tab is centred on its card`);
-    assert.deepEqual(loss.font, ["14px", "700"], `${v.tag}: the −N tab is 14 px bold`);
-    assert.ok(Math.abs(loss.h - 22) <= 0.5 && Math.abs(loss.above - 19) <= 0.5, `${v.tag}: the −N tab is 22 px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
+    assert.deepEqual(loss.font, TAB[v.tag].font, `${v.tag}: the −N tab is ${TAB[v.tag].font[0]} bold`);
+    assert.ok(Math.abs(loss.h - TAB[v.tag].h) <= 0.5 && Math.abs(loss.above - TAB[v.tag].above) <= 0.5, `${v.tag}: the −N tab is ${TAB[v.tag].h} px tall and grows out of the top edge (${loss.h}, ${loss.above})`);
     assert.ok(!gain.cues.concat(loss.cues).some((q) => q.what === "hand-ring"), `${v.tag}: no ring is drawn`);
     assert.equal(await page.locator('[data-testid="hand-ring"]').count(), 0, `${v.tag}: no ring on the page`);
     assert.deepEqual(errors, [], `${v.tag}: console errors`);
     console.log(`${v.tag} ${v.width}x${v.height}: ${SIZE[v.tag].box.join("x")} cards, ${SIZE[v.tag].symbol} px symbols, ${SIZE[v.tag].count} px tabular counts; fills ${RESOURCES.map((r) => cards[r].fill).join(" ")}; contrast ` +
-      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].fill)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
+      RESOURCES.map((r) => ratio(parse(cards[r].color), parse(cards[r].paper)).toFixed(1)).join(" ") + `; symbol, count and name centred within ${still.worst.toFixed(3)} px at rest, ${lit.worst.toFixed(3)} px lit; ` +
       `gain fill ${gain.fill}, count ${ratio(parse(gain.count), parse(gain.fill)).toFixed(2)}:1, +2 tab ${gain.tab.font.join(" ")} ${gain.tab.h} px tall ${ratio(parse(gain.tab.color), parse(gain.tab.bg)).toFixed(2)}:1, −1 tab ${ratio(parse(loss.color), parse(loss.bg)).toFixed(2)}:1; 1 cue per change; 0 console errors`);
     await page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });
     await proveResourceMotion(page, v.tag);
@@ -704,7 +717,8 @@ try {
     await ds.page.waitForFunction(() => document.querySelector('[data-testid="resource-wool"]')?.textContent.includes("2"), null, { timeout: STEP_MS });
     await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"], [data-testid="goods-lit"], [data-testid="goods-lost"]'), null, { timeout: STEP_MS });
     const rest = await box();
-    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [139.2, 52, 60], `deskshort ${c.r}: card is main's 139.2x52 in a 60 px tray (${JSON.stringify(c)})`);
+    // #1539: the desk tray is one row with 64 px hand columns, so the card is 64x62 in a 70 px tray.
+    for (const c of rest) assert.deepEqual([c.w, c.h, c.tray], [64, 62, 70], `deskshort ${c.r}: card is the tray's 64x62 column (64 after a divider too, #1712) in a 70 px tray (${JSON.stringify(c)})`);
     const during = [];
     for (const hand of [{ timber: 5 }, { wool: 1 }]) {
       await ds.page.evaluate(() => (window.__holdCues = true));
@@ -721,7 +735,7 @@ try {
         return { top: hit === t || t.contains(hit), font: getComputedStyle(t).fontSize, h: r.height };
       });
       assert.equal(tab.top, true, `deskshort ${JSON.stringify(hand)}: nothing clips or covers the tab`);
-      assert.ok(tab.font === "14px" && Math.abs(tab.h - 22) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 22 px tall (${JSON.stringify(tab)})`);
+      assert.ok(tab.font === "14px" && Math.abs(tab.h - 24) <= 0.5, `deskshort ${JSON.stringify(hand)}: the tab is 14 px text, 24 px tall (${JSON.stringify(tab)})`);
       during.push(await box());
       await ds.page.evaluate(() => { for (const a of document.querySelector(".goods-tray").getAnimations({ subtree: true })) a.play(); window.__releaseCues(); });
       await ds.page.waitForFunction(() => !document.querySelector('[data-testid="resource-flash"]'), null, { timeout: STEP_MS });

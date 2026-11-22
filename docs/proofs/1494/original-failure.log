@@ -1,0 +1,21 @@
+
+> win-list-prove
+> node --import ./server/register.mjs scripts/win-list-prove.mjs
+
+ok 440x956 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+ok 956x440 touch: list rows, totals = totalVP, open/close by tap and keyboard, one open, scroll to top, fits list and viewport, no sideways scroll
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+locator.waitFor: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for getByTestId('win-menu') to be visible[22m
+
+    at open (/workspace/work/1406/scripts/win-list-prove.mjs:108:40)
+    at async file:///workspace/work/1406/scripts/win-list-prove.mjs:130:36 {
+  log: [ "  - waiting for getByTestId('win-menu') to be visible" ],
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.4

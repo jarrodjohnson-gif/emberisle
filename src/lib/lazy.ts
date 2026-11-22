@@ -5,15 +5,27 @@
 // suspends on the shared load; a failed load reaches the LazyBoundary around it and is forgotten there (or a second later
 // if only a prefetch asked), so the next open or mount tries the network again.
 import { Component, createElement, Suspense, use, type ComponentType, type ReactNode } from "react";
+import { JOIN_CODE } from "@/lib/net/proto";
 
 // A promise React's `use` can read without suspending once it has settled: it carries its own status, as React's thenable
 // protocol allows, so a loaded chunk renders synchronously on every later pass (React must see `use` called on each pass).
 type Tracked<M> = Promise<M> & { status?: "fulfilled" | "rejected"; value?: M; reason?: unknown; waited?: boolean };
 
+// Optional non-React imports may own their recovery instead of reloading a playable page.
+// Ownership lasts through settlement, including a cancelled caller whose network request is still pending.
+const chunkRecoveries = new Set<(url: string) => boolean>();
+export function withChunkRecovery<M>(load: () => Promise<M>, owns: (url: string) => boolean): Promise<M> {
+  const entry = (url: string) => owns(url);
+  chunkRecoveries.add(entry);
+  return Promise.resolve().then(load).finally(() => chunkRecoveries.delete(entry));
+}
+// A promise `use` reads at once, with no suspended pass.
+const settled: Tracked<void> = Object.assign(Promise.resolve(), { status: "fulfilled" as const });
+
 // The boundary that catches a chunk's failure forgets it, so the next mount asks the network: keyed by the error thrown.
 const caught = new WeakMap<object, () => void>();
 
-export function chunk<M>(load: () => Promise<M>) {
+export function chunk<M>(load: () => Promise<M>, recover?: RegExp) {
   let pending: Tracked<M> | undefined;
   // The browser remembers a module that failed to fetch for the life of the page, so a plain retry of the same URL fails at
   // once without touching the network. The failure names the URL (Chromium and Firefox do; Safari does not, and there the
@@ -49,26 +61,53 @@ export function chunk<M>(load: () => Promise<M>) {
   };
   // Resolves true once the chunk is in memory, false if the load failed.
   const prefetch = () => preload().then(() => true, () => false);
+  // The load a render waits on. A failed prefetch no render waited on (the table's idle one, with the win screen mounting at
+  // game over) is dropped, and this render asks the network. A failure a render waited on has to reach the boundary, which
+  // forgets it.
+  const current = () => {
+    let p = preload();
+    if (p.status === "rejected" && !p.waited) {
+      pending = undefined;
+      p = preload();
+    }
+    if (!p.status) p.waited = true;
+    return p;
+  };
   const pick = <P extends object>(select: (m: M) => ComponentType<P>) =>
     function Lazy(props: P) {
-      let p = preload();
-      // A failed prefetch no render waited on (the table's idle one, with the win screen mounting at game over) is dropped,
-      // and this mount asks the network. A failure this component waited on has to reach the boundary, which forgets it.
-      if (p.status === "rejected" && !p.waited) {
-        pending = undefined;
-        p = preload();
-      }
-      if (!p.status) p.waited = true;
       // React's type for `use` wants one settled shape at a time; the promise reports whichever it is in at run time.
-      return createElement(select(use(p as Promise<M>)), props);
+      return createElement(select(use(current() as Promise<M>)), props);
     };
-  // Non-React callers share the same cache and failed-URL retry as the UI.
-  const loadModule = () => {
-    if (pending?.status === "rejected") pending = undefined;
-    return preload();
+  // #1695: for a parent that holds its first paint until this chunk has run or failed: a promise for `use` that never rejects,
+  // to keep across renders, already settled once the chunk has (a failure is still the boundary's around its component).
+  const ready = (): Promise<void> => {
+    const p = current();
+    return p.status ? settled : p.then(() => {}, () => {});
   };
-  return { prefetch, pick, load: loadModule };
+  // Non-React callers share the same cache and failed-URL retry as the UI.
+  // A recovering load is a plain promise (no `status`): its callers wait on it rather than read it at once.
+  const loadModule = (): Tracked<M> => {
+    if (pending?.status === "rejected") pending = undefined;
+    if (!recover) return preload();
+    // Only opt-in non-React loads own stale-chunk recovery. Match this build's exact preload path;
+    // retry queries may change, but another asset or another origin stays outside this request.
+    return withChunkRecovery(preload, (url) => {
+      try {
+        const asset = new URL(url, location.href);
+        return asset.origin === location.origin && recover.test(asset.pathname) &&
+          [...document.querySelectorAll<HTMLLinkElement>('link[rel="modulepreload"],link[rel="preload"][as="script"]')]
+            .some((link) => new URL(link.href).pathname === asset.pathname);
+      } catch { return false; }
+    });
+  };
+  return { prefetch, pick, ready, load: loadModule };
 }
+
+// #1281: the startup loading screen's real progress, set by the island as it comes up (first frame drawn, Hex Jelly scenes
+// in, shore in; a load that gives up counts as done, as the game plays on without it), and the push's camera lift, which
+// the island reads each title frame. It lives in the index, so neither lazy chunk imports the other. `intro`: the loading
+// screen is up, so the island's one-time GPU probe waits (#1385).
+export const boot = { drawn: false, scenes: false, shore: false, lift: 0, intro: false };
 
 // Prefetch when the browser is idle (within 2 s even while the island keeps every frame busy), or after a short delay
 // where requestIdleCallback is missing (Safari).
@@ -117,7 +156,7 @@ function typing() {
   return el instanceof HTMLInputElement && !/^(button|submit|reset|checkbox|radio|range|color|file|image)$/.test(el.type);
 }
 
-export const JOIN_CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
+export { JOIN_CODE };
 
 // The focus change that releases a held reload can be the press on Join or Host, which the reload then swallows. The join
 // field's value rides the reload in the URL (as a join link does) so the field refills: a valid code replaces whatever link
@@ -173,7 +212,10 @@ export function reloadOnStaleChunk(when: () => boolean) {
     keepJoinCode();
     location.reload();
   };
-  const onError = (e: Event) => attempt(chunkUrl((e as Event & { payload?: unknown }).payload) ?? "?");
+  const onError = (event: Event) => {
+    const url = chunkUrl((event as Event & { payload?: unknown }).payload) ?? "?";
+    if (![...chunkRecoveries].some((owns) => owns(url))) attempt(url);
+  };
   window.addEventListener("vite:preloadError", onError);
   return () => window.removeEventListener("vite:preloadError", onError);
 }

@@ -6,7 +6,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize } from "node:path";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 
 const BASE = "/emberisle/";
 const PORT = Number(process.env.PAGES_PORT) || 8110;
@@ -27,13 +27,14 @@ const server = createServer((req, res) => {
 await new Promise((ok) => server.listen(PORT, "127.0.0.1", ok));
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;
 try {
   const page = await (await browser.newContext()).newPage();
   const problems = [];
+  const sockets = [];
+  page.on("websocket", (socket) => sockets.push(socket.url()));
   page.on("console", (m) => m.type() === "error" && problems.push(`console: ${m.text()}`));
   page.on("pageerror", (e) => problems.push(`pageerror: ${e}`));
   page.on("response", (r) => r.status() >= 400 && problems.push(`${r.status()} ${r.url()}`));
@@ -41,7 +42,7 @@ try {
   await page.routeWebSocket(/:8787\//, () => {});
   const origin = `http://127.0.0.1:${PORT}`;
   await page.goto(`${origin}${BASE}`);
-  await page.getByRole("button", { name: "Play", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).waitFor();
   await page.waitForLoadState("networkidle");
 
   // #833: both optional title modules must resolve under the hosted prefix too.
@@ -51,6 +52,11 @@ try {
   const wayfarer = page.locator('select[aria-label="Online wayfarer"]');
   await wayfarer.waitFor({ state: "attached" });
   assert.equal(await wayfarer.inputValue(), "on");
+
+  // #987: a static non-root title must never start automatic discovery or retries.
+  await page.waitForTimeout(17000);
+  assert.deepEqual(sockets, [], "static title opens no automatic host connection");
+  console.log("PASS static non-root title: zero automatic WebSockets after 17 seconds");
 
   const hrefs = await page.evaluate(() => ({
     manifest: document.querySelector('link[rel="manifest"]').href,
@@ -66,7 +72,7 @@ try {
 
   // The sound module builds its URL from BASE_URL; ask it to play, and see which URL the page asks for.
   const audio = page.waitForRequest((r) => r.url().endsWith(".wav"), { timeout: 5000 });
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   const url = (await audio).url();
   assert.ok(url.startsWith(`${origin}${BASE}audio/`), `audio URL ${url}`);
   assert.equal((await page.request.get(url)).status(), 200);

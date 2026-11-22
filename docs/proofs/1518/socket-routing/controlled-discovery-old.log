@@ -1,0 +1,20 @@
+controlled socket message { socket: 0, type: 'hello' }
+controlled socket message { socket: 0, type: 'healthPing' }
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+controlled socket message { socket: 1, type: 'list' }
+controlled socket target { sockets: 2, seat: 0, latest: 1 }
+controlled socket message { socket: 0, type: 'healthPing' }
+reconnect cue failure context {"welcomes":1,"sockets":2,"now":34783.5,"origin":1794309196311.3,"hidden":false,"seq":20,"synced":1,"resync":false,"screen":"play","localId":"p0","error":null,"timber":1,"hand":"1","cues":[],"own":[],"lines":[]}
+390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-testid="resource-flash"]') to be visible[22m
+
+    at reconnect (/workspace/work/1518/scripts/.codex-p-1518-discovery-old.mjs:875:18)
+    at async file:///workspace/work/1518/scripts/.codex-p-1518-discovery-old.mjs:937:38 {
+  log: [
+    `  - waiting for locator('[data-testid="resource-flash"]') to be visible`
+  ],
+  name: 'TimeoutError'
+}
+ok   zero console errors []
+turn-gain-prove: 1 failed

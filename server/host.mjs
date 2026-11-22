@@ -1,23 +1,28 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
-import { chooseBotAction, chooseRecoveryAction, chooseTradeAsk, logBotAction, shouldAcceptTrade } from "../src/lib/game/ai.ts";
+import { chooseBotAction, chooseRecoveryAction, logBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
-import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, validBag } from "../src/lib/game/rules.ts";
-import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
-import { PROTO } from "../src/lib/net/proto.ts";
+// Also registers the paired turns, so applyAction can play a restored five or six seat game (#1605, #1610).
+import { createExpandedGame, EXPANDED_COLORS, EXPANDED_COORDS, PARTNER_NO_TRADE, pairedAcceptTrade, pairedTradeAsk } from "../src/lib/game/expanded.ts";
+import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
+import { COST, PLAYER_COLORS, RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
+import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
 import { PROFILE_TYPES, profileGate, profileHandler, seatCredential, seatProfile, tableCard, watchRefusal } from "./profile-protocol.mjs";
-import { openProfiles, UUID } from "./profiles.mjs";
+import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, redactText, UUID } from "./profiles.mjs";
+import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
+import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
+import { closeTtt, resendTtt, tictactoe, TTT_CAP, TTT_RATE, TTT_TYPES } from "./tictactoe.mjs";
 
 // The running host's checkout, regardless of the shell's cwd. Archives and hosts without git report dev (#913).
 const SERVER_SHA = (() => {
@@ -121,6 +126,8 @@ const TURN_EXTENSION_MS = envMs("TURN_EXTENSION_MS", 60_000);
 const BOT_ANSWER_MS = Number(process.env.BOT_ANSWER_MS ?? 1000);
 // People first (#850): a bot's Yes waits this long, or until every person asked has said No. A bot's No does not wait.
 const PEOPLE_FIRST_MS = Number(process.env.PEOPLE_FIRST_MS ?? 8000);
+// A bot's table offer closes after this if nobody takes it (#1245: a person's offer has no run-out).
+const OFFER_MS = 20000;
 // Every socket is pinged this often; one that has not answered the last ping is cut, so a phone that
 // locked or changed Wi-Fi frees its seat for the rejoin instead of holding it half-open (#202, #113).
 const PING_MS = Number(process.env.PING_MS ?? 30 * 1000);
@@ -132,9 +139,13 @@ const ROOMS = path.resolve(process.env.ROOMS_DIR ?? fileURLToPath(new URL("./roo
 // kill -9 or a power cut can lose at most the last SAVE_MS of changes. The proofs shorten it through env.
 const SAVE_MS = Number(process.env.SAVE_MS ?? 250);
 const ROOM_TTL = 24 * 60 * 60 * 1000;
-// Stamped on every saved room. Bump it whenever GameState, the seat record or the chat record changes
-// shape: load() drops files with any other stamp (including none), so a bump ends the saved rooms on the next restart.
-const ROOM_SHAPE = 2;
+// Stamped on every saved room. Shape 3 (#1610) adds the five and six seat game: `game.variant` and the paired-turn fields
+// `primary`, `role` and `activation`. load() reads a shape-2 room as classic, unchanged, and rewrites it as shape 3 once it
+// validates. It drops a file older than shape 2 (or unstamped). A newer file, or one whose game does not validate, is kept
+// aside as `<code>.json.unsupported`, never deleted.
+const ROOM_SHAPE = 3;
+// The oldest shape this host reads.
+const LEGACY_SHAPE = 2;
 // A seat's soundboard taps are at least this far apart (the host's word; the client greys the buttons for the same time).
 const SOUND_MS = envMs("SOUND_MS", 3000);
 // A seat's accepted renames are at least this far apart, on top of the ordinary action limit.
@@ -143,6 +154,30 @@ const RENAME_MS = envMs("RENAME_MS", 2000);
 // over plain ws:// for local development; every other plaintext link stays guest-only (docs/design/profiles.md).
 const PROFILES = path.resolve(process.env.PROFILES_DIR ?? fileURLToPath(new URL("./profiles/", import.meta.url)));
 const PROFILES_DEV = process.env.PROFILES_DEV === "1";
+// Pending outcomes of finished games (#889): one durable file per game id, in a folder of their own, apart from the rooms and
+// outside the profile store's directory, so no room cleanup ever removes one. Result recording (#890) consumes them.
+const RESULTS = path.resolve(process.env.RESULTS_DIR ?? fileURLToPath(new URL("./results/", import.meta.url)));
+// Proof-only fault points (#889). RESULT_FAULT="room-before:fail:2,journal-after:exit" fails that commit point N times
+// (default once), or kills the host there with no exit flush, as a crash or power cut would. The points are start-, room-
+// and journal-, each -before or -after its durable write, receipt-, before or after the profile store's result
+// transaction (#890), and redact-, before or after each startup rewrite of a pending outcome, room or file kept for repair for a deleted profile (#891, #1393).
+const FAULTS = new Map(
+  String(process.env.RESULT_FAULT ?? "")
+    .split(",")
+    .filter(Boolean)
+    .map((s) => {
+      const [point, act = "fail", n = "1"] = s.split(":");
+      return [point, { act, n: Number(n) }];
+    }),
+);
+function fault(point) {
+  const f = FAULTS.get(point);
+  if (!f || !(f.n > 0)) return;
+  f.n -= 1;
+  if (f.act === "exit") process.kill(process.pid, "SIGKILL");
+  throw new Error(`injected fault at ${point}`);
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 // The built client (npm run build). DIST lets a proof point the host at a small temp folder.
 const DIST = path.resolve(process.env.DIST ?? fileURLToPath(new URL("../dist/", import.meta.url)));
 const TYPES = {
@@ -157,12 +192,26 @@ const TYPES = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".woff2": "font/woff2",
+  ".wasm": "application/wasm",
+  ".swf": "application/x-shockwave-flash",
   ".wav": "audio/wav",
   ".ogg": "audio/ogg",
   ".mp3": "audio/mpeg",
 };
-const EMOTES_DIR = fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+// EMOTES_DIR swaps the sticker folder for a proof (scripts/fixtures/stickers). It must be an existing folder, is read only by
+// loadEmotes (same name rules, nothing else is served from it), and holds at most the tray's 24 stickers.
+const EMOTES_DIR = process.env.EMOTES_DIR
+  ? path.resolve(process.env.EMOTES_DIR)
+  : fileURLToPath(new URL("../src/assets/emotes/", import.meta.url));
+if (process.env.EMOTES_DIR && !statSync(EMOTES_DIR, { throwIfNoEntry: false })?.isDirectory()) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} is not a folder`);
+  process.exit(1);
+}
 const EMOTES = loadEmotes(EMOTES_DIR);
+if (EMOTES.size > 24) {
+  console.error(`EMOTES_DIR ${EMOTES_DIR} has ${EMOTES.size} stickers, at most 24`);
+  process.exit(1);
+}
 
 function code() {
   let out = "";
@@ -204,6 +253,10 @@ function seatsOf(room) {
     host: s.id === room.host,
     away: !s.bot && !s.ws,
     bot: Boolean(s.bot),
+    player: s.pid ?? null,
+    // #1411: only a seat that said it wants another game; the screen gives the host and bots their tick itself.
+    ...(s.again ? { again: true } : {}),
+    needs: [...(s.needs?.kinds ?? [])],
     url: s.avatarId ? `/avatars/${s.avatarId}.jpg` : null,
     // A guest seat carries no profile field at all (#764).
     ...(s.profileId ? { profile: seatProfile(profiles, s.profileId) } : {}),
@@ -215,17 +268,67 @@ function seatsOf(room) {
 // and at each rematch, and saved with the room; durable result recording reads this, never the live seats. Nothing is counted.
 const ROSTER_V = 1;
 const COUNT_POLICY = 1;
-function freezeRoster(room, order) {
+// `order` is the starting seats, each with its new game pid. The roster is written durably before the game is put in place.
+function freezeRoster(order) {
   const players = order.map((s) => ({ pid: s.pid, seat: s.id, profileId: (!s.bot && s.profileId) || null, name: s.name, color: s.color, kind: s.bot ? "bot" : "human" }));
   // Guests count as humans toward eligibility; a game needs two humans at its start to count.
-  room.roster = { v: ROSTER_V, gameId: randomUUID(), startedAt: Date.now(), policy: COUNT_POLICY, eligible: players.filter((p) => p.kind === "human").length >= 2, players };
+  return { v: ROSTER_V, gameId: randomUUID(), startedAt: Date.now(), policy: COUNT_POLICY, eligible: players.filter((p) => p.kind === "human").length >= 2, players };
+}
+
+// The frozen outcome of a finished tracked game (#889, profiles.md "Exactly-once recording"), computed once at the win and
+// never rebuilt from live seats: the roster's rows with the rules engine's winner and final points, and whether the bot
+// played an originally human seat at any point (`assisted`, from takeover).
+function freezeOutcome(game, roster, assisted, endedAt) {
+  return {
+    v: OUTCOME_V,
+    gameId: roster.gameId,
+    startedAt: roster.startedAt,
+    endedAt: Math.max(endedAt, roster.startedAt),
+    policy: roster.policy,
+    eligible: roster.eligible,
+    victoryTarget: game.victoryTarget ?? 10,
+    winner: game.winner,
+    players: roster.players.map((p) => ({ pid: p.pid, seat: p.seat, profileId: p.profileId, name: p.name, color: p.color, kind: p.kind, points: totalVP(game, p.pid), won: p.pid === game.winner, assisted: assisted.includes(p.pid) })),
+  };
+}
+
+// What a table sees of a finished game's profile result (#767, profiles.md "Profile and Wins surfaces"), keyed by game player
+// id for each starting seat that was bound to a profile. An untracked game (legacy, invalid or not eligible) says so. A tracked
+// one gives each profile's committed win total once the profile store holds this game's receipt, and null while it is saving.
+// Read from the store, never counted here, so a repeated push cannot add a win. No profiled seat, no field. A deleted
+// profile (#891) is left out, so its row ends as "Not tracked", never "Saving record…" for good.
+function resultOf(room) {
+  if (room.game?.phase !== "over" || !room.roster) return undefined;
+  const rows = room.roster.players.filter((p) => p.profileId);
+  if (!rows.length) return undefined;
+  const tracked = room.roster.eligible && room.outcome?.gameId === room.roster.gameId;
+  const recorded = tracked && Boolean(profiles.receipt(room.roster.gameId));
+  const wins = {};
+  for (const p of rows) {
+    if (profiles.tombstoned(p.profileId)) continue;
+    const n = recorded ? profiles.committedWins(p.profileId) : null;
+    if (!recorded || n !== null) wins[p.pid] = n;
+  }
+  return { tracked, wins };
+}
+
+// A saved outcome that is not this roster's is dropped; the load freezes a fresh one from the terminal snapshot instead.
+function loadOutcome(o, roster) {
+  return o && roster && validOutcome(o) && o.gameId === roster.gameId ? o : null;
+}
+
+// A finished tracked game whose final room and pending outcome are not yet both durable: no terminal state goes out (#889).
+function unsettled(room) {
+  return room.game?.phase === "over" && Boolean(room.roster) && room.settled !== room.roster.gameId;
 }
 
 // A saved roster that does not match its game is dropped, leaving that game untracked; a legacy room has none (#764).
+// Its rows are in starting order and the roll-off reorders the game's players, so a row matches by player id, once each (#1650).
 function loadRoster(r, game) {
   if (!game || r === undefined || r === null) return null;
-  const row = (p, i) => p && typeof p === "object" && p.pid === game.players[i].id && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
-  const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && Number.isSafeInteger(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
+  const pids = new Set(game.players.map((p) => p.id));
+  const row = (p) => p && typeof p === "object" && pids.delete(p.pid) && typeof p.seat === "string" && (p.profileId === null || (typeof p.profileId === "string" && UUID.test(p.profileId))) && typeof p.name === "string" && typeof p.color === "string" && (p.kind === "human" || p.kind === "bot");
+  const ok = typeof r === "object" && r.v === ROSTER_V && typeof r.gameId === "string" && UUID.test(r.gameId) && isTime(r.startedAt) && Number.isSafeInteger(r.policy) && typeof r.eligible === "boolean" && Array.isArray(r.players) && r.players.length === game.players.length && r.players.every(row);
   const ids = ok ? r.players.map((p) => p.profileId).filter(Boolean) : [];
   if (ok && new Set(ids).size === ids.length) return r;
   console.error("bad roster in room file; this game is not tracked");
@@ -238,7 +341,26 @@ function visibleProfiles(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
+}
+
+// A room's variant (#1611; six-players.md, "Lobby and network limits"): fixed when the table opens, before the first seat
+// and its colour. An expanded room seats five or six on the six-colour palette; a classic one keeps three or four and the
+// classic palette exactly. Only the rematch prompt may change it (accepted decision 7). Classic rooms carry no field at
+// all, on the wire or on disk, so they stay byte for byte as before.
+const expandedRoom = (room) => room.variant === "expanded";
+const expandedTag = (room) => (expandedRoom(room) ? { variant: "expanded" } : {});
+const paletteOf = (room) => (expandedRoom(room) ? EXPANDED_COLORS : PLAYER_COLORS);
+const seatRange = (room) => (expandedRoom(room) ? [5, 6] : [3, 4]);
+// Clients that can show the expanded island say so in every hello (`caps`). Raising PROTO would not do: older protocol
+// versions are still let in. A client without it is refused at every way into an expanded room, before anything of the
+// room reaches it, and a held seat stays held.
+const UPDATE = "Update Emberisle to join this table.";
+const canExpand = (msg) => Array.isArray(msg.caps) && msg.caps.includes("expanded");
+function refusesClient(ws, room, msg) {
+  if (!expandedRoom(room) || canExpand(msg)) return false;
+  send(ws, { type: "error", update: true, message: UPDATE });
+  return true;
 }
 
 function publish(room) {
@@ -264,22 +386,28 @@ function save(room) {
   if (!room.saveTimer && !room.saving) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
 }
 
-function snapshot(room) {
+// `over` replaces fields for a room about to be: start and rematch write their new game before putting it in place (#889).
+function snapshot(room, over = {}) {
+  room = { ...room, ...over };
   return JSON.stringify({
     code: room.code,
     visibility: room.visibility ?? "private",
     host: room.host,
     next: room.next,
     botDeclined: room.botDeclined ?? {},
-    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-4),
+    recoveryPids: [...new Set(room.recoveryPids ?? [])].slice(-recoveryCap(room.game)),
     chat: room.chat,
     chatSeq: room.chatSeq,
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
-    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
+    ...expandedTag(room),
+    seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
     roster: room.roster ?? null,
+    // The frozen outcome once the game is over, and the pids the bot played for (#889). Optional, like the roster.
+    outcome: room.outcome ?? null,
+    assisted: room.assisted ?? [],
     shape: ROOM_SHAPE,
     savedAt: Date.now(),
   });
@@ -287,24 +415,60 @@ function snapshot(room) {
 
 // One write at a time per room: changes that land mid-write set `dirty` again and the next write follows.
 // Write then rename, so a crash mid-write never leaves half a room behind.
+// `room.saving` is the write in flight, if any; commitRoom shares it, so the two never race on one room file.
 async function flush(room) {
   room.saveTimer = null;
-  if (!room.dirty || !rooms.has(room.code)) return;
+  // A durable commit is in flight: it reschedules this write when it is done.
+  if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
-  room.saving = true;
   const file = path.join(ROOMS, `${room.code}.json`);
-  try {
+  const tmp = `${file}.tmp`;
+  const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
-    await writeFile(`${file}.tmp`, json);
-    await rename(`${file}.tmp`, file);
+    await writeFile(tmp, json);
+    await rename(tmp, file);
+  })();
+  room.saving = run;
+  try {
+    await run;
   } catch (err) {
+    room.dirty = true;
+    await rm(tmp, { force: true }).catch(() => {});
     console.error("save failed:", err);
   }
-  room.saving = false;
+  room.saving = null;
   // The table closed while the write was in flight: the rename may have landed after unsave(), so remove it again.
   if (room.dropped) unsave(room);
   else if (room.dirty) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+}
+
+// The awaited, durable room write (#889): it waits out the write in flight, then writes the snapshot with a file sync,
+// rename and directory sync, and resolves only once that is on disk. `save(room)` is never such an acknowledgment.
+// With `over`, it writes the room as it is about to be (a new game) without touching the live room's pending changes.
+async function commitRoom(room, label, over) {
+  while (room.saving) await room.saving.catch(() => {});
+  if (!over) {
+    clearTimeout(room.saveTimer);
+    room.saveTimer = null;
+    room.dirty = false;
+  }
+  const run = (async () => {
+    fault(`${label}-before`);
+    await writeDurable(ROOMS, `${room.code}.json`, snapshot(room, over));
+    fault(`${label}-after`);
+  })();
+  room.saving = run;
+  try {
+    await run;
+  } catch (err) {
+    if (!over) room.dirty = true;
+    throw err;
+  } finally {
+    room.saving = null;
+    if (room.dropped) unsave(room);
+    else if (room.dirty && !room.saveTimer) room.saveTimer = setTimeout(() => flush(room), SAVE_MS);
+  }
 }
 
 // Synchronous, for the end of the process: every room with a change not yet on disk (or a write in flight) is written now.
@@ -314,12 +478,14 @@ function flushAll() {
     clearTimeout(room.saveTimer);
     room.saveTimer = null;
     room.dirty = false;
+    const file = path.join(ROOMS, `${room.code}.json`);
+    const tmp = `${file}.tmp`;
     try {
-      const file = path.join(ROOMS, `${room.code}.json`);
       mkdirSync(ROOMS, { recursive: true });
-      writeFileSync(`${file}.tmp`, snapshot(room));
-      renameSync(`${file}.tmp`, file);
+      writeFileSync(tmp, snapshot(room));
+      renameSync(tmp, file);
     } catch (err) {
+      rmSync(tmp, { force: true });
       console.error("save failed:", err);
     }
   }
@@ -335,15 +501,178 @@ function unsave(room) {
   rmSync(path.join(ROOMS, `${room.code}.json.tmp`), { force: true });
 }
 
+// The saved roster of a parsed room file, or null; a file too broken to check is null here and is judged below as before.
+function savedRoster(saved) {
+  try {
+    return saved?.game && Array.isArray(saved.game.players) ? loadRoster(saved.roster, saved.game) : null;
+  } catch {
+    return null;
+  }
+}
+
+// A recovery pid is a game seat the bot took over, so a room keeps at most one per player: four at a classic table (#1610).
+function recoveryCap(game) {
+  return Math.max(4, Array.isArray(game?.players) ? game.players.length : 0);
+}
+
+const count = (n) => Number.isSafeInteger(n) && n >= 0;
+const PAIRED = ["primary", "role", "activation"];
+const FORTUNES = ["knight", "road", "plenty", "monopoly", "vp"];
+
+// Why a saved game cannot be read as its room shape says, or null (#1610). A shape-2 game is classic: absent `variant`
+// means classic, as in every game saved before #1604. A classic game has no variant, no paired-turn fields and at most four
+// players; a variant is never inferred from the seat count. An expanded game carries the one variant this host knows, its
+// 30-hex island, five or six players, and a paired-turn state that names its own actor.
+function gameProblem(g, shape) {
+  if (g === null) return null;
+  if (!Array.isArray(g.players)) return "bad players";
+  if (g.variant === undefined) {
+    if (PAIRED.some((k) => k in g)) return "paired-turn fields in a classic game";
+    if (g.players.length > 4) return `${g.players.length} players in a classic game`;
+    return null;
+  }
+  if (shape === LEGACY_SHAPE) return "a variant in a shape-2 room";
+  if (!g.players.every((p) => p && typeof p.id === "string" && p.hidden && p.boughtThisTurn)) return "bad players";
+  const ids = g.players.map((p) => p.id);
+  if (new Set(ids).size !== ids.length || !ids.includes(g.current)) return "bad players";
+  const v = g.variant;
+  if (v?.kind !== "expanded" || v.version !== 1 || v.turns?.rule !== "paired" || v.turns.version !== 1) return `unknown variant ${JSON.stringify(v)}`;
+  if (ids.length < 5 || ids.length > 6) return `${ids.length} players in an expanded game`;
+  const hexes = new Map((Array.isArray(g.hexes) ? g.hexes : []).map((h) => [h?.id, h]));
+  if (hexes.size !== EXPANDED_COORDS.length || !EXPANDED_COORDS.every((c) => hexes.has(`${c.q},${c.r}`))) return "not the expanded island";
+  if (!Array.isArray(v.wastes) || v.wastes.length !== 2 || !v.wastes.every((id) => hexes.get(id)?.terrain === "waste")) return "bad wastes";
+  if (v.spiral !== undefined && (!hexes.has(v.spiral?.start) || (v.spiral.direction !== 1 && v.spiral.direction !== -1))) return "bad spiral";
+  if (!RESOURCES.every((r) => count(g.bank?.[r])) || !Array.isArray(g.deck) || !g.deck.every((k) => FORTUNES.includes(k))) return "bad inventory";
+  if (!g.players.every((p) => FORTUNES.every((k) => count(p.hidden[k]) && count(p.boughtThisTurn[k])))) return "bad fortunes";
+  if (g.role === undefined) {
+    // Setup: the paired turns start when it ends.
+    if (g.primary !== undefined || g.activation !== undefined || !["rollOff", "setupSettle", "setupRoad"].includes(g.phase)) return "no turn role after setup";
+    return null;
+  }
+  const at = ids.indexOf(g.primary);
+  if (at < 0 || !Number.isSafeInteger(g.activation) || g.activation < 1) return "bad paired turn";
+  const actor = g.role === "primary" ? g.primary : g.role === "partner" ? ids[(at + 3) % ids.length] : null;
+  if (g.current !== actor) return `bad paired turn: ${g.current} acts as ${g.role}`;
+  return null;
+}
+
+// Why a saved room's variant (#1611) cannot be read, or null. A room saved without one is classic, unless its game is an
+// expanded one: a room file from before #1611 (piece 7's proofs write such rooms) takes its game's own variant. Only a
+// shape-3 room may say expanded, and its game, once dealt, must be the same variant.
+function variantProblem(saved) {
+  const v = saved.variant;
+  if (v === undefined) return null;
+  if (v !== "expanded" && v !== "classic") return `unknown room variant ${JSON.stringify(v)}`;
+  if (v === "expanded" && saved.shape === LEGACY_SHAPE) return "an expanded room in a shape-2 file";
+  if (saved.game && Boolean(saved.game.variant) !== (v === "expanded")) return `a ${v} room holding a ${saved.game.variant ? "expanded" : "classic"} game`;
+  return null;
+}
+
+// A room file this host must not read as it stands: set aside for recovery by hand, never deleted (#1610), and never
+// overwritten by a later room with the same code.
+function keepAside(file, name, why) {
+  // #1654: the first free name, <code>.json.unsupported, then .1, .2 and so on, so a file set aside never lands on one kept
+  // before (a timestamp could repeat within a millisecond).
+  let kept = `${file}.unsupported`;
+  for (let n = 1; existsSync(kept); n++) kept = `${file}.${n}.unsupported`;
+  // A rename that fails (a read-only disk) must not stop the host from starting: the file stays where it is. load() has already
+  // parsed it and skips it for this boot; the next boot reads and refuses it again.
+  try {
+    renameSync(file, kept);
+    console.error(`unsupported room file: ${name} (${why}); kept as ${path.basename(kept)}`);
+  } catch (e) {
+    console.error(`unsupported room file: ${name} (${why}); left in place, could not set it aside: ${e.message}`);
+  }
+}
+
+function alive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return e.code === "EPERM";
+  }
+}
+
+// Remove orphan temp files left by an earlier process before reconciliation, redaction or listening (#1474).
+function sweepOrphans() {
+  if (profiles.reason === "locked") return;
+  let swept = 0;
+  for (const dir of [ROOMS, RESULTS, PROFILES]) {
+    let list;
+    try {
+      list = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of list) {
+      if (!name.endsWith(".tmp")) continue;
+      const m = name.match(/\.(\d+)\.[0-9a-zA-Z]+\.tmp$/);
+      if (m) {
+        const pid = Number(m[1]);
+        if (pid !== process.pid && alive(pid)) {
+          console.log(`storage: kept orphan ${name} (pid ${pid} is alive)`);
+          continue;
+        }
+      }
+      try {
+        rmSync(path.join(dir, name), { force: true });
+        swept++;
+      } catch (err) {
+        console.error(`cannot remove orphan ${name}: ${err.message}`);
+      }
+    }
+  }
+  if (swept) console.log(`storage: swept ${swept} orphan temp file(s)`);
+}
+
 // Rebuild every saved room. Nobody is connected yet, so each seat is held as if it had just dropped.
-function load() {
+// Startup reconciliation (#889) comes first for each file, before expiry, any shape check, play or listen: a terminal room
+// whose pending outcome never reached disk gets one now, frozen from that snapshot, and a nonterminal room for a game that
+// already finished is fenced from play and kept aside for repair. A failed repair write stops the host before it listens.
+async function load() {
+  sweepOrphans();
   let names;
   try {
-    names = readdirSync(ROOMS).filter((n) => n.endsWith(".json"));
+    names = readdirSync(ROOMS);
   } catch {
-    return;
+    names = [];
   }
-  for (const name of names) {
+  let repaired = 0;
+  let fenced = 0;
+  // Profile deletion (#891) left these for the host: before anything is recorded or served, each pending outcome naming a
+  // deleted profile is rewritten without it, one durable file at a time. An interrupted pass resumes on the next start.
+  const gone = profiles.tombstoned;
+  if (!profiles.ready) console.error(`profiles: store unavailable (${profiles.reason}); pending outcomes and saved rooms keep any deleted profile until a start with the store available redacts them`);
+  let redacted = 0;
+  // Files kept only for repair by hand (#1393) are redacted too. A fenced room keeps its suffix, so it never plays again, and
+  // an unreadable pending outcome keeps its name, so it still fences its game.
+  for (const [dir, name] of [...journal.unreadable().map((id) => [journal.dir, `${id}.json`]), ...names.filter((n) => n.endsWith(".json.fenced") || n.endsWith(".unsupported")).map((n) => [ROOMS, n])]) {
+    let text;
+    try {
+      text = readFileSync(path.join(dir, name), "utf8");
+    } catch (err) {
+      console.error(`profiles: cannot read ${name} to redact deleted profiles (${err.message})`);
+      continue;
+    }
+    const clean = redactText(text, gone);
+    if (clean === null) continue;
+    fault("redact-before");
+    await writeDurable(dir, name, clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from ${name}, kept for repair`);
+    fault("redact-after");
+  }
+  for (const o of journal.pending()) {
+    const clean = redactOutcome(o, gone);
+    if (!clean) continue;
+    fault("redact-before");
+    await journal.replace(clean);
+    redacted++;
+    console.log(`profiles: redacted a deleted profile from the pending outcome of game ${o.gameId}`);
+    fault("redact-after");
+  }
+  for (const name of names.filter((n) => n.endsWith(".json"))) {
     const file = path.join(ROOMS, name);
     let saved;
     try {
@@ -352,12 +681,64 @@ function load() {
       console.error("unreadable room file:", name);
       continue;
     }
+    let roster = savedRoster(saved);
+    if (roster && saved.game.phase === "over") {
+      // An outcome that cannot be frozen or does not validate leaves the game untracked; only a failed write stops startup.
+      try {
+        saved.outcome = loadOutcome(saved.outcome, roster) ?? freezeOutcome(saved.game, roster, Array.isArray(saved.assisted) ? saved.assisted : [], Number.isSafeInteger(saved.savedAt) ? saved.savedAt : Date.now());
+        if (!validOutcome(saved.outcome)) throw new Error("bad outcome");
+      } catch (err) {
+        console.error(`results: room ${name} holds a finished game whose outcome is not valid (${err.message}); this game is not tracked`);
+        saved.roster = null;
+        saved.outcome = null;
+        roster = null;
+      }
+    }
+    // A saved room is a stale roster to the deletion tombstones (#891): its frozen rows and outcome lose a deleted profile,
+    // fingerprinted first, and its seat drops the binding but keeps playing. The file is rewritten before it is used.
+    const outcome = roster && saved.outcome ? redactOutcome(saved.outcome, gone) : null;
+    if (outcome) saved.outcome = outcome;
+    let changed = Boolean(outcome);
+    if (roster && redactRows(roster.players, gone)) changed = true;
+    for (const s of Array.isArray(saved?.seats) ? saved.seats : []) {
+      if (typeof s?.profileId !== "string" || !gone(s.profileId)) continue;
+      delete s.profileId;
+      changed = true;
+    }
+    if (changed) {
+      fault("redact-before");
+      await writeDurable(ROOMS, name, JSON.stringify(saved));
+      redacted++;
+      console.log(`profiles: redacted a deleted profile from room ${name}`);
+      fault("redact-after");
+    }
+    if (roster && saved.game.phase === "over") {
+      // A recorded game (#890) is not journalled again; a room whose outcome is not the recorded one is reported, not counted.
+      const receipt = profiles.receipt(roster.gameId);
+      if (receipt) {
+        if (receipt.fingerprint !== fingerprint(saved.outcome)) console.error(`results: room ${name} holds game ${roster.gameId} with an outcome that differs from its recorded receipt; the receipt stands`);
+      } else if (!journal.ready(roster.gameId)) {
+        await journal.put(saved.outcome);
+        repaired++;
+        console.log(`results: repaired the pending outcome of game ${roster.gameId} from room ${name}`);
+      }
+    } else if (roster && (journal.has(roster.gameId) || profiles.receipt(roster.gameId))) {
+      console.error(`results: room ${name} holds game ${roster.gameId} at ${saved.game.phase}, but that game already finished; fenced from play and kept as ${name}.fenced`);
+      renameSync(file, `${file}.fenced`);
+      fenced++;
+      continue;
+    }
+    // A newer host wrote this: kept for it, whatever its age or fields (#1610).
+    if (typeof saved?.shape === "number" && saved.shape > ROOM_SHAPE) {
+      keepAside(file, name, `shape ${saved.shape}, this host reads ${LEGACY_SHAPE} to ${ROOM_SHAPE}`);
+      continue;
+    }
     if (typeof saved?.code !== "string" || !Array.isArray(saved.seats) || !(Date.now() - saved.savedAt < ROOM_TTL) || saved.seats.length === 0) {
       rmSync(file, { force: true });
       continue;
     }
-    if (saved.shape !== ROOM_SHAPE) {
-      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${ROOM_SHAPE})`);
+    if (saved.shape !== ROOM_SHAPE && saved.shape !== LEGACY_SHAPE) {
+      console.error(`stale room file: ${name} (shape ${saved.shape}, want ${LEGACY_SHAPE})`);
       rmSync(file, { force: true });
       continue;
     }
@@ -365,6 +746,11 @@ function load() {
     if (g !== null && (typeof g !== "object" || !["players", "vertices", "edges", "seq", "phase"].every((k) => k in g))) {
       console.error(`bad game in room file: ${name}`);
       rmSync(file, { force: true });
+      continue;
+    }
+    const problem = gameProblem(g, saved.shape) ?? variantProblem(saved);
+    if (problem) {
+      keepAside(file, name, problem);
       continue;
     }
     // A file that parses but does not rebuild (a null seat, say) is skipped like one that does not parse.
@@ -380,19 +766,27 @@ function load() {
         botDeclined: saved.botDeclined ?? {},
         visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
+        variant: saved.variant ?? (g?.variant ? "expanded" : "classic"),
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
-        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-4),
-        roster: loadRoster(saved.roster, saved.game),
+        recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-recoveryCap(saved.game)),
+        roster,
+        assisted: Array.isArray(saved.assisted) ? saved.assisted.filter((pid) => typeof pid === "string") : [],
         seats: [],
         watchers: new Set(),
       };
       delete room.savedAt;
-      for (const s of saved.seats) {
-        if (typeof s?.id !== "string" || typeof s.secret !== "string") throw new Error(`bad seat ${JSON.stringify(s)}`);
+      // Reconciled above: a terminal tracked room loads with its frozen outcome already journalled, so it is settled.
+      room.outcome = loadOutcome(saved.outcome, room.roster);
+      room.settled = room.outcome && (journal.ready(room.outcome.gameId) || profiles.receipt(room.outcome.gameId)) ? room.outcome.gameId : null;
+      for (const [i, s] of saved.seats.entries()) {
+        // #1236: name the seat and the field only. The message is logged, and the seat holds its secret.
+        if (typeof s?.id !== "string") throw new Error(`bad seat ${i}: id`);
+        if (typeof s.secret !== "string") throw new Error(`bad seat ${i}: secret`);
         // Avatars live in memory only, so a restored seat has none.
         // G9: the saved window rides in `resume` until the seat is back and waited on; older files have none.
         const at = (n) => (Number.isFinite(n) ? n : null);
-        room.seats.push({ ...s, turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
+        // A saved window belongs to the saved turn (#1612, #1661), so a restart mid turn keeps its budget.
+        room.seats.push({ ...s, needs: restoredNeed(s.needs), turnDeadline: null, turnStartedAt: at(s.turnStartedAt), resume: at(s.turnDeadline), turnKey: g && turnOf(g), avatarId: null, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() } });
       }
       // A profile binding must be a UUID on a human seat, once per room; anything else leaves that seat a guest (#764).
       const bound = new Set();
@@ -414,9 +808,21 @@ function load() {
       rmSync(file, { force: true });
       continue;
     }
+    // A validated shape-2 room is rewritten as shape 3 with nothing else changed, in one atomic write. If the write fails the
+    // original file stays as it was, the room still plays, and its next save writes shape 3.
+    if (saved.shape === LEGACY_SHAPE) {
+      try {
+        await writeDurable(ROOMS, name, JSON.stringify({ ...saved, shape: ROOM_SHAPE }));
+        console.log(`migrated room file: ${name} (shape ${LEGACY_SHAPE} to ${ROOM_SHAPE}, classic)`);
+      } catch (err) {
+        console.error(`cannot migrate room file ${name}: ${err.message}`);
+      }
+    }
     rooms.set(room.code, room);
   }
   if (rooms.size) console.log(`restored ${rooms.size} room(s): ${[...rooms.keys()].join(" ")}`);
+  console.log(`results: ${journal.pending().length} pending outcome(s) kept for recording, ${repaired} repaired from rooms, ${fenced} room(s) fenced`);
+  if (redacted) console.log(`profiles: deletion redaction finished in ${redacted} file(s)`);
 }
 
 function affords(player, cost) {
@@ -469,7 +875,8 @@ export function viewFor(game, you) {
 
 // Goods lost to successful steals (#550) stay on the host until the win: no view carries them, not even the seat's own.
 // At the win every seat and watcher gets the count with the final state, a 0 for a seat that lost nothing.
-function withoutLoss({ goodsLost, ...rest }) {
+// #1452: so do the results screen's award counts (`tally`); the final state carries each seat's, when it has any.
+function withoutLoss({ goodsLost, tally, ...rest }) {
   return rest;
 }
 
@@ -521,11 +928,14 @@ function runBots(room) {
     if (!waiting) return;
     // A bot's own ask is open: its turn waits for the answers, and the offer's close plays on (botsOn).
     if (room.offer?.from === waiting.id) return;
-    // Once per bot turn, before its other moves, the bot may ask the table (#363).
+    // Once per bot turn, before its other moves, the bot may ask the table (#363). A partner asks nobody (#1611): the
+    // paired-turn choice is the classic one whenever the game has no partner activation.
     const recovery = (room.recoveryPids ?? []).includes(waiting.id);
-    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== `${g.turn}:${waiting.id}`) {
-      room.botAsked = `${g.turn}:${waiting.id}`;
-      const ask = chooseTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
+    // Keyed by activation under paired turns (#1612): a seat's partner activation must not use up its own turn's ask.
+    const asked = `${g.turn}:${waiting.id}${g.role ? `:${g.activation}` : ""}`;
+    if (!recovery && g.phase === "main" && !room.offer && room.botAsked !== asked) {
+      room.botAsked = asked;
+      const ask = pairedTradeAsk(g, waiting.id, room.botDeclined?.[waiting.id]);
       if (ask) return openOffer(room, waiting.id, ask.give, ask.want);
     }
     const action = recovery ? chooseRecoveryAction(g, waiting.id) : chooseBotAction(g, waiting.id);
@@ -540,6 +950,7 @@ function runBots(room) {
       const seatName = room.seats.find((s) => s.pid === waiting.id)?.name ?? waiting.name.replace(/ \(bot\)$/i, "");
       room.game = logBotAction(g, next.state, action, waiting.id, seatName);
     }
+    if (advanceRoomNeeds(room, g, room.game, action?.type === "bankTrade")) publish(room);
   }
 }
 
@@ -563,11 +974,25 @@ function disarmTurn(seat) {
 // restart (`resume`, G9) is kept: the remainder is armed, and one that ran out while the host was down, or has under
 // RESUME_MIN_MS left, is spent at once so a timeout never lands mid-rejoin.
 const RESUME_MIN_MS = Math.min(5000, TURN_MS / 10);
+// The turn a window and budget belong to: the activation under paired turns, else the round and whose turn it is, so a
+// discard owed in another seat's turn is not part of the seat's own. Setup and the roll-off stay in round 0, so there
+// the seat's roll-off roll and each setup step (an outpost and its path) are a turn of their own (#1671). A roll-off roll
+// is keyed by `seq`, so a re-roll after a tie is a new turn even when the same seats tie twice and the saved roll-off is
+// the same (#1681); only the seat to roll is waited on, and its roll is the only move, so `seq` holds within one roll.
+const turnOf = (game) => (game.role ? game.activation : `${game.turn}:${game.current}${game.phase === "rollOff" ? `:rollOff:${game.seq}` : game.phase.startsWith("setup") ? `:setup:${game.setupIndex}` : ""}`);
 function armTurns(room) {
   for (const seat of room.seats) {
     const bonus = extensionBudget(seat, room.game, TURN_EXTENSION_MS).extra;
     const human = room.game?.players.find((p) => p.id === seat.pid)?.kind === "human";
     const waited = human && waitedOn(room.game, seat.pid);
+    // Each turn starts its own window and budget, even when bots played every turn between two of this seat's, so no
+    // state push saw it unwaited in between (#1612, #1661).
+    if (waited && seat.turnKey !== turnOf(room.game)) {
+      disarmTurn(seat);
+      seat.turnStartedAt = null;
+      seat.resume = null;
+      seat.turnKey = turnOf(room.game);
+    }
     if (!waited) {
       seat.turnStartedAt = null;
       seat.resume = null;
@@ -645,13 +1070,26 @@ function deadlineOf(room) {
 function pushState(room) {
   // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
   maybeReleaseOpenSlot(room);
+  if (room.game?.phase === "over") {
+    for (const seat of room.seats) {
+      clearTimeout(seat.graceTimer);
+      seat.graceTimer = null;
+    }
+  }
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
   // whose clock is off still land on the host's moment.
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
+  const result = resultOf(room);
   save(room);
+  // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
+  // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
+  if (unsettled(room)) {
+    settle(room).catch((err) => console.error("result settle failed:", err));
+    return;
+  }
   for (const seat of room.seats) {
     if (!seat.ws) continue;
     send(seat.ws, {
@@ -664,11 +1102,109 @@ function pushState(room) {
       turnDeadline,
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
+      result,
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
+}
+
+// The awaitable terminal transition (#889, profiles.md "Exactly-once recording" steps 1-4). The outcome is frozen once, at
+// the first call, before any write can carry the over state. Then the final room snapshot is committed, then the
+// independent pending outcome; a failure of either withholds the final state and rematch, says so at the table, and retries
+// with bounded backoff, reusing the same frozen outcome. A second caller while this runs only waits for it to publish.
+async function settle(room) {
+  const id = room.roster.gameId;
+  if (room.settling === id) return;
+  if (room.outcome?.gameId !== id) {
+    // A validation error never goes away by retrying: leave this game untracked and publish it, as for a legacy room.
+    try {
+      room.outcome = freezeOutcome(room.game, room.roster, room.assisted ?? [], Date.now());
+      if (!validOutcome(room.outcome)) throw new Error("bad outcome");
+    } catch (err) {
+      console.error(`results: game ${id} has an outcome that is not valid (${err.message}); it is not tracked`);
+      room.outcome = null;
+      room.roster = null;
+      if (rooms.get(room.code) === room && room.game) pushState(room);
+      return;
+    }
+  }
+  room.settling = id;
+  let told = false;
+  for (let wait = 250; ; wait = Math.min(wait * 2, 10_000)) {
+    try {
+      // A dropped room has no file to commit, but its outcome is still journalled.
+      if (rooms.get(room.code) === room) await commitRoom(room, "room");
+      await journal.put(room.outcome);
+      break;
+    } catch (err) {
+      console.error(`result save failed for game ${id}:`, err.message);
+      if (!told && rooms.get(room.code) === room) {
+        told = true;
+        say(room, "Couldn't save the result. Retrying…");
+      }
+      await sleep(wait);
+    }
+  }
+  room.settling = null;
+  room.settled = id;
+  if (rooms.get(room.code) === room && room.game) pushState(room);
+  recordPending();
+}
+
+// Result recording (#890, profiles.md "Exactly-once recording" steps 5 and 6). Each pending outcome goes through the profile
+// store's one serialized transaction (receipt, result rows, aggregates), and its journal file is removed only after that
+// commits. A replay finds the receipt and only clears the file; a receipt with another fingerprint is reported and the file
+// is kept for repair. A game that credits no profile writes nothing and its file stays, as #889 left it. Transient failures
+// retry with bounded backoff on one timer. With the store unavailable nothing is tried; the files wait for the next start.
+const recording = new Map();
+const unrecordable = new Set();
+let recordTimer = null;
+let recordWait = 250;
+async function recordAttempt(o) {
+  const id = o.gameId;
+  try {
+    const out = await profiles.recordOutcome(o);
+    // Nothing credited: resultOf already left out every deleted profile, so the table's line has nothing to wait for.
+    if (out === "excluded") return true;
+    // The table's win screen swaps "Saving record…" for the committed totals.
+    for (const room of rooms.values()) if (room.roster?.gameId === id && room.game?.phase === "over") pushState(room);
+    await journal.done(id);
+    console.log(out === "duplicate" ? `results: game ${id} was already recorded; its pending outcome is cleared` : `results: recorded game ${id}`);
+    return true;
+  } catch (err) {
+    if (err instanceof ProfileError && (err.code === "conflict" || err.code === "invalid")) {
+      unrecordable.add(id);
+      console.error(`results: game ${id} ${err.code === "conflict" ? "does not match its recorded receipt" : "cannot be counted"}; nothing changed, and its pending outcome is kept for repair`);
+      return true;
+    }
+    console.error(`results: recording game ${id} failed (${err.message}); kept for retry`);
+    return false;
+  }
+}
+function recordOne(o) {
+  if (unrecordable.has(o.gameId)) return true;
+  let run = recording.get(o.gameId);
+  if (!run) {
+    run = recordAttempt(o).finally(() => recording.delete(o.gameId));
+    recording.set(o.gameId, run);
+  }
+  return run;
+}
+async function recordPending() {
+  if (!profiles.ready) return;
+  const ok = await Promise.all(journal.pending().map(recordOne));
+  if (ok.every(Boolean)) {
+    recordWait = 250;
+    return;
+  }
+  if (recordTimer || !profiles.ready) return;
+  recordTimer = setTimeout(() => {
+    recordTimer = null;
+    recordPending();
+  }, recordWait);
+  recordWait = Math.min(recordWait * 2, 10_000);
 }
 
 // A connection-bound baseline for gameplay intents. Rejoin/restart gets a new connection id even when
@@ -683,7 +1219,7 @@ function freshAction(ws, room, msg) {
   const seen = (ws.seat.actionCids ??= []);
   // Discards and offer replies from other seats can race with progress in the same turn.
   // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
-  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "tradeCounter", "tradeCounterCancel", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
   if (
     ws.seat.ws !== ws ||
     typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
@@ -693,6 +1229,8 @@ function freshAction(ws, room, msg) {
     msg.connection !== stamp.connection || seen.includes(msg.cid)
   ) {
     send(ws, { type: "error", message: "The table has updated. Please try again." });
+    // A finished game still being saved is not resent: the terminal gate publishes it once it is durable (#889).
+    if (unsettled(room)) return false;
     // Resync this seat only. Refusing an intent must not rearm any clock, run bots, or write a room.
     const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
     send(ws, {
@@ -730,7 +1268,7 @@ function seatOf(secret) {
     return own.length === given.length && timingSafeEqual(own, given);
   };
   for (const room of rooms.values()) {
-    const seat = room.seats.find(same);
+    const seat = room.seats.find((s) => !s.bot && same(s));
     if (seat) return { room, seat };
   }
   return null;
@@ -790,7 +1328,7 @@ function route(req, res) {
       const body = Buffer.concat(chunks);
       // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
       if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
-      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX || storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
       forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
       avatars.set(id, { body });
@@ -803,12 +1341,17 @@ function route(req, res) {
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
-  if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
-    res.end(avatars.get(got[1]).body);
+  if ((req.method === "GET" || req.method === "HEAD") && got && avatars.has(got[1])) {
+    const body = avatars.get(got[1]).body;
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "content-length": body.length,
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
-  if (req.method === "GET" && url.pathname === "/tables") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/tables") {
     // Same allow() throttle shape as the WS peek/list bucket (#833 review).
     const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
     const now = Date.now();
@@ -822,16 +1365,17 @@ function route(req, res) {
         "cache-control": "no-cache",
         "retry-after": "1",
       });
-      res.end("[]");
+      res.end(req.method === "HEAD" ? undefined : "[]");
       return;
     }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
       "access-control-allow-origin": "*",
       "cache-control": "no-cache",
     });
-    res.end(body);
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
@@ -894,8 +1438,9 @@ async function serveStatic(req, res) {
 }
 
 const wss = new WebSocketServer({ server, maxPayload: 16 * 1024 });
-const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS });
+const profiles = openProfiles(PROFILES, { colors: PLAYER_COLORS, fault });
 const onProfile = profileHandler(profiles, send);
+const journal = openJournal(RESULTS, { fault });
 
 // A name is the join key for the away marker, chat mentions and the log, so it is cleaned and made unique.
 function seatName(room, raw, fallback, except = null) {
@@ -910,14 +1455,18 @@ function seatName(room, raw, fallback, except = null) {
   }
 }
 
-// Only a palette swatch is accepted, since the colour reaches inline styles; anything else gets the first free one.
+// Only a swatch of the room's palette is accepted, since the colour reaches inline styles; anything else, a classic
+// purple at an expanded table included, gets the first free one (accepted decision 6).
 function seatColor(room, raw) {
-  if (PLAYER_COLORS.includes(raw)) return raw;
-  return PLAYER_COLORS.find((c) => !room.seats.some((s) => s.color === c));
+  const palette = paletteOf(room);
+  if (palette.includes(raw)) return raw;
+  return palette.find((c) => !room.seats.some((s) => s.color === c));
 }
 
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
+  if (msg.variant !== undefined && msg.variant !== "classic" && msg.variant !== "expanded") return send(ws, { type: "error", message: "Choose 4, 5 or 6 seats." });
+  if (msg.variant === "expanded" && !canExpand(msg)) return send(ws, { type: "error", update: true, message: UPDATE });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
   // An optional profile, verified before the table opens; a refusal opens nothing (#764).
   const profile = seatCredential(profiles, ws, msg, () => false);
@@ -930,7 +1479,7 @@ function openTable(ws, msg) {
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
   const visibility = msg.visibility === "open" ? "open" : "private";
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -940,6 +1489,7 @@ function openTable(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -953,7 +1503,7 @@ function openTable(ws, msg) {
   }
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -961,8 +1511,9 @@ function openTable(ws, msg) {
 function sitDown(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
-  if (room.game) return send(ws, { type: "error", message: "Game already started." });
-  if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
+  if (refusesClient(ws, room, msg)) return;
+  if (room.game || room.busy) return send(ws, { type: "error", message: "Game already started." });
+  if (room.seats.length >= seatRange(room)[1]) return send(ws, { type: "error", message: "Table full." });
   const color = seatColor(room, msg.color);
   if (!color || room.seats.some((s) => s.color === color)) return send(ws, { type: "error", message: "Color taken." });
   // One profile, one seat: a seat it holds, live or held, is never recovered or doubled by the credential (#764).
@@ -975,6 +1526,7 @@ function sitDown(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -983,7 +1535,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -992,33 +1544,78 @@ function sitDown(ws, msg) {
 function watch(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
+  if (refusesClient(ws, room, msg)) return;
   if (!room.game) return send(ws, { type: "error", message: "Not started yet." });
   // A watcher never attaches a profile (#764); its credential is refused, not looked at.
   if (msg.credential !== undefined && msg.credential !== null) return send(ws, { type: "error", ...watchRefusal() });
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   watchersChanged(room, "Someone is watching.");
+  // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
+  if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room) });
 }
 
-function startGame(ws, room) {
+// The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
+// roster reach disk, synced, before the game is put in place, so no game message goes out first. While it is written the
+// room is busy (no second start, again or lobby change), and a table that changed meanwhile is told to try again. A failed
+// write keeps the lobby or the finished game as it was. Returns false when the new game was not put in place.
+// `variant` is the room's after this start: only the rematch choice changes it (#1611). A seat takes its player's colour,
+// which differs from the seat's only when the classic map is picked at an expanded table.
+async function durableStart(ws, room, order, game, unchanged, variant = room.variant) {
+  const seats = order.map((s, i) => ({ ...s, pid: game.players[i].id, color: game.players[i].color }));
+  const roster = freezeRoster(seats);
+  const before = room.game;
+  room.busy = true;
+  try {
+    await commitRoom(room, "start", { game, roster, outcome: null, assisted: [], botDeclined: {}, recoveryPids: [], seats, variant });
+  } catch (err) {
+    console.error("start save failed:", err.message);
+    save(room);
+    send(ws, { type: "error", message: "Couldn't save the new game. Try again." });
+    return false;
+  } finally {
+    room.busy = false;
+  }
+  if (rooms.get(room.code) !== room || room.game !== before || !unchanged()) {
+    // The file now holds a game that is not in place; the next save puts the room back as it is.
+    save(room);
+    send(ws, { type: "error", message: "The table changed. Try again." });
+    return false;
+  }
+  seats.forEach((s, i) => Object.assign(order[i], { pid: s.pid, color: s.color }));
+  room.variant = variant;
+  room.game = game;
+  room.roster = roster;
+  room.outcome = null;
+  room.settled = null;
+  room.assisted = [];
+  room.botDeclined = {};
+  room.recoveryPids = [];
+  return true;
+}
+
+async function startGame(ws, room) {
   const n = room.seats.length;
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
-  if (n < 3 || n > 4) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+  if (room.busy) return send(ws, { type: "error", message: "Game already started." });
+  const [least, most] = seatRange(room);
+  if (n < least || n > most) return send(ws, { type: "error", message: `Need ${least} or ${most} at the table.` });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
-  const game = createGame({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
-  room.seats.forEach((s, i) => {
-    s.pid = game.players[i].id;
+  // Exactly the seats at the table: five people are never filled to six. Seat numbers follow the lobby rows.
+  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
+  const order = [...room.seats];
+  order.forEach((s, i) => {
+    s.needs = undefined;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
-  room.game = game;
-  freezeRoster(room, room.seats);
-  room.botDeclined = {};
-  room.recoveryPids = [];
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  if (!(await durableStart(ws, room, order, game, () => room.host === ws.seat.id && room.seats.length === order.length && order.every((s, i) => room.seats[i] === s && s.ready && isLive(s))))) return;
+  closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
   say(room, "Roll for first place.");
@@ -1033,7 +1630,7 @@ function startGame(ws, room) {
 function addBot(ws, room) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can add a bot." });
   if (room.game) return send(ws, { type: "error", message: "Game already started." });
-  if (room.seats.length >= 4) return send(ws, { type: "error", message: "Table full." });
+  if (room.seats.length >= seatRange(room)[1]) return send(ws, { type: "error", message: "Table full." });
   const seat = {
     id: `s${room.next++}`,
     name: seatName(room, "Bot", "Bot"),
@@ -1078,11 +1675,73 @@ function renameSeat(ws, room, msg) {
 
 // `again` (#266, docs/design/rematch.md): a new island at the same table. The last winner places first and the rest
 // roll off behind it (Jarrod, 2026-10-03). Seats with no socket are let go; watchers stay and get the new game.
-function rematch(ws, room) {
+// #889: the finished game's pending outcome is durable before `again` can replace it, and the new game, with its own UUID
+// and roster, is durable before its first message. The room is busy meanwhile, so no second again lands on a stale game.
+// #1611 (six-players.md, "Lobby and network limits"; accepted decision 7 and Jarrod's answers A to E of 2026-11-06 on
+// #666): an expanded table with five or six at it keeps the expanded island, each seat its number and colour. With fewer,
+// the host chooses (`choice`), and nothing changes until then: fill with bots up to five and play expanded, or play the
+// classic map with those present (offered only with three or four, C). The choice rides on the seat list, so every seat
+// and watcher sees that the host is choosing (A); it has no timeout and "dismiss" closes it (B).
+async function rematch(ws, room, choice) {
   if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can start." });
   if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
-  const live = room.seats.filter((s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN));
-  if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+  if (room.busy) return send(ws, { type: "error", message: "Game is not over." });
+  if (unsettled(room)) return send(ws, { type: "error", message: "Couldn't save the result. Retrying…" });
+  // Cancel first, at any table: it only closes the choice, so a seat that came back meanwhile never turns it into a start.
+  if (choice === "dismiss") {
+    if (!room.choose) return;
+    room.choose = null;
+    return publish(room);
+  }
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  const live = room.seats.filter(isLive);
+  if (!expandedRoom(room) || live.length >= 5) {
+    if (live.length < 3) return send(ws, { type: "error", message: "Need 3 or 4 at the table." });
+    return replay(ws, room, live, isLive, room.variant);
+  }
+  const choices = live.length >= 3 ? ["bots", "classic"] : ["bots"];
+  if (!choices.includes(choice)) {
+    room.choose = choices;
+    return publish(room);
+  }
+  return replay(ws, room, live, isLive, choice === "bots" ? "expanded" : "classic");
+}
+
+// The next game for the `live` seats, as a `variant` game. An expanded game under five seats takes bots, numbered with the
+// lowest free seat numbers (E). A classic game picked at an expanded table makes the room classic for later rematches; each
+// seat keeps its colour if the classic palette has it, else takes the first free classic slot (D). Seat numbers are kept.
+async function replay(ws, room, live, isLive, variant) {
+  const old = room.game;
+  const winner = live.find((s) => s.pid === old.winner);
+  const numberOf = new Map(old.players.map((p) => [p.id, p.seat]));
+  const bots = [];
+  const free = [1, 2, 3, 4, 5, 6].filter((n) => !live.some((s) => numberOf.get(s.pid) === n));
+  while (variant === "expanded" && live.length + bots.length < 5) {
+    const all = { seats: [...live, ...bots] };
+    bots.push({ id: `s${room.next++}`, name: seatName(all, "Bot", "Bot"), color: EXPANDED_COLORS.find((c) => !all.seats.some((s) => s.color === c)), avatarId: null, ready: true, bot: true, ws: null, bucket: { tokens: 5, at: Date.now() }, act: { tokens: ACT_CAP, at: Date.now() }, secret: randomBytes(16).toString("hex"), no: free[bots.length] });
+  }
+  const colors = new Map();
+  if (variant !== "expanded" && expandedRoom(room)) {
+    for (const s of live) if (PLAYER_COLORS.includes(s.color)) colors.set(s, s.color);
+    for (const s of live) if (!colors.has(s)) colors.set(s, PLAYER_COLORS.find((c) => ![...colors.values()].includes(c)));
+  }
+  const order = [...(winner ? [winner, ...live.filter((s) => s !== winner)] : live), ...bots];
+  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on" });
+  order.forEach((s, i) => {
+    s.needs = undefined;
+    game.players[i].color = colors.get(s) ?? s.color;
+    const n = s.no ?? numberOf.get(s.pid);
+    if (n) game.players[i].seat = n;
+    if (s.bot) game.players[i].kind = "bot";
+  });
+  const unchanged = () => {
+    const now = room.seats.filter(isLive);
+    return now.length === live.length && live.every((s) => now.includes(s));
+  };
+  // Seats get new pids, so no offer (or a bot's answer timer on it) may outlive the old game.
+  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
+  closeOffer(room);
+  if (!(await durableStart(ws, room, order, game, unchanged, variant))) return;
   for (const seat of room.seats) {
     if (live.includes(seat)) continue;
     clearTimeout(seat.graceTimer);
@@ -1091,27 +1750,17 @@ function rematch(ws, room) {
     forgetAvatar(seat);
     seat.ws = null;
   }
-  room.seats = live;
-  // Seats get new pids below, so no offer (or a bot's answer timer on it) may outlive the old game.
-  if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
-  closeOffer(room);
-  room.botDeclined = {};
-  room.recoveryPids = [];
-  const winner = live.find((s) => s.pid === room.game.winner);
-  const order = winner ? [winner, ...live.filter((s) => s !== winner)] : live;
-  const game = createGame({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? room.game.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game.wayfarerMode ?? "on" });
-  order.forEach((s, i) => {
-    s.pid = game.players[i].id;
-    game.players[i].color = s.color;
-    if (s.bot) game.players[i].kind = "bot";
-  });
-  room.game = game;
-  // New pids in the new order: the rematch gets its own game UUID and roster (#764).
-  freezeRoster(room, order);
+  for (const b of bots) delete b.no;
+  room.seats = [...live, ...bots];
+  room.choose = null;
+  // #1411: every "play again" was for the game that just ended.
+  for (const seat of room.seats) seat.again = undefined;
+  for (const seat of room.seats) seat.turnKey = undefined;
   // Reclaim a finished open room's slot only if no successor has taken it (#986).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
+  for (const b of bots) say(room, `${b.name} sat down.`);
   say(room, winner ? `${winner.name} won last time and places first. The rest roll for their order.` : "Roll for first place.");
   const seen = room.game.log;
   runBots(room);
@@ -1191,13 +1840,21 @@ function openOffer(room, from, give, want) {
   if (room.offer) broadcast(room, { type: "tradeClosed", tradeId: room.offer.tradeId });
   closeOffer(room);
   const tradeId = `t${room.game.seq}-${(room.offerSeq = (room.offerSeq ?? 0) + 1)}`;
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: Date.now() + 20000 });
-  room.offerTimer = setTimeout(() => {
-    closeOffer(room);
-    broadcast(room, { type: "tradeClosed", tradeId });
-    botsOn(room, offer);
-  }, 20000);
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: 20 });
+  // #1245 (owner q-trade-hold B): a person's offer holds until it is answered, declined by all, cancelled, or their turn
+  // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
+  // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
+  const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), counters: new Map(), counterUsed: new Set(), counter: room.game.players.find((p) => p.id === from)?.kind === "bot" || room.seats.find((seat) => seat.pid === from)?.caps?.includes("counter") === true, botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  if (runOut) {
+    room.offerTimer = setTimeout(() => {
+      for (const counter of [...offer.counters.values()]) botCounterAnswer(room, offer, counter);
+      if (room.offer !== offer) return;
+      closeOffer(room);
+      broadcast(room, { type: "tradeClosed", tradeId });
+      botsOn(room, offer);
+    }, OFFER_MS);
+  }
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null, ...(offer.counter ? { counter: true } : {}) });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
@@ -1211,14 +1868,15 @@ function openOffer(room, from, give, want) {
 function botAnswer(room, offer, pid) {
   if (room.offer !== offer || room.game.players.find((p) => p.id === pid)?.kind !== "bot") return;
   const recovery = (room.recoveryPids ?? []).includes(pid);
-  const yes = !recovery && shouldAcceptTrade(room.game, pid, offer);
+  // Every bot says No on a partner activation, which the rules refuse a player trade on (#1611).
+  const yes = !recovery && pairedAcceptTrade(room.game, pid, offer);
   if (yes && peopleWaiting(room, offer)) return void offer.heldYes.push(pid);
   respond(room, pid, yes);
 }
 
 function peopleWaiting(room, offer) {
   if (Date.now() >= offer.peopleUntil) return false;
-  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+  return offer.counters.size > 0 || room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
 }
 
 // Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
@@ -1234,11 +1892,24 @@ function ask(ws, room, msg) {
   if (room.game.phase !== "main" || room.game.current !== actor) {
     return send(ws, { type: "error", message: "Cannot trade now." });
   }
+  // A partner may trade with the bank, never the table (#1611; six-players.md, paired turns).
+  if (room.game.role === "partner") return send(ws, { type: "error", message: PARTNER_NO_TRADE });
   if (!validBag(msg.give) || !validBag(msg.want)) return send(ws, { type: "error", message: "Bad trade." });
   const asker = room.game.players.find((p) => p.id === actor);
   if (RESOURCES.some((r) => (msg.give[r] ?? 0) > asker.resources[r])) return send(ws, { type: "error", message: "You lack those goods." });
   if (RESOURCES.every((r) => !msg.give[r] && !msg.want[r])) return send(ws, { type: "error", message: "Offer something." });
   openOffer(room, actor, msg.give, msg.want);
+}
+
+// The asker takes back its own open offer (#1245): with no run-out on a person's offer, this is the way out of one nobody
+// answers. Closes it for the whole table with no taker.
+function cancelOffer(ws, room, msg) {
+  const offer = room.offer;
+  if (!offer || offer.from !== ws.seat.pid || (msg.tradeId && msg.tradeId !== offer.tradeId)) {
+    return send(ws, { type: "error", message: "Offer is gone." });
+  }
+  closeOffer(room);
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
 }
 
 function answer(ws, room, msg) {
@@ -1253,6 +1924,7 @@ function answer(ws, room, msg) {
 
 // `actor`'s Yes or No to the open offer, from a person or a bot seat. Returns an error for that seat, if any.
 function respond(room, actor, yes) {
+  const before = room.game;
   const offer = room.offer;
   if (!yes) {
     // A "No" is told to the whole table. The offer stays open for seats that have not answered and
@@ -1271,7 +1943,7 @@ function respond(room, actor, yes) {
     }
     say(room, line);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
-    if (askees.every((p) => offer.declined.has(p.id))) {
+    if (askees.every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
       if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
         (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
       }
@@ -1294,6 +1966,7 @@ function respond(room, actor, yes) {
   closeOffer(room);
   const tradeLines = newLog(room.game.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
   room.game = { ...accepted.state, log: [...room.game.log, ...tradeLines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
   for (const line of tradeLines) say(room, line);
   // The asker's trade went through: that is their action, so their window restarts (pushState re-arms it).
   const asker = room.seats.find((s) => s.pid === offer.from);
@@ -1301,6 +1974,92 @@ function respond(room, actor, yes) {
   hear("trade_yes");
   broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: actor });
   if (!botsOn(room, offer)) pushState(room);
+}
+
+// Counter terms are public and always from the original asker's side. They live only with the offer.
+const bagWords = (bag) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ");
+const counterEvent = (offer, counter) => ({ type: "tradeCounter", tradeId: offer.tradeId, counterId: counter.counterId, by: counter.by, name: counter.name, give: counter.give, want: counter.want });
+const payable = (player, bag) => player && RESOURCES.every((r) => (bag[r] ?? 0) <= player.resources[r]);
+const nonempty = (bag) => RESOURCES.some((r) => (bag[r] ?? 0) > 0);
+const sameBag = (a, b) => RESOURCES.every((r) => (a[r] ?? 0) === (b[r] ?? 0));
+
+function counterClosed(room, offer, counter, why) {
+  if (room.offer !== offer || !offer.counters.delete(counter.counterId)) return;
+  clearTimeout(counter.timer);
+  broadcast(room, { type: "tradeCounterClosed", tradeId: offer.tradeId, counterId: counter.counterId, why });
+  if (room.game.players.filter((p) => p.id !== offer.from).every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
+    if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
+      (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
+    }
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    botsOn(room, offer);
+  } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
+}
+
+function counterAsk(ws, room, msg) {
+  const offer = room.offer;
+  const by = ws.seat.pid;
+  if (!offer || msg.tradeId !== offer.tradeId) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.phase !== "main" || room.game.role === "partner") return send(ws, { type: "error", message: "Cannot trade now." });
+  if (!offer.counter || !ws.seat.caps?.includes("counter") || by === offer.from || offer.counterUsed.has(by)) return send(ws, { type: "error", message: "Bad trade." });
+  if (!validBag(msg.give) || !validBag(msg.want) || !nonempty(msg.give) || !nonempty(msg.want) || RESOURCES.some((r) => msg.give[r] && msg.want[r]) || (sameBag(msg.give, offer.give) && sameBag(msg.want, offer.want))) return send(ws, { type: "error", message: "Bad trade." });
+  if (!payable(room.game.players.find((p) => p.id === by), msg.want)) return send(ws, { type: "error", message: "You lack those goods." });
+  const counter = { counterId: `${offer.tradeId}-c${offer.counterUsed.size + 1}`, by, name: ws.seat.name, give: { ...msg.give }, want: { ...msg.want } };
+  offer.counterUsed.add(by);
+  offer.counters.set(counter.counterId, counter);
+  broadcast(room, counterEvent(offer, counter));
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  say(room, `${counter.name} counters ${asker.name.replace(/ \(bot\)$/i, "")}: ${bagWords(counter.want)} for ${bagWords(counter.give)}.`);
+  if (asker.kind === "bot") {
+    counter.timer = setTimeout(() => botCounterAnswer(room, offer, counter), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1));
+    offer.botTimers.push(counter.timer);
+  }
+}
+
+function settleCounter(room, offer, counter, yes) {
+  if (!yes) return counterClosed(room, offer, counter, "no");
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  const sender = room.game.players.find((p) => p.id === counter.by);
+  if (!payable(asker, counter.give)) return "You lack those goods.";
+  if (!payable(sender, counter.want)) return counterClosed(room, offer, counter, "gone");
+  const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: counter.by, give: counter.give, want: counter.want });
+  if (offered.error) return "Cannot trade now.";
+  const accepted = applyAction(offered.state, counter.by, { type: "respondTrade", accept: true });
+  if (accepted.error) return accepted.error;
+  const before = room.game;
+  closeOffer(room);
+  const lines = newLog(before.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  room.game = { ...accepted.state, log: [...before.log, ...lines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
+  for (const line of lines) say(room, line);
+  const seat = room.seats.find((s) => s.pid === offer.from);
+  if (seat) disarmTurn(seat);
+  hear("trade_yes");
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: counter.by });
+  if (!botsOn(room, offer)) pushState(room);
+}
+
+function botCounterAnswer(room, offer, counter) {
+  if (room.offer !== offer || !offer.counters.has(counter.counterId) || room.game.players.find((p) => p.id === offer.from)?.kind !== "bot") return;
+  const error = settleCounter(room, offer, counter, pairedAcceptTrade(room.game, offer.from, { from: counter.by, give: counter.want, want: counter.give }));
+  if (error && room.offer === offer) counterClosed(room, offer, counter, "no");
+}
+
+function counterAnswer(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || offer.from !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.role === "partner" || room.game.phase !== "main") return send(ws, { type: "error", message: "Cannot trade now." });
+  const error = settleCounter(room, offer, counter, msg.yes === true);
+  if (error) send(ws, { type: "error", message: error });
+}
+
+function counterCancel(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || counter.by !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  counterClosed(room, offer, counter, "back");
 }
 
 function talk(ws, room, msg) {
@@ -1347,6 +2106,7 @@ function play(ws, room, msg, automated = false) {
   room.game = automated
     ? logBotAction(before, next.state, action, ws.seat.pid, room.seats.find((s) => s.pid === ws.seat.pid)?.name ?? ws.seat.name)
     : next.state;
+  if (advanceRoomNeeds(room, before, room.game, action.type === "bankTrade")) publish(room);
   disarmTurn(ws.seat);
   hear(msg.type === "place" ? `${msg.kind}_place` : SOUND[msg.type]);
   // A roll-off die is not a production roll: its lines reach every seat through the log below.
@@ -1485,7 +2245,23 @@ function handle(ws, raw) {
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
-  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+  if (TTT_TYPES.has(msg.type)) {
+    const now = Date.now();
+    ws.seat.tttBucket ??= { tokens: TTT_CAP, at: now };
+    if (!allow(ws.seat.tttBucket, now, TTT_CAP, TTT_RATE)) return send(ws, { type: "error", message: "Slow down." });
+    if (room.game || room.busy) return send(ws, { type: "error", message: "Games close when the table starts." });
+    const error = tictactoe(room, ws.seat, msg, send);
+    return error ? send(ws, { type: "error", message: error }) : undefined;
+  }
+  if (!allow(ws.seat.act, Date.now(), ACT_CAP, ACT_RATE)) return send(ws, { type: "error", message: "Slow down.", ...(msg.type === "need" ? { request: "need" } : {}) });
+  // A new game is being written to disk (#889): nothing else changes the table until it is in place or refused.
+  if (room.busy) return send(ws, { type: "error", message: "The table has updated. Please try again.", ...(msg.type === "need" ? { request: "need" } : {}) });
+  if (msg.type === "need") {
+    if (!room.game || room.game.phase === "over") return send(ws, { type: "error", message: "Needs are available during a game.", request: "need" });
+    if (!validNeeds(msg.kinds)) return send(ws, { type: "error", message: "Choose up to two different goods.", request: "need" });
+    ws.seat.needs = msg.kinds.length ? { kinds: [...msg.kinds], turnsLeft: 2 } : undefined;
+    return publish(room);
+  }
   if (msg.type === "setVictoryTarget") {
     if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the target." });
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
@@ -1499,11 +2275,19 @@ function handle(ws, raw) {
     ws.seat.ready = value;
     return publish(room);
   }
+  // #1411: a seat says it wants another game. Only while a game is over; it never starts, blocks or delays the rematch.
+  if (msg.type === "wantAgain") {
+    if (room.game?.phase !== "over") return send(ws, { type: "error", message: "Game is not over." });
+    const value = msg.value === true;
+    if (Boolean(ws.seat.again) === value) return;
+    ws.seat.again = value || undefined;
+    return publish(room);
+  }
   if (msg.type === "rename") return renameSeat(ws, room, msg);
   if (msg.type === "addBot") return addBot(ws, room);
   if (msg.type === "removeBot") return removeBot(ws, room, msg);
-  if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : startGame(ws, room);
-  if (msg.type === "again") return rematch(ws, room);
+  if (msg.type === "start") return room.game ? send(ws, { type: "error", message: "Game already started." }) : void startGame(ws, room).catch((err) => console.error("start failed:", err));
+  if (msg.type === "again") return void rematch(ws, room, msg.choice).catch((err) => console.error("again failed:", err));
   if (!room.game) return send(ws, { type: "error", message: "not ready" });
   if (!freshAction(ws, room, msg)) return;
   if (msg.type === "turnExtensionAsk" || msg.type === "turnExtensionAnswer") {
@@ -1511,43 +2295,50 @@ function handle(ws, raw) {
     if (error) return send(ws, { type: "error", message: error });
     return; // The extension changed callback publishes the updated state.
   }
+  if (msg.type === "tradeCounter") return counterAsk(ws, room, msg);
+  if (msg.type === "tradeCounterAnswer") return counterAnswer(ws, room, msg);
+  if (msg.type === "tradeCounterCancel") return counterCancel(ws, room, msg);
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
+  if (msg.type === "tradeCancel") return cancelOffer(ws, room, msg);
   return play(ws, room, msg);
 }
-
-const CODE = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/;
 
 // Answers which seats a lobby holds, without sitting down (docs/design/color-peek.md). The asker has no seat, so it gets
 // what dims the swatches and nothing more: no names or pictures for whoever holds the code (G10). Those come with the
 // `seats` broadcast after sitting down.
 function peek(ws, msg) {
   const code = typeof msg.code === "string" ? msg.code.toUpperCase() : "";
-  if (!CODE.test(code)) return;
+  if (!JOIN_CODE.test(code)) return;
   const room = rooms.get(code);
   const seats = room && !room.game ? room.seats.map((s) => ({ id: s.id, color: s.color, ready: s.ready })) : [];
-  send(ws, { type: "seats", code, seats });
+  // An expanded lobby names its six swatches, so a joiner can tell which are there to take; a classic peek is as before.
+  send(ws, { type: "seats", code, seats, ...(room && !room.game && expandedRoom(room) ? { palette: EXPANDED_COLORS } : {}) });
 }
 
 // hello {code, secret} puts a dropped player back in their own seat, even after the bot took over.
 function rejoin(ws, msg) {
   const room = rooms.get(String(msg.code || "").toUpperCase());
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
-  const seat = room.seats.find((s) => s.secret === msg.secret);
+  // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
+  if (refusesClient(ws, room, msg)) return;
+  const seat = room.seats.find((s) => !s.bot && s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
   clearTimeout(seat.graceTimer);
   clearTimeout(seat.holdTimer);
   seat.graceTimer = seat.holdTimer = null;
   seat.ws = ws;
+  seat.caps = Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [];
   seat.gone = null;
   // Restore discovery after a reload, without displacing a newer open table.
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on" });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
+  resendTtt(seat, send);
   if (!room.game) return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (p?.kind === "bot") {
@@ -1564,15 +2355,16 @@ function rejoin(ws, msg) {
   if (open && room.offer === open) resendOffer(ws, room, seat, open);
 }
 
-// A seat back inside an open ask it did not make sees the offer again with what is left of its window, then every No
-// it missed, so its panel matches the table (#576). After the state, so the client has the names.
+// A seat back inside an open ask sees the offer again with what is left of its window, then every No it missed, so its
+// panel matches the table (#576). After the state, so the client has the names. The asker gets it back too (#1245): a
+// person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
-  if (offer.from === seat.pid) return;
-  const seconds = Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
-  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
+  const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
+  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds, ...(offer.counter ? { counter: true } : {}) });
   for (const by of offer.declined) {
     send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
   }
+  for (const counter of offer.counters.values()) send(ws, counterEvent(offer, counter));
 }
 
 function dropRoom(room) {
@@ -1598,10 +2390,12 @@ function dropRoom(room) {
 function hold(room, seat) {
   seat.ws = null;
   seat.gone = Date.now();
+  // #1411: back before the next game, a player says again whether they want it.
+  seat.again = undefined;
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
-  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  if (room.game && room.game.phase !== "over" && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
   // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
   maybeReleaseOpenSlot(room);
@@ -1617,6 +2411,7 @@ function handOffHost(room) {
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
 function takeOver(room, seat) {
   seat.graceTimer = null;
+  if (!room.game || room.game.phase === "over") return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
   if (room.offer?.from === seat.pid) {
@@ -1624,10 +2419,17 @@ function takeOver(room, seat) {
     closeOffer(room);
     broadcast(room, { type: "tradeClosed", tradeId });
   }
-  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-4);
+  room.recoveryPids = [...new Set([...(room.recoveryPids ?? []), seat.pid])].slice(-recoveryCap(room.game));
+  // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
+  room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  if (room.offer) {
+    const offer = room.offer;
+    for (const counter of [...offer.counters.values()]) if (counter.by === seat.pid) counterClosed(room, offer, counter, "gone");
+  }
+  seat.needs = undefined;
   say(room, `${seat.name} is played by the bot until they return.`);
-  save(room);
+  publish(room);
   // With nobody connected, the bots wait too: a rejoin runs them.
   if (!room.seats.some((s) => s.ws)) return;
   const seen = room.game.log;
@@ -1640,6 +2442,7 @@ function takeOver(room, seat) {
 function letGo(room, seat) {
   clearTimeout(seat.graceTimer);
   forgetAvatar(seat);
+  closeTtt([seat], "left", seat, send);
   room.seats = room.seats.filter((s) => s !== seat);
   if (!room.seats.some((s) => !s.bot)) return dropRoom(room);
   if (!room.game) say(room, `${seat.name} left.`);
@@ -1701,5 +2504,7 @@ const pinger = setInterval(() => {
 pinger.unref();
 wss.on("close", () => clearInterval(pinger));
 
-load();
+await load();
+// Pending outcomes are replayed once before the host listens (#890); anything left retries in the background.
+await recordPending();
 server.listen(PORT, () => console.log(`host listening ${server.address().port}`));

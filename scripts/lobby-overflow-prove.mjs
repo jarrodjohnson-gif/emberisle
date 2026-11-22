@@ -4,8 +4,8 @@
 // Touch targets meet the >= 44x44 px requirement;
 // Baseline 667x375 and 844x390 landscape viewports remain unscrolled.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
-import { chromium } from "playwright";
+import { mkdirSync } from "node:fs";
+import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
 const PORT = Number(process.env.VITE_PORT) || 0;
@@ -29,7 +29,6 @@ const assignedPort = vite.httpServer.address().port;
 const url = `http://127.0.0.1:${assignedPort}/`;
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 

@@ -1,0 +1,22 @@
+{
+  "size.log.gz": "2265eb09296ff921c582f818b7925830edb028d3c8d13fbc813eb022d869a771",
+  "trade-tabs.log.gz": "7ab20717f23a611b980177ad5bf07dfb33fac8902aeab9a178e170f355393c27",
+  "npm-ci.log.gz": "b8b17617d44aabd35938c6ed9aa73e9d228b5c92bc0a3485dc7402f31f23ff21",
+  "static-status.json.gz": "8802d5dcae744124b86656f23e948c679fdda52030d404174833dafe5c74b78d",
+  "client.log.gz": "bc7ec78f9dfeb7799da9425f0ac9209504a1dcf925fb6fdd6b3fd12080fcd053",
+  "registered.log.gz": "9b19c3c6faf64b44687c6492cbe10f1da1ef8a51a9d508c2da72eb01af6b459d",
+  "run-browsers.py.gz": "28522c4430b83eb681e74f9d364bf087b93748870258ccb6715eae336009ac5e",
+  "source-sha256.json": "3c1a18cb25498e5e29eab1b9dd71f07bb44627b3347270bb63c175761face167",
+  "server-npm-ci.log.gz": "36166aea8fb7dff9e43f1996331c56feeb84f538ae8fac2b53a8f9f99d0c4562",
+  "browser-status.json.gz": "b7c91e0ac95753a3f83ae9c5efed2b3f98eed8c8a1817235e147fdafc754fec7",
+  "size-delta.log.gz": "78ca3402d96220d7baae578cd20b03ec1f7612a4ff33ac7db7205f6aa7705112",
+  "build.log.gz": "dace18f75d9352a6699b1549b554ae81bdc6e3acf3b19155a3bf21f989f6916a",
+  "types.log.gz": "7245db644f813ad00cfe8dd02c19d0e484df1e42825c0a80f276039fd99b7615",
+  "loosen.log.gz": "a43c4f38f6d29f679e8e459211f74a52f79d8f86e1ada3cb3833527c19e41191",
+  "screenshots/trade-tabs-390x844-no-preference-table.png": "c144547308f53dbab365bf2445d82b2b05e90b5b74668b987e6a9624a657535e",
+  "screenshots/trade-tabs-1280x720-no-preference-bank.png": "1e5fc14abacf6b804cae801e2ca626535f8ed349526b087fc2016e537e0ce0aa",
+  "screenshots/trade-tabs-844x390-no-preference-bank.png": "9048949b82ba58046cc5de089cbcdd49a773d8ffd3b43069825a21e6c377198d",
+  "screenshots/trade-tabs-390x844-no-preference-bank.png": "3e75629ce082b5fd4c03377436d382d40bf83125cb5b2f9d2ef52b5e3aea9a31",
+  "screenshots/trade-tabs-1280x720-no-preference-table.png": "fae80a1a113473efe9a908d5ff73c7817bbd0188ff9c3a02d83578afbbd08e95",
+  "screenshots/trade-tabs-844x390-no-preference-table.png": "a535da0b7772f239e11e77b048ed274608231f96e8bfdb122314b60f28edd4a5"
+}

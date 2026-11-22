@@ -1,0 +1,39 @@
+
+> needs-prove
+> node --import ./register.mjs needs-prove.mjs
+
+ok needs validation and shared local/host expiry rules
+file:///workspace/emberisle/work/p-needs-server873/server/needs-prove.mjs:41
+ return new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(Error(`host startup timeout: ${stderr}`)),10000);host.once('error',reject);host.once('exit',exit=>{clearTimeout(timeout);reject(Error(`host exit ${exit}: ${stderr}`));});host.stdout.on('data',data=>{const m=String(data).match(/listening (\d+)/);if(m){clearTimeout(timeout);resolve(Number(m[1]));}});});
+                                                                                                                                                                                                           ^
+
+Error: host exit 1: node:events:487
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EPERM: operation not permitted 0.0.0.0
+    at Server.setupListenHandle [as _listen2] (node:net:2145:21)
+    at listenInCluster (node:net:2224:12)
+    at Server.listen (node:net:2344:7)
+    at file:///workspace/emberisle/work/p-needs-server873/server/host.mjs:1718:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+Emitted 'error' event on WebSocketServer instance at:
+    at Server.emit (node:events:509:28)
+    at emitErrorNT (node:net:2203:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+  code: 'EPERM',
+  errno: -1,
+  syscall: 'listen',
+  address: '0.0.0.0'
+}
+
+Node.js v24.19.0
+
+    at ChildProcess.<anonymous> (file:///workspace/emberisle/work/p-needs-server873/server/needs-prove.mjs:41:204)
+    at Object.onceWrapper (node:events:631:26)
+    at ChildProcess.emit (node:events:509:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:295:12)
+
+Node.js v24.19.0

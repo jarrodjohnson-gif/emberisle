@@ -27,10 +27,22 @@ export function OreSymbol(props: Props) {
   return <svg {...frame} {...props}><path d="m2 20 7-14 7 14H2Zm11 0-3-6 5-12 8 18H13Z" fill="currentColor" stroke="none"/></svg>;
 }
 
-export const RESOURCE_ICON: Record<Resource, ComponentType<Props>> = {
+export function FallbackResourceSymbol(props: Props) {
+  return <svg {...frame} {...props}><circle cx="12" cy="12" r="8" fill="currentColor" stroke="none"/></svg>;
+}
+
+const ICONS: Record<Resource, ComponentType<Props>> = {
   timber: TimberSymbol,
   clay: ClaySymbol,
   wool: WoolSymbol,
   grain: GrainSymbol,
   ore: OreSymbol,
 };
+
+export const RESOURCE_ICON: Record<Resource, ComponentType<Props>> = new Proxy(ICONS, {
+  get(target, prop) {
+    if (typeof prop === "string" && prop in target) return target[prop as Resource];
+    if (typeof prop === "string" && prop !== "then") return FallbackResourceSymbol;
+    return Reflect.get(target, prop);
+  },
+});

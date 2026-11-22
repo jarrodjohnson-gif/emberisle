@@ -16,7 +16,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium } from "playwright";
+import { chromium } from "./proof-browser.mjs";
 import { preview } from "vite";
 
 const { chunkUrl } = await import("../src/lib/lazy.ts");
@@ -49,7 +49,7 @@ const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"],
   cwd: new URL("../server/", import.meta.url),
   // The finished seat below is held from host start and botted after GRACE_MS; that grace is not what this proof tests,
   // and on a slow runner the online game-over step can land past the 90 s default, so the host gets a wide one.
-  env: { ...process.env, PORT: "0", ROOMS_DIR, GRACE_MS: "300000" },
+  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results`, GRACE_MS: "300000" },
 });
 process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
@@ -62,7 +62,6 @@ const hostPort = await new Promise((resolve) =>
 const server = await preview({ preview: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 const url = `http://127.0.0.1:${PORT}/?host=ws://127.0.0.1:${hostPort}`;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -107,7 +106,7 @@ async function tab(name, chunk, query = "", { reloaded = [], seat, viewport = { 
   await page.goto(url + query);
   return t;
 }
-const title = (page) => page.getByRole("button", { name: "Play", exact: true }).waitFor({ timeout: 15_000 });
+const title = (page) => page.getByRole("button", { name: "Play with bots", exact: true }).waitFor({ timeout: 15_000 });
 
 try {
   // --- 1. The sheets chunk fails. Idle on the title prefetches it: one reload, then the flag holds.
@@ -121,7 +120,7 @@ try {
   const loads = a.loads;
   check("sheets: the title reloaded itself once on the failed prefetch and not again", loads === 2 && a.blocked >= 2, { loads, blocked: a.blocked });
 
-  await a.page.getByRole("button", { name: "Play", exact: true }).click();
+  await a.page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await a.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
   await a.page.waitForSelector("header", { timeout: 15_000 });
   await a.page.waitForSelector("canvas", { timeout: 15_000 });
@@ -198,11 +197,11 @@ try {
   await c2.addInitScript((n) => localStorage.setItem("emberisle-name", n), "Reed");
   await c2.goto(`${url}&code=K7QP`);
   await until(() => cLoads >= 2, "the join link's title reloading once on the failed online prefetch");
-  await title(c2);
-  const joinInput = c2.locator('input[aria-label="Join code"]');
-  await joinInput.waitFor({ timeout: 15_000 });
+  const joinBtn = c2.getByTestId("join-table");
+  await joinBtn.waitFor({ timeout: 15_000 });
   await sleep(500);
-  check("join link: the code is still in the field after the stale-chunk reload", (await joinInput.inputValue()) === "K7QP" && cLoads === 2, { value: await joinInput.inputValue(), loads: cLoads });
+  const joinLabel = (await joinBtn.textContent()) ?? "";
+  check("join link: the code is still on Join after the stale-chunk reload", joinLabel.includes("K7QP") && cLoads === 2 && (await c2.getByRole("button", { name: "Play with bots", exact: true }).count()) === 0, { joinLabel, loads: cLoads });
   await c2.close();
 
   // --- 4. (#492) The title's How to play retries on every press, the first one after the route recovers included.
@@ -253,7 +252,7 @@ try {
   await f.page.getByRole("button", { name: "Host a table" }).hover(); // the retry succeeds
   await sleep(1000);
   await fInput.fill("ZZZZ");
-  await f.page.getByRole("button", { name: "Play", exact: true }).click();
+  await f.page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await f.page.waitForFunction(() => window.__emberisle.getState().screen === "play", null, { timeout: 15_000 });
   await f.page.evaluate(() => window.__emberisle.getState().goTitle());
   await title(f.page);
@@ -277,9 +276,11 @@ try {
   const before = g.loads;
   await g.page.getByRole("button", { name: "Join", exact: true }).click();
   await until(() => g.loads >= 2, "the held reload once Join took focus");
-  await title(g.page);
+  const keptJoin = g.page.getByTestId("join-table");
+  await keptJoin.waitFor({ timeout: 15_000 });
   await sleep(500);
-  check("typing: a typed code is still in the field after the reload Join released", before === 1 && (await gInput.inputValue()) === "K7QP", { before, loads: g.loads, value: await gInput.inputValue() });
+  const keptLabel = (await keptJoin.textContent()) ?? "";
+  check("typing: a typed code is still on Join after the reload Join released", before === 1 && keptLabel.includes("K7QP") && g.loads === 2 && (await g.page.getByRole("button", { name: "Play with bots", exact: true }).count()) === 0, { before, loads: g.loads, keptLabel });
   await g.page.close();
 
   // --- 6. (#492) chunkUrl names dev source URLs (.tsx) as well as built ones, so dev retries too.
@@ -317,7 +318,7 @@ try {
   // preloadOnIdle's 2 s) have been refused and nothing has asked for longer than that, so the next ask is game over's.
   const settled = async (t) => {
     const atPlay = t.blocked;
-    await t.page.getByRole("button", { name: "Play", exact: true }).click();
+    await t.page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await t.page.waitForFunction(() => window.__emberisle?.getState().screen === "play", null, { timeout: 15_000 });
     await t.page.waitForSelector("header", { timeout: 15_000 });
     await until(() => t.blocked > atPlay, "the table's own sheets request being refused");
@@ -326,6 +327,31 @@ try {
       if (t.blocked !== quiet.n) quiet = { n: t.blocked, since: Date.now() };
       return Date.now() - quiet.since > 2500;
     }, "the table's sheets requests going quiet");
+  };
+  // A failed help retry at game over must restore the existing way out, without reloading the table.
+  const winAfterFailedHelp = async (t, mode) => {
+    const before = await shown(t.page);
+    const blocked = t.blocked;
+    const loads = t.loads;
+    await t.page.evaluate(() => {
+      window.__winHelpStates = [];
+      window.__winHelpUnsubscribe = window.__emberisle.subscribe((state) => window.__winHelpStates.push(state.howTo));
+    });
+    await t.page.getByRole("button", { name: "Table menu" }).click();
+    await t.page.getByRole("dialog", { name: "Table menu" }).getByRole("button", { name: "How to play" }).click();
+    await until(() => t.blocked > blocked, `${mode}: help retry asking for the refused sheets chunk`);
+    await t.page.waitForFunction(() => window.__winHelpStates.includes(true) && window.__emberisle.getState().howTo === false, null, { timeout: 15_000 });
+    const helpStates = await t.page.evaluate(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      window.__winHelpUnsubscribe();
+      return window.__winHelpStates;
+    });
+    await t.page.getByTestId("win-failed").waitFor({ timeout: 15_000 });
+    const after = await shown(t.page);
+    check(`game over (${mode}): failed How to play restores the same visible win fallback without reloading`,
+      after.line === before.line && after.button === before.button && after.inView && after.dialogs === 0 &&
+      after.screen === "play" && after.header && t.loads === loads && t.blocked > blocked,
+      { before, after, helpStates, blockedBefore: blocked, blocked: t.blocked, loadsBefore: loads, loads: t.loads });
   };
   // Practice, 1280x720: no seat to rejoin, so the way out is the menu.
   const h = await tab("Oak", "sheets");
@@ -342,6 +368,7 @@ try {
   const hShown = await shown(h.page);
   check("game over (practice): the chunk is asked for again, refused, and the winner line gets a focused Back to menu", hShown.line.startsWith(`${hName} wins with`) && hShown.button === "Back to menu" && hShown.focused && hShown.inView && hShown.dialogs === 0 && hShown.screen === "play" && hShown.header && h.blocked > hBefore && h.loads === 2, { ...hShown, name: hName, blocked: h.blocked, before: hBefore, loads: h.loads });
   await h.page.screenshot({ path: "test-results/win-stale-1280x720.png" });
+  await winAfterFailedHelp(h, "practice");
   await hButton.click();
   await title(h.page);
   check("game over (practice): Back to menu reaches the title without a reload", h.loads === 2 && (await h.page.evaluate(() => window.__emberisle.getState().screen)) === "title", { loads: h.loads });
@@ -381,6 +408,7 @@ try {
   const iShown = await shown(i.page);
   check("game over (online): the rejoined seat finds the chunk refused, and the winner line gets a focused Reload inside the viewport", iShown.line.startsWith("Sage wins with") && iShown.button === "Reload for the results" && iShown.focused && iShown.inView && iShown.dialogs === 0 && iShown.screen === "play" && iShown.header && i.blocked >= 1 && i.loads === 1, { ...iShown, blocked: i.blocked, loads: i.loads });
   await i.page.screenshot({ path: "test-results/win-stale-390x844.png" });
+  await winAfterFailedHelp(i, "online");
   // The deploy is done (the route recovers): Reload rejoins the saved seat, and the win screen loads from the fresh chunk.
   i.broken = false;
   await iButton.click();

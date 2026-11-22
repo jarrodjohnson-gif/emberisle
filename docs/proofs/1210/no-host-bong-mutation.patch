@@ -1,0 +1,13 @@
+diff --git a/scripts/audio-recovery-prove.mjs b/scripts/audio-recovery-prove.mjs
+index bb76c21..670d14f 100644
+--- a/scripts/audio-recovery-prove.mjs
++++ b/scripts/audio-recovery-prove.mjs
+@@ -69,7 +69,7 @@ function __audioRecoveryRecord(stage, name, facts = {}) {
+   if (__audioRecoveryTrace.length > 400) __audioRecoveryTrace.shift();
+ }\n`;
+       return { code: trace + source
+-        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});')
++        .replace(request, request + '\n  __audioRecoveryRecord("request", name, {volume, noAudio: typeof Audio === "undefined"});\n  if (name === "board_bong" && window.mediaRestoreAt) return;')
+         .replace(gate, '  __audioRecoveryRecord("gate", name, {now, asked: asked.get(name) ?? null, burst: !UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS, full: queue.length >= MAX_QUEUE});\n' + gate)
+         .replace(start, start + '\n  __audioRecoveryRecord("start", name, {gain});')
+         + '\nexport const __audioRecoveryQueue = () => ({pacing, queue: queue.map(item => item[0]), trace: __audioRecoveryTrace.slice()});\n', map: null };

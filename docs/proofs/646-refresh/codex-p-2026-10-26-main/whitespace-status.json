@@ -1,0 +1,22 @@
+{
+  "whole_merge_vs_old_head": {
+    "exit": 2,
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "note": "Inherited current-main log/source whitespace; all such main files preserved exactly by scope audit."
+  },
+  "reconciliation_vs_current_main": {
+    "exit": 0,
+    "command": [
+      "git",
+      "diff",
+      "--cached",
+      "--check",
+      "origin/main"
+    ]
+  }
+}
