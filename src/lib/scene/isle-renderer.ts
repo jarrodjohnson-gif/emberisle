@@ -26,6 +26,8 @@ import {
   type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
+import { clampZoom, glideProgress, safeEyeDistance } from "./camera.ts";
+import { calcPanLimit, clampPanOffset, PAN_DEAD } from "./pan-zoom.ts";
 import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -145,11 +147,6 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", 
 const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
-// How far a pan may carry the look-at point from home, about the island's own radius: its centre stays on screen.
-const PAN_RADIUS = 5;
-const PAN_VIEW = 0.6;
-// Pixels a pinch's midpoint may drift before it also pans.
-const PAN_DEAD = 8;
 const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
@@ -211,6 +208,7 @@ export class IsleRenderer {
   private relayout = 0;
   private sizeW = 0;
   private sizeH = 0;
+  private parent: HTMLElement | null = null;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -470,8 +468,9 @@ export class IsleRenderer {
     canvas.addEventListener("pointerup", this.onUp);
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
+    this.parent = canvas.parentElement;
     // Capture phase on the shell, so the pinch gate sees a move before the orbit controls do.
-    for (const t of GATE_EVENTS) canvas.parentElement?.addEventListener(t, this.gate, true);
+    for (const t of GATE_EVENTS) this.parent?.addEventListener(t, this.gate, true);
     // OrbitControls' private pan step; the gate holds a pinch's midpoint still. If a three.js upgrade drops it, pinch just pans a little.
     const oc = this.orbit as unknown as { _pan?: (x: number, y: number) => void };
     const pan = oc._pan?.bind(this.orbit);
@@ -481,8 +480,8 @@ export class IsleRenderer {
     window.visualViewport?.addEventListener("resize", this.onViewport);
     window.addEventListener("keydown", this.onKey);
     // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
-    canvas.parentElement?.addEventListener("focusin", this.remeasure);
-    canvas.parentElement?.addEventListener("focusout", this.remeasure);
+    this.parent?.addEventListener("focusin", this.remeasure);
+    this.parent?.addEventListener("focusout", this.remeasure);
     this.resize();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -893,9 +892,14 @@ export class IsleRenderer {
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
-    this.renderer?.domElement?.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer?.domElement?.parentElement?.removeEventListener("focusout", this.remeasure);
-    for (const t of GATE_EVENTS) this.renderer?.domElement?.parentElement?.removeEventListener(t, this.gate, true);
+    if (this.parent) {
+      this.parent.removeEventListener("focusin", this.remeasure);
+      this.parent.removeEventListener("focusout", this.remeasure);
+      for (const t of GATE_EVENTS) this.parent.removeEventListener(t, this.gate, true);
+      this.parent = null;
+    }
+    this.gesture.reset();
+    this.fingers.clear();
     this.renderer?.domElement?.removeEventListener("pointerdown", this.onDown);
     this.renderer?.domElement?.removeEventListener("pointerup", this.onUp);
     this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
@@ -1012,23 +1016,28 @@ export class IsleRenderer {
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
     this.docksDirty = true;
+    const zoom = clampZoom(p.zoom, this.orbit.minZoom, this.orbit.maxZoom);
+    const tx = Number.isFinite(p.tx) ? p.tx : this.isle.cx;
+    const tz = Number.isFinite(p.tz) ? p.tz : this.isle.cz;
     if (this.view === "diorama") {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
       // A frame centred on the lens axis that holds the canvas, and the canvas as a view into it.
       const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
       const fullH = 2 * Math.max(p.cy, h - p.cy, 1);
-      c.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
+      const focal = Number.isFinite(p.focal) && p.focal > 0 ? p.focal : fullH / 2;
+      c.fov = (2 * Math.atan(fullH / 2 / focal) * 180) / Math.PI;
       c.aspect = fullW / fullH;
       c.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
-      this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
+      this.lens = { focal, dist: p.dist, cx: p.cx, cy: p.cy };
       this.orbit.minDistance = p.dist / this.orbit.maxZoom;
       this.orbit.maxDistance = p.dist / this.orbit.minZoom;
-      this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+      this.orbit.target.set(tx, CAP_LEVEL, tz);
       // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
       this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
-      c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
+      const eyeDist = safeEyeDistance(p.dist, zoom);
+      c.position.setFromSphericalCoords(eyeDist, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
       c.updateProjectionMatrix();
       return;
@@ -1038,8 +1047,8 @@ export class IsleRenderer {
     o.right = p.right;
     o.top = p.top;
     o.bottom = p.bottom;
-    o.zoom = p.zoom;
-    this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+    o.zoom = zoom;
+    this.orbit.target.set(tx, CAP_LEVEL, tz);
     this.orbit.panSpeed = 1;
     o.up.set(0, 1, 0);
     o.position.setFromSphericalCoords(ORBIT_RADIUS, p.polar, p.azimuth).add(this.orbit.target);
@@ -1064,8 +1073,7 @@ export class IsleRenderer {
   private stepGlide(now: number) {
     const g = this.glide;
     if (!g) return;
-    const u = this.calm() ? 1 : Math.min(1, (now - g.start) / GLIDE_MS);
-    const e = 1 - (1 - u) ** 3;
+    const { e, done } = glideProgress(now, g.start, GLIDE_MS, this.calm());
     const p = this.pose();
     for (const k of g.keys) {
       let d = g.to[k] - g.from[k];
@@ -1074,7 +1082,7 @@ export class IsleRenderer {
       p[k] = g.from[k] + d * e;
     }
     this.applyPose(p);
-    if (u >= 1) this.glide = null;
+    if (done) this.glide = null;
   }
 
   // The legal marks a ray passes near, in the diorama view: a corner or a path within `pickReach` of the ray where it passes
@@ -1129,7 +1137,7 @@ export class IsleRenderer {
     const f = this.fit;
     if (!f) return 0;
     const half = "focal" in f ? (f.dist * Math.min(this.sizeW, this.sizeH)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
-    return Math.min(PAN_RADIUS + this.isle.grow, PAN_VIEW * half);
+    return calcPanLimit(half, this.isle.grow);
   }
 
   // The eye moves with the target, so the view does not lag a frame.
@@ -1138,17 +1146,13 @@ export class IsleRenderer {
     const home = this.fitPose(this.fit);
     const t = this.orbit.target;
     const cam = this.orbit.object;
-    const max = this.panLimit();
-    const dx = t.x - home.tx;
-    const dz = t.z - home.tz;
-    const d = Math.hypot(dx, dz);
-    if (d <= max) return;
+    const res = clampPanOffset(t.x, t.z, home.tx, home.tz, this.panLimit());
+    if (!res.clamped) return;
     this.docksDirty = true;
-    const k = max / d - 1;
-    t.x += dx * k;
-    t.z += dz * k;
-    cam.position.x += dx * k;
-    cam.position.z += dz * k;
+    t.x = res.x;
+    t.z = res.z;
+    cam.position.x += res.shiftX;
+    cam.position.z += res.shiftZ;
   }
 
   // Back to the fitted view, zoom 1, over the hole's centre.
@@ -1248,7 +1252,7 @@ export class IsleRenderer {
   private onCancel = (e: PointerEvent) => {
     this.cancelPlop();
     this.trail = null;
-    this.gesture.up(e.pointerId);
+    this.gesture.cancel(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
