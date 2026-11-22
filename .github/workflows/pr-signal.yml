@@ -48,3 +48,5 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           # The same switch auto-merge reads, so green always means "auto-merge will take it".
           AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}
+          # The kill switch. Anything but "on" means no PR is green, so `merge-by-chat` comes off and nothing merges.
+          AUTO_MERGE: ${{ vars.AUTO_MERGE }}

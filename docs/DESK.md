@@ -1,13 +1,13 @@
 # The flow: builders, signals and the dispatcher
 
-Jarrod set this flow on 2026-11-21. It replaces the review desk. There is no long-running chat that reviews, merges or keeps a ledger.
+Jarrod set this flow on 2026-11-21. It replaces the review desk. There is no long-running chat that reviews, decides a merge or keeps a ledger.
 
 - **A builder chat owns one issue to the end.** It builds, waits for CI, has a different model review the PR, fixes the findings and stops.
 - **GitHub holds the state.** A workflow puts one signal label on every open PR: green, yellow or red.
-- **A workflow merges.** Auto-merge squashes a PR that is green and reviewed. No chat merges.
+- **A workflow decides every merge.** Auto-merge squashes a PR that is green and reviewed. No chat decides a merge. The dispatcher only carries out the ones the workflow's token is not allowed to make.
 - **The dispatcher only starts chats.** It reads the labels and fills free slots. It never opens a diff or a review.
 
-Where an older document says "the desk", read it this way: a review is your own reviewer subagent, a merge is auto-merge, and a question for Jarrod is the `needs-owner` label.
+Where an older document says "the desk", read it this way: a review is your own reviewer subagent, a merge is decided by auto-merge, and a question for Jarrod is the `needs-owner` label.
 
 ## Why the desk went
 
@@ -21,7 +21,7 @@ Every chat starts at about 84K tokens before it reads anything, and every wake r
 |---|---|---|
 | `signal:yellow` | In progress: building, CI running or red, review pending, or findings to fix | The PR's builder chat. If it has none, the dispatcher starts one. |
 | `signal:green` | Auto-merge will take it: every rule under [Merging](#merging) holds at the exact head | Auto-merge |
-| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok`, or the PR is green and reviewed but touches a governance file that only he merges | Jarrod |
+| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok`, the newest review asks for his look, or the PR is green and reviewed but only he can merge it (a governance file, or `AUTO_MERGE` is off) | Jarrod |
 
 A draft PR gets no signal.
 
@@ -72,10 +72,12 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 
 - `checks` is completed and green on the head;
 - the newest review comment is clean at that head, and its reviewer differs from its builder. A docs-only PR under 400 changed lines needs only the clean marker;
-- `needs-owner` is absent, or `owner-ok` is present;
+- `needs-owner` is absent and the newest review does not ask for Jarrod's look, or `owner-ok` is present;
 - the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Jarrod merges those by hand. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
 
-Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
+Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging, the dispatcher's hand-over merges included: no PR is green then, a PR that would have merged turns red for Jarrod, and `merge-by-chat` comes off. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
+
+**The workflow can't merge a PR that changes `ci.yml`.** GitHub refuses that to a workflow's own token, and every PR that registers a proof changes `ci.yml`. The workflow then labels the PR `merge-by-chat`, and the dispatcher merges it at its next tick. `pr-signal` removes that label as soon as the PR is no longer green. If Jarrod adds a repo secret `AUTO_MERGE_TOKEN` (a token with the workflows permission), the workflow merges these itself and the label is never used.
 
 Red on `main` after a merge is `prio:p0`. The dispatcher starts a builder for it first.
 
@@ -94,10 +96,11 @@ It keeps no ledger. Everything it needs is in the PR list and in the session ids
 **Every tick, in this order:**
 
 1. List the open PRs once, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
-2. **Archive finished chats.** Archive a chat you started when its PR is merged, closed, green or red, or 6 hours after you started it.
-3. **Count live chats.** A chat is live for 4 hours after you start it, or while one of its PRs was updated in the last 3 hours.
-4. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no live chat and no update for 3 hours. A `signal:red` PR that changed since it turned red is an orphan too. Start one PR-owner chat for up to three orphans. Start two such chats per tick at most.
-5. **Fill the builder slots**, while fewer than five chats are live in all:
+2. **Merge what the workflow handed over.** For each PR in the list that carries both `signal:green` and `merge-by-chat`: read that one PR's head SHA and labels again, and if both labels are still there, squash-merge it pinned to that SHA. Never merge a PR without both labels, and never add either label yourself. This step is the one exception to "never merge" in AGENTS.md rule 7, and it is yours alone. If the merge is refused, leave it and go on. If the same PR is refused at two ticks, tell Jarrod once in your chat, with its number and the error.
+3. **Archive finished chats.** Archive a chat you started when its PR is merged, closed, green or red, or 6 hours after you started it.
+4. **Count live chats.** A chat is live for 4 hours after you start it, or while one of its PRs was updated in the last 3 hours.
+5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no live chat and no update for 3 hours. A `signal:red` PR that changed since it turned red is an orphan too. Start one PR-owner chat for up to three orphans. Start two such chats per tick at most.
+6. **Fill the builder slots**, while fewer than five chats are live in all:
 
    | Slot | Model | Takes |
    |---|---|---|
@@ -106,14 +109,14 @@ It keeps no ledger. Everything it needs is in the PR list and in the session ids
    | `claude-sonnet-b` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
 
    Skip a slot whose last chat is still live.
-6. **Set the next tick** with one `send_later` for 120 minutes. Then post `·` and end the turn.
+7. **Set the next tick** with one `send_later` for 120 minutes. Then post `·` and end the turn.
 
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and a title that starts `(auto)` and names the slot and PR numbers.
 
 - **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take one eligible <tier> issue, a prio:p0 first, and follow that section to the end. Then stop.`
 - **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is <slot>, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 5 of that section. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
 
-**The dispatcher never** reviews, merges, labels, comments on GitHub, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
+**The dispatcher never** reviews, decides a merge, labels, comments on GitHub, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
 **Its own size.** A tick adds about 2K tokens. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
 

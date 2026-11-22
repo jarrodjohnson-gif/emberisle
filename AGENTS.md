@@ -21,7 +21,7 @@ These are short on purpose. Follow all of them, every round.
 4. **One issue per PR. At most 4 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, different limit for you. At the limit, work only on those PRs. A PR with no push for 24 hours is open for any builder to adopt (`docs/LANES.md`, rung 1).
 5. **Don't park drafts, and own your PR to the end.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it. When it is green, a Claude builder starts its own reviewer subagent on a different model, fixes the findings, and stops only when the review is clean ([`docs/DESK.md`](docs/DESK.md), "A builder chat").
 6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
-7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` label.
+7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` label. The one exception: the dispatcher carries out a merge the auto-merge workflow approved but could not make ([`docs/DESK.md`](docs/DESK.md), "The dispatcher", step 2).
 8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
 10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854.
@@ -53,7 +53,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
    using [`docs/LANES.md`](docs/LANES.md).
    Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
-2. Never merge. The auto-merge workflow merges a PR, after a clean review by a different model
+2. Never merge. The auto-merge workflow decides every merge, after a clean review by a different model
    ([`docs/DESK.md`](docs/DESK.md), "Merging").
 3. If Jarrod named a specific issue, do that one instead, still checking its prerequisites, claims and files.
 4. **Need a decision?** Post it as a comment on the issue, starting with `Question:`, giving the options and your

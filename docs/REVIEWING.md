@@ -29,7 +29,7 @@ Run each local browser proof alone (AGENTS.md rule 11). Use `flock /tmp/claude-0
 
 Give blocking findings, then non-blocking ones, each with `file:line`. Paste real output tails, and say which checks you relied on CI for. Also flag to-do lists in files.
 
-For a `ux` PR, attach the screenshots and don't judge the look. Visual changes wait for Jarrod: check that the PR has the `needs-owner` label, and add it if it is missing.
+For a `ux` PR, attach the screenshots and don't judge the look. Visual changes wait for Jarrod: check that the PR has the `needs-owner` label, and add it if it is missing. Also write one plain line in the review, such as "Waiting on Jarrod for the look." Auto-merge holds the PR on that line until `owner-ok` is added, so never write such a line in a review that needs nothing from him.
 
 **Post the review yourself**, as one comment on the PR, in the exact shape in [DESK.md](DESK.md#the-review-comment). The builder never writes or edits it. Hand back one line to the builder: clean, or the number of blocking findings.
 
