@@ -147,15 +147,13 @@ let openCode;
   assert.equal(reply.tables[0].code, openCode);
   lister.ws.terminate();
 
-  // At most one open table per host: a second open create is refused.
+  // One open table per host player, not per host server (#944): a different player's open table is listed beside it.
   const rival = client(port, "Rival");
   await rival.open;
   rival.send({ type: "hello", name: "Rival", visibility: "open" });
-  const err = await rival.next("error");
-  assert.match(err.message, /already listed/i, "second open table is refused");
-  const still = await (await fetch(`${baseUrl}/tables`)).json();
-  assert.equal(still.length, 1, "list still has only Jarrod's table");
-  assert.equal(still[0].code, openCode);
+  const rivalWelcome = await rival.next("welcome");
+  const both = await (await fetch(`${baseUrl}/tables`)).json();
+  assert.deepEqual(both.map((t) => t.code), [openCode, rivalWelcome.code], "a second player's open table is listed too");
   rival.ws.terminate();
 }
 
@@ -304,7 +302,7 @@ let openCode;
   await lister.open;
   lister.send({ type: "list" });
   assert.deepEqual((await lister.next("openTables")).tables, [], "restored held seats stay unlisted until a player returns");
-  // Rejoin private seats first: they must not take the single open slot.
+  // Rejoin private seats first: they must stay unlisted.
   for (const c of [...credentials.slice(1), credentials[0]]) {
     const returning = client(restartPort, `${c.name}-returning`);
     await returning.open;
@@ -408,7 +406,7 @@ let openCode;
   assert.deepEqual(await (await fetch(`http://127.0.0.1:${recoveryPort}/tables`)).json(), [], "HTTP discovery also omits the terminal recovery table");
   console.log("recovery: authenticated rejoin finishes at turn start and releases discovery while the winner stays connected");
 
-  // #986: restored completed rooms must reclaim only a free open slot when rematched.
+  // #986: restored completed rooms are listed again when rematched, beside any newer open table (#944).
   for (const scenario of ["free", "successor", "private"]) {
     await stop();
     const visibility = scenario === "private" ? "private" : "open";
@@ -454,13 +452,15 @@ let openCode;
         "winner goes first; remaining seat order and colors survive rematch");
     }
     const tables = await list();
-    const expectedCode = scenario === "free" ? "RCVR" : successorCode;
-    if (expectedCode) {
-      assert.equal(tables.length, 1, "exactly one room retains the open slot");
-      assert.equal(tables[0].code, expectedCode, "rematch reclaims a free slot without replacing its successor");
-      assert.equal(tables[0].status, scenario === "free" ? "playing" : "lobby");
-      assert.equal(tables[0].seated, scenario === "free" ? 3 : 1, "listing counts exactly the rematch or successor seats");
-      assert.equal(tables[0].total, 4, "the listed capacity stays four");
+    // Several open tables may be listed at once (#944): the rematch is listed again beside its successor, never over it.
+    const expected = scenario === "free" ? ["RCVR"] : scenario === "successor" ? [successorCode, "RCVR"] : [];
+    if (expected.length) {
+      assert.deepEqual(tables.map((t) => t.code), expected, "the rematch is listed again without replacing its successor");
+      for (const t of tables) {
+        assert.equal(t.status, t.code === "RCVR" ? "playing" : "lobby");
+        assert.equal(t.seated, t.code === "RCVR" ? 3 : 1, "listing counts exactly the rematch or successor seats");
+        assert.equal(t.total, 4, "the listed capacity stays four");
+      }
     } else assert.deepEqual(tables, [], "private rematch never becomes discoverable");
     const http = await fetch(`http://127.0.0.1:${rematchPort}/tables`);
     assert.equal(http.status, 200, "HTTP listing succeeds without masking the result with rate limiting");
