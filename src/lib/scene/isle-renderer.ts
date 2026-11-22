@@ -71,7 +71,9 @@ const landModules = {
   jelly: chunk(() => import("@/lib/scene/jelly-board"), /\/(jelly-board|hex-jelly)-[\w-]+\.js$/),
   classic: chunk(() => import("@/lib/scene/classic-board"), /\/classic-board-[\w-]+\.js$/),
 };
-const loadLand = (look: LandLook) => landModules[look].load();
+// #1341: the shared build-and-swap is its own entry, so a failed fetch of it retries under its own fresh query.
+const controller = chunk(() => import("@/lib/scene/appearance-controller"), /\/appearance-controller-[\w-]+\.js$/);
+const loadLand = (look: LandLook) => Promise.all([landModules[look].load(), controller.load()]);
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
@@ -1802,8 +1804,8 @@ export class IsleRenderer {
       return;
     }
     performance.mark("props-start");
-    // The build and swap live with the look's own chunk (appearance-controller.ts); a failed import or build retries here.
-    void loadLand(look).then((m) => { if (alive()) return m.grow(this as unknown as AppearanceHost, { key, hexes, look, alive }); }).catch(() => {
+    // The build and swap live in their own chunk (appearance-controller.ts); a failed import or build retries here.
+    void loadLand(look).then(([m, c]) => { if (alive()) return c.growWith(m.create, this as unknown as AppearanceHost, { key, hexes, look, alive }); }).catch(() => {
       if (!alive()) return;
       this.landState.error = `${look === "classic" ? "Classic" : "Jelly"} could not load`;
       this.landState.loading = tries < 5;

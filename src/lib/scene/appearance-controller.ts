@@ -5,9 +5,11 @@ import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import type { LandAppearance, LandHex, LandLook, VisibilityContext } from "@/lib/scene/land-appearance";
 
 // #759, desk answer A on #1341 (2026-11-12): the land look's build-and-swap, moved out of the island renderer's chunk so the
-// renderer stays inside its growth allowance. jelly-board.ts and classic-board.ts each re-export `grow`, so this module loads
-// with whichever look is asked for, as part of that look's import: it has no load or failure of its own. A failed import of
-// the look (this module included) is the renderer's, which keeps the retry and the error state (`landFailed`), unchanged.
+// renderer stays inside its growth allowance. It is its own chunk, loaded by the renderer beside whichever look is asked for
+// (jelly-board.ts and classic-board.ts export only `create`), not a static import of the looks: the browser keeps a failed
+// module fetch for the life of the page, so a dependency that failed once would fail every fresh-query retry of the look's
+// entry. As its own entry it retries under its own fresh query (lazy.ts). A failed import of either is the renderer's, which
+// keeps the retry and the error state, unchanged.
 // The contract is the approved one (docs/design/classic-board.md "Builders and ownership"): build off screen, compile, then
 // swap whole in one frame; a newer request or a dispose (the generation) drops the candidate; the shore follows the board.
 
@@ -68,11 +70,12 @@ let shoreFailed = false;
 
 // A look has swapped in. The first one on a board brings the shore, which follows the canonical board, independently from
 // look requests; a shore that fails to load or build leaves the plain beach (said once a page).
-function shown(host: AppearanceHost, key: string, first: boolean) {
+function shown(host: AppearanceHost, key: string, first: boolean, alive: () => boolean) {
   host.whenDrawn(() => (boot.scenes = true));
   if (HARBOR_JELLY && !host.lite && first) {
     void import("@/lib/scene/harbor-jelly").then(({ buildShore }) => {
-      if (host.stopped || host.lastLand !== key) return;
+      // A newer board (the generation) or a dispose drops this shore, even when the newer board has the same hexes.
+      if (!alive() || host.lastLand !== key) return;
       host.swapShore(buildShore(host.coast as never, host.docks, hashStr(`${key}|shore`)));
     }).catch((error: unknown) => {
       if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", error);
@@ -103,11 +106,11 @@ function prepare(host: AppearanceHost, appearance: LandAppearance) {
   return hex;
 }
 
-type Create = (hexes: readonly LandHex[], key: string, pause: () => Promise<boolean>, lite: boolean, holdAge: () => boolean) => Promise<LandAppearance | null> | LandAppearance | null;
+export type CreateLook = (hexes: readonly LandHex[], key: string, pause: () => Promise<boolean>, lite: boolean, holdAge: () => boolean) => Promise<LandAppearance | null> | LandAppearance | null;
 
 // Builds the look, compiles its shaders where the browser can do it in parallel, and swaps it in whole. Rejects (after
 // disposing its own candidate) if the build fails; the renderer then retries.
-export async function growWith(create: Create, host: AppearanceHost, { key, hexes, look, alive }: GrowRequest) {
+export async function growWith(create: CreateLook, host: AppearanceHost, { key, hexes, look, alive }: GrowRequest) {
   const pause = () => new Promise<boolean>((resolve) => setTimeout(() => resolve(alive()), 0));
   let candidate: LandAppearance | null = null;
   try {
@@ -153,20 +156,9 @@ export async function growWith(create: Create, host: AppearanceHost, { key, hexe
       if (!host.walk) host.wayfarer.position.copy(host.robberTarget);
     }
     host.reportLand();
-    shown(host, key, !previous);
+    shown(host, key, !previous, alive);
   } catch (error) {
     if (candidate && candidate !== host.appearance) candidate.dispose();
     throw error;
   }
-}
-
-// What a group's direct children own: meshes, and their distinct geometries and materials (Jelly's stats; the chunk is shared).
-export function ownedBy(group: THREE.Group) {
-  const geometries = new Set(), materials = new Set();
-  for (const child of group.children) {
-    const mesh = child as THREE.Mesh;
-    geometries.add(mesh.geometry);
-    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
-  }
-  return { meshes: group.children.length, geometries: geometries.size, materials: materials.size };
 }

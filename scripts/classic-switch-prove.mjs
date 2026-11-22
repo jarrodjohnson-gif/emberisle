@@ -364,6 +364,39 @@ try {
   console.log(`ok production playable-board and unobscured scene pictures ${JSON.stringify(pictureFrames)}`);
   await context.close();
 
+  // #1341: the shared build-and-swap chunk failing once. It is its own entry (not a static import of the look), so the
+  // renderer's normal retry asks for it under a fresh query; a static dependency would stay failed for the life of the page.
+  const controllerContext = await browser.newContext();
+  await controllerContext.addInitScript(() => {
+    localStorage.setItem("emberisle-water", "simple"); localStorage.setItem("emberisle-jelly", "lite");
+    window.__controllerFailures = [];
+    window.addEventListener("vite:preloadError", (event) => window.__controllerFailures.push(String(event.payload)));
+  });
+  const controllerPage = await controllerContext.newPage(), controllerRequests = [], controllerErrors = [];
+  let controllerAborted = 0, controllerNavigations = 0;
+  controllerPage.on("framenavigated", (frame) => { if (frame === controllerPage.mainFrame()) ++controllerNavigations; });
+  controllerPage.on("request", (request) => { if (/appearance-controller|jelly-board/.test(request.url())) controllerRequests.push(request.url()); });
+  controllerPage.on("pageerror", (error) => controllerErrors.push(error.message));
+  controllerPage.on("console", (message) => {
+    if (message.type() !== "error") return;
+    if (!(/\/assets\/appearance-controller-[^/]+\.js$/.test(message.location().url) && /Failed to load resource/.test(message.text()))) controllerErrors.push(message.text());
+  });
+  await controllerPage.route("**/assets/appearance-controller-*.js*", async (route) => {
+    if (controllerAborted < 1) { ++controllerAborted; await route.abort("failed"); }
+    else await route.continue();
+  });
+  await controllerPage.goto(`http://127.0.0.1:${PORT + 1}/`);
+  await controllerPage.waitForFunction(() => window.__isle?.landStatus.displayed === "jelly" && !window.__isle.landStatus.error, null, { timeout: 120_000 });
+  const controllerFailures = await controllerPage.evaluate(() => window.__controllerFailures);
+  assert.equal(controllerAborted, 1, "the controller chunk failed once");
+  assert.ok(controllerFailures.length === 1 && /\/assets\/appearance-controller-[^/?]+\.js$/.test(controllerFailures[0]), `the browser reports the controller's own URL: ${JSON.stringify(controllerFailures)}`);
+  assert.ok(controllerRequests.some((url) => /\/assets\/appearance-controller-[^/]+\.js\?retry=\d+$/.test(url)), "the retry asks for the controller under a fresh query");
+  assert.equal(controllerRequests.filter((url) => /jelly-board/.test(url)).length, 1, "the loaded look is not fetched again");
+  assert.equal(controllerNavigations, 1, "an owned controller failure never reloads the page");
+  assert.deepEqual(controllerErrors, [], "controller recovery has zero unexpected browser errors");
+  console.log(`ok production controller-chunk failure recovers through the look's normal retry; reported ${JSON.stringify(controllerFailures)}; requests ${JSON.stringify(controllerRequests)}`);
+  await controllerContext.close();
+
   // A disposed renderer still owns its optional request until that request settles.
   const disposedContext = await browser.newContext();
   await disposedContext.addInitScript(() => {

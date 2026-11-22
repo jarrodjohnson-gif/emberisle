@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { growWith, type AppearanceHost, type GrowRequest } from "@/lib/scene/appearance-controller";
+import type { CreateLook } from "@/lib/scene/appearance-controller";
 import type { HexCell } from "@/lib/game/types";
 import { HEX_SIZE } from "@/lib/game/hex";
 import { BLOCK_H } from "@/lib/scene/jelly-dims";
@@ -324,5 +324,4 @@ export class ClassicBoard implements LandAppearance {
 }
 
 // #759: the same lazy boundary as Jelly, with Classic's own deterministic seed and quality.
-export const grow = (host: AppearanceHost, request: GrowRequest) =>
-  growWith((hexes, key, pause, lite) => ClassicBoard.create(hexes, hashStr(key), pause, lite ? "lite" : "full"), host, request);
+export const create: CreateLook = (hexes, key, pause, lite) => ClassicBoard.create(hexes, hashStr(key), pause, lite ? "lite" : "full");

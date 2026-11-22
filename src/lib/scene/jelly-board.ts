@@ -1,5 +1,5 @@
 import type { LandAppearance, LandStats, VisibilityContext } from "@/lib/scene/land-appearance";
-import { growWith, ownedBy, type AppearanceHost, type GrowRequest } from "@/lib/scene/appearance-controller";
+import type { CreateLook } from "@/lib/scene/appearance-controller";
 import * as THREE from "three";
 import { hashStr } from "@/lib/utils";
 import { type Terrain } from "@/lib/game/types";
@@ -1103,7 +1103,18 @@ export class JellyBoard implements LandAppearance {
   }
 }
 
-// #759: the uniform lazy boundary. The renderer asks this look's chunk to build and swap itself in (appearance-controller.ts),
-// with no need to know Jelly's seed or quality conventions.
-export const grow = (host: AppearanceHost, request: GrowRequest) =>
-  growWith((hexes, key, pause, lite, holdAge) => JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge), host, request);
+// #759: the uniform lazy boundary. The renderer hands this to the shared build-and-swap (appearance-controller.ts), with no
+// need to know Jelly's seed or quality conventions.
+export const create: CreateLook = (hexes, key, pause, lite, holdAge) =>
+  JellyBoard.create([...hexes], (kind) => hashStr(`${key}|${kind}`), pause, lite, holdAge);
+
+// What a group's direct children own: meshes, and their distinct geometries and materials.
+function ownedBy(group: THREE.Group) {
+  const geometries = new Set(), materials = new Set();
+  for (const child of group.children) {
+    const mesh = child as THREE.Mesh;
+    geometries.add(mesh.geometry);
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
+  }
+  return { meshes: group.children.length, geometries: geometries.size, materials: materials.size };
+}
