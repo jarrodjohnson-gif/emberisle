@@ -97,19 +97,19 @@ It keeps no ledger. Everything it needs is in the PR list and in the session ids
 
 1. List the open PRs once, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
 2. **Merge what the workflow handed over.** For each PR in the list that carries both `signal:green` and `merge-by-chat`: read that one PR's head SHA and labels again, and if both labels are still there, squash-merge it pinned to that SHA. Never merge a PR without both labels, and never add either label yourself. This step is the one exception to "never merge" in AGENTS.md rule 7, and it is yours alone. If the merge is refused, leave it and go on. If the same PR is refused at two ticks, tell Jarrod once in your chat, with its number and the error.
-3. **Archive finished chats.** Archive a chat you started when its PR is merged, closed, green or red, or 6 hours after you started it.
-4. **Count live chats.** A chat is live for 4 hours after you start it, or while one of its PRs was updated in the last 3 hours.
+3. **Archive finished chats.** Call `list_sessions` once with `children: true` and `limit: 10`. Archive a chat you started when it is no longer working and its PR is merged, closed, green or red, or it opened no PR.
+4. **Count live chats.** A chat is live only while that listing shows it working. A chat that has finished is not live, however recently you started it. On 2026-11-21 a builder that found nothing to build in three minutes was counted live for four hours, and no slot was filled.
 5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no live chat and no update for 3 hours. A `signal:red` PR that changed since it turned red is an orphan too. Start one PR-owner chat for up to three orphans. Start two such chats per tick at most.
-6. **Fill the builder slots**, while fewer than five chats are live in all:
+6. **Fill the builder slots.** There are three, and each holds one chat at a time:
 
    | Slot | Model | Takes |
    |---|---|---|
-   | `claude-opus-a` | `claude-opus-5-5` | `tier:1` |
+   | `claude-opus-a` | `claude-opus-5-5` | `tier:1`, or a `tier:2` issue marked `model:opus` when no `tier:1` issue is eligible |
    | `claude-sonnet-a` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
    | `claude-sonnet-b` | `claude-sonnet-5-5` | `tier:2` or `tier:3` |
 
-   Skip a slot whose last chat is still live.
-7. **Set the next tick** with one `send_later` for 120 minutes. Then post `·` and end the turn.
+   Skip a slot whose last chat is still live. Fill every other slot at every tick: the PR-owner chats from step 5 do not use up a builder slot. If a slot's last chat ended with nothing eligible, start it again only when the list of `status:todo` issues has changed since.
+7. **Set the next tick** with one `send_later` for 60 minutes. Then post `·` and end the turn.
 
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and a title that starts `(auto)` and names the slot and PR numbers.
 
@@ -118,7 +118,7 @@ It keeps no ledger. Everything it needs is in the PR list and in the session ids
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
-**Its own size.** A tick adds about 2K tokens. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
+**Its own size.** A tick adds about 4K tokens. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
 
 **Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. Only Jarrod changes it. If one is denied, say which, once, and carry on.
 
