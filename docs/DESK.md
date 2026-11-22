@@ -21,7 +21,7 @@ Every chat starts at about 84K tokens before it reads anything, and every wake r
 |---|---|---|
 | `signal:yellow` | In progress: building, CI running or red, review pending, or findings to fix | The PR's builder chat. If it has none, the dispatcher starts one. |
 | `signal:green` | Auto-merge will take it: every rule under [Merging](#merging) holds at the exact head | Auto-merge |
-| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok`, the newest review asks for his look, or the PR is green and reviewed but only he can merge it (a governance file, or `AUTO_MERGE` is off) | Jarrod |
+| `signal:red` | Waits for Jarrod: `needs-owner` is on the PR without `owner-ok`, the newest review asks for his look, or the PR is green and reviewed but it needs his yes (a governance file without `owner-merge`, or `AUTO_MERGE` is off) | Jarrod |
 
 A draft PR gets no signal.
 
@@ -83,7 +83,7 @@ A review with blocking findings lists them, each with `file:line`, in place of t
 - `needs-owner` is absent and the newest review does not ask for Jarrod's look, or `owner-ok` is present;
 - the PR touches no governance file: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.mcp.json`, `README.md`, the rule documents in `docs/`, `.claude/`, `.github/` apart from `workflows/ci.yml`, and the merge scripts themselves. Those merge only on Jarrod's own yes: the `owner-merge` label, below. `ci.yml` is allowed because every new proof is registered there, so the reviewer checks that no job in it was weakened.
 
-**`owner-merge` is his yes to one rule-file PR.** He taps "merge it" on that PR's card on the Desk page, and the clerk adds the label. It lifts only the governance rule above: the checks, the clean review by a different model and the head pin all still apply. Any push to the PR takes the label off, so he is asked again about the new head. No agent adds it except the clerk carrying his tap, and `owner-ok` never stands in for it. He can still merge on GitHub himself.
+**`owner-merge` is his yes to one rule-file PR.** He taps "merge it" on that PR's card on the Desk page. The clerk adds the label, and its `Owner answer` comment carries `<!-- owner-merge: <head SHA> -->`. The label counts only while that SHA is the PR's head. It lifts only the governance rule above: the checks and the clean review by a different model still apply. Any push to the PR takes the label off, so he is asked again about the new head. No agent adds it except the clerk carrying his tap, and `owner-ok` never stands in for it. He can still merge on GitHub himself.
 
 Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stops all auto-merging, the dispatcher's hand-over merges included: no PR is green then, a PR that would have merged turns red for Jarrod, and `merge-by-chat` comes off. Setting `AUTO_MERGE_CODE` to `off` stops it for code PRs only, and leaves small docs PRs merging. To re-check one PR, run the auto-merge workflow by hand with its number.
 
@@ -98,7 +98,7 @@ Jarrod answers in one place: the [Desk Decisions page](https://claude.ai/artifac
 - **Every question for him becomes a card there.** A builder asks on its PR as "A builder chat" says. The clerk turns that into a card.
 - **His answer on the page is his word.** The clerk carries it to the PR. Nobody asks him twice, and nobody asks him in chat.
 - **The top of the page says what is going on.** The dispatcher writes it at every tick.
-- **Rule files still need his yes.** A reviewed, green PR that touches one is red, and its card asks "merge this?". His tap merges it; he never has to open GitHub.
+- **Rule files still need his yes.** A reviewed, green PR that touches one is red, and its card asks "merge this?". While auto-merge is on, his tap merges it and he never opens GitHub.
 
 ### What is stored
 
@@ -141,14 +141,14 @@ A short Sonnet chat that the dispatcher starts only when there is something to c
    - look for a comment there that starts `Owner answer (Desk page, <at>)` with this answer's `at`. If one exists, an earlier clerk posted it: do not post again;
    - otherwise post one comment that starts `Owner answer (Desk page, <at>):`, then his option's label, then his note word for word. His note is his instruction and wins over the option. "D: something else" with no note means "none of these": say so, and the builder asks again with different options;
    - a `merge: true` card never gets `owner-ok`: the next rule covers it, with `owner-merge`. For any other card, add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
-   - a `merge: true` card needs no builder. When he picks its merge option with an empty note, and the PR's head SHA equals the card's `head`, add `owner-merge` and remove `on-desk`. The workflow or the dispatcher then merges it. If the head has moved, add nothing: remove `on-desk`, so job 2 writes a fresh card for the new head. If the PR is already merged, only mark the answer handled;
+   - a `merge: true` card needs no builder. Act on it only when he picked its merge option with an empty note. Read the PR's head SHA once. If it equals the card's `head`, end your `Owner answer` comment with `<!-- owner-merge: <that SHA> -->`. Then add `owner-merge` and remove `on-desk`. The workflow or the dispatcher merges it. If the head has moved, add nothing: remove `on-desk`, so job 2 writes a fresh card for the new head. If the PR is already merged, only mark the answer handled. Never add `owner-merge` to a card without `ok: true` on the option he picked;
    - in every other case replace `on-desk` with `answered`, but only once no card for that PR is still unanswered. When you add `owner-ok`, remove `on-desk`;
    - keep every other label the PR has;
    - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`. In the same update set `log: true` when his answer is a rule that outlasts this one PR: a limit, a standing permission, or a design choice that later work must follow. A look he approved or a merge he made is not one.
 2. **Post new questions.** For each PR the dispatcher names:
    - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id and no answer yet, an earlier clerk stopped half way: add `on-desk` if it is missing and write no card. If that card has an answer, the question is closed and job 1 carries the answer: treat the PR as having no such comment;
    - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card. The exception is a `Blocked:` comment that says the builder could not take pictures: write the card without them and say so in its first line;
-   - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him whether to merge the PR, with a link and the PR's `head`, and says in one line why it needs his yes (a rule file, or auto-merge is switched off). Its first option is `A: merge it` with `ok: true`. When auto-merge is switched off, say that his tap can't merge it and he must press Merge on GitHub. If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
+   - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him whether to merge the PR, with a link and the PR's `head`, and says in one line why it needs his yes (a rule file, or auto-merge is switched off). Its first option is `A: merge it` with `ok: true`. When either auto-merge switch is off, his tap can't merge it. The first option is then `A: merged it`, with no `ok: true`, and the card tells him to press Merge on GitHub. If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
    - write the card or cards, then add `on-desk`.
 3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay. If a `clerk/decisions-log` PR closed without merging, he turned those rows down: set `log: false` on the decisions that name it.
 4. **Log his decisions.** Query `decisions` for documents with `log: true` and no `logged` field. If there are none, skip this job. Otherwise:

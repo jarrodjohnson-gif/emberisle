@@ -79,6 +79,20 @@ export function reviewFooter(comments) {
   return null;
 }
 
+// The reasons from codeRefusal() that the owner's `owner-merge` may lift. Never "no path" or "unsafe path".
+const LIFTABLE = /^(?:governance (?:file|file name|folder)|merge machinery)$/;
+const OWNER_MERGE = /<!-- owner-merge: ([0-9a-f]{40}) -->/gi;
+// The head the owner said yes to: the marker in the newest trusted comment that carries one, or null. The clerk writes it
+// in its `Owner answer` comment, so the label alone, or a yes to an older head, never merges anything.
+export function ownerMergeHead(comments) {
+  for (const c of (comments ?? []).toReversed()) {
+    if (!TRUSTED.includes(c.author_association)) continue;
+    const found = [...String(c.body ?? "").matchAll(OWNER_MERGE)];
+    if (found.length) return found[found.length - 1][1].toLowerCase();
+  }
+  return null;
+}
+
 // Why a path can't auto-merge, or null if it can. Excludes are checked first, case-insensitively.
 export function pathRefusal(path) {
   if (typeof path !== "string" || !path) return "no path";
@@ -115,14 +129,14 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   const docsOnly = files.every((f) => STATUSES.includes(f.status) && !pathRefusal(f.filename))
     && files.reduce((n, f) => n + f.additions + f.deletions, 0) < MAX_CHANGED_LINES;
   const asCode = code === true && !docsOnly;
-  const ownerMerge = labels.includes("owner-merge");
+  const ownerMerge = labels.includes("owner-merge") && ownerMergeHead(comments) === sha;
   if (asCode) {
     for (const f of files) {
       for (const path of [f.filename, f.previous_filename].filter((p) => p !== undefined)) {
         const why = codeRefusal(path);
-        // `owner-merge` is the owner's tap on the Desk page, carried by the clerk for this exact head. It lifts only this
-        // refusal: the review, the checks and the head pin below still apply. The workflow removes it on every push.
-        if (why && !ownerMerge) return no(`${JSON.stringify(path)}: ${why}`);
+        // `owner-merge` is the owner's tap on the Desk page, carried by the clerk for this exact head. It lifts only the
+        // governance reasons: an unsafe path still refuses, and the review, the checks and the head pin still apply.
+        if (why && !(ownerMerge && LIFTABLE.test(why))) return no(`${JSON.stringify(path)}: ${why}`);
       }
     }
     const footer = reviewFooter(comments);

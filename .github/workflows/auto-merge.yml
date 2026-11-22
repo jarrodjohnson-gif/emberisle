@@ -42,9 +42,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A push ends the owner's yes and the workflow's hand-over: both were for the old head. This runs with the kill switch
+  # on or off, before anything else, and fails loudly. `decide` also pins `owner-merge` to a head by itself.
+  reset:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.pull_request.number }}
+        run: |
+          have=$(gh api "repos/$REPO/issues/$NUM/labels" --paginate --jq '.[].name')
+          for label in owner-merge merge-by-chat; do
+            if grep -qx "$label" <<<"$have"; then gh api -X DELETE "repos/$REPO/issues/$NUM/labels/$label" >/dev/null; fi
+          done
   merge:
+    needs: reset
     if: >-
-      vars.AUTO_MERGE == 'on' && (
+      !cancelled() && needs.reset.result != 'failure' && vars.AUTO_MERGE == 'on' && (
         github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.path == '.github/workflows/ci.yml') ||
@@ -64,13 +81,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      # `owner-merge` is the owner's yes for one exact head. Any push takes it off, before the decision below reads the PR.
-      - if: github.event_name == 'pull_request_target' && github.event.action == 'synchronize'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          NUM: ${{ github.event.pull_request.number }}
-        run: gh api -X DELETE "repos/$REPO/issues/$NUM/labels/owner-merge" >/dev/null 2>&1 || true
       - id: decide
         env:
           GITHUB_TOKEN: ${{ github.token }}
