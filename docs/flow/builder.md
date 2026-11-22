@@ -4,7 +4,7 @@ This is everything a builder or PR-owner chat needs from the flow. The map is [`
 
 One chat takes one issue, or one batch of up to three PRs it is told to finish. Pick and claim the issue as [AGENTS.md](../../AGENTS.md) and [LANES.md](../LANES.md) say. Then:
 
-1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and `Model: <your model>` in the body. Then set your chat's title to `(auto) <your agent name> #<PR number> building` with `set_session_title`. The dispatcher reads only titles, so the title is how it knows your slot is busy.
+1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and `Model: <your model>` in the body. Then set your chat's title to `(auto) <your agent name> #<PR number> building` with `set_session_title`. Before the PR exists, use the issue's number in its place. The dispatcher reads only titles, so the title is how it knows your slot is busy.
 2. **Wait for CI with `subscribe_pr_activity`.** Never sleep or poll. Fix a red CI.
 3. **If the PR changes what a player sees or hears, get the look check first** ([Small look fixes need no card](#small-look-fixes-need-no-card)).
 4. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool.
@@ -16,7 +16,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
 6. **Stop when the PR is done.** Done means the newest review is clean at the head, and `checks` is green there. Set the issue to `status:in-review`, unsubscribe from the PR, and post one last line.
 7. **Set your last title.** Keep `(auto) <your agent name> #<PR number>` and change the last word:
    - `done` when the PR is done;
-   - `blocked` when you added `needs-owner`;
+   - `blocked` when you added `needs-owner`. With no PR, the title carries the issue's number;
    - `(auto) <your agent name> nothing eligible` when you found no issue to take.
 8. **Then wake the dispatcher, as the very last thing you do.** If the dispatcher started you and `get_session` shows a `parent_session_id`, send that chat the one word `tick` with `send_message`. It starts the next chat at once. If the call is denied, or there is no parent, skip it: the hourly tick still comes.
 

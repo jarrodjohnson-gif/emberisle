@@ -29,7 +29,7 @@ Builders are only as good as the issues they are handed. The old desk wrote the 
 - Keep at least 5 open, unclaimed `anytime` issues ([LANES.md](../LANES.md#anytime-queue)).
 - Mark a claim expired only as [LANES.md](../LANES.md#picking-an-issue), step 2, says. Comment `expired: <agent>, <date>`, and set the issue back to `status:todo`.
 - Keep the bodies of the three issues in [`issue-bodies.md`](issue-bodies.md) the same as that file. Replace a body that differs.
-- Once a month, move `docs/DECISIONS.md` rows older than 30 days to "Still in force" in `docs/DECISIONS-archive.md`, word for word, in a PR.
+- Once a month, move `docs/DECISIONS.md` rows older than 30 days to "Still in force" in `docs/DECISIONS-archive.md`, word for word, in a PR. This PR is the one exception to "never builds". The dispatcher sends a chat to get it reviewed, and it merges on Jarrod's tap.
 - Close an issue whose work is merged, with the PR number.
 
 **How much.** Stop when 12 unclaimed `status:todo` issues are ready across the tiers, at least 3 of them `tier:1`, or when the sources above are used up. File 15 at most in one run. End with one line: how many issues you filed, moved and closed.

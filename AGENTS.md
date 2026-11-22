@@ -24,7 +24,7 @@ These are short on purpose. Follow all of them, every round.
 7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` or `owner-merge` label; only the clerk adds them, and only to carry Jarrod's own answer from the Desk page. The one exception: the dispatcher carries out a merge the auto-merge workflow approved but could not make ([`docs/flow/dispatcher.md`](docs/flow/dispatcher.md), step 2). Add and remove labels one at a time. Never send a PR's whole label list, and never touch a `signal:` label.
 8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854.
+10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854. A chat the dispatcher started posts nothing there: it sets its title to `nothing eligible` ([`docs/flow/builder.md`](docs/flow/builder.md), step 7).
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask Jarrod as rule 14 says, with your recommendation, and move on.
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner.
@@ -49,7 +49,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 
 **Told to "work on Emberisle", or something like it?** Then:
 
-0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work.
+0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work. A chat the dispatcher started skips this step (rule 1).
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
    using [`docs/LANES.md`](docs/LANES.md).
    Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
@@ -62,7 +62,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 5. **Keep working while eligible work exists.** Pick open `status:todo` issues with a lane label,
    closed dependencies, no active claim or open PR, and no file overlap with another active claim.
    Lanes sort work; they do not lock it. Claim as [`docs/LANES.md`](docs/LANES.md#picking-an-issue) says.
-6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `Nothing eligible` line on #854 naming the issues you skipped and why.
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `Nothing eligible` line on #854 naming the issues you skipped and why. A chat the dispatcher started sets its title instead (rule 10).
 
 **Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow

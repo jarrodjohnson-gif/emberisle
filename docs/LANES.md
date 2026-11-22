@@ -168,7 +168,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 **Fix your own first.** Does one of your PRs have review findings or red CI? Fix it before you claim anything new or open another PR.
 
-An empty ready list is not a reason to stop. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all four rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854.
+An empty ready list is not a reason to stop. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all four rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854. A chat the dispatcher started sets its title to `nothing eligible` instead ([`flow/builder.md`](flow/builder.md), step 7).
 
 1. **Adopt a finished-but-stuck PR.** A PR with no push for 24 hours is stale. A red PR with `on-desk` waits for Jarrod: leave it.
    - Comment `/claim adopt PR #N` on its issue.

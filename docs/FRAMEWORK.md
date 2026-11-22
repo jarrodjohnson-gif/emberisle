@@ -69,7 +69,7 @@ Every issue says its size in the body:
 | Node | **Issue**, filed under the milestone of its stage |
 | Child node | **Sub-issue** of the parent issue (GitHub allows 8 levels and 100 children per issue) |
 | Step (1-4) | Its own issue. Title starts with the step verb. Label `research`, `design`, `implementation`, or `test`. |
-| Decision | Issue titled `Decide: ...`. Anything waiting on it says `Depends on: #N`. |
+| Decision | An issue with `needs-owner` and one `Question:` comment (AGENTS.md rule 14). Anything waiting on it says `Depends on: #N`. |
 | Bug | Issue with the label `bug`, as a sub-issue of the step that found it |
 | Status | The Project **Status** field (section 6) |
 

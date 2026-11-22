@@ -27,7 +27,12 @@ One scheduled task wakes the dispatcher every hour. It is named `Emberisle dispa
    - Leave `persistent_session_id` out, so it fires into this chat.
 3. Delete every other `Emberisle dispatcher tick` task with `delete_trigger`. Exactly one is left, and it fires into this chat.
 
-If `create_trigger` is denied, set one `send_later` for 60 minutes with the text `hourly tick` instead. Do that at every tick until the task exists. Add one line to `problems` in step 7.
+**If `list_triggers` or `create_trigger` is denied:**
+
+- Set one `send_later` for 60 minutes, with the text `hourly tick`.
+- Do this only at the start line and at an `hourly tick`, never at a `tick`. Each hourly tick then sets the next one, so one chain runs.
+- Add one line to `problems` in step 7.
+- If a task to delete is already gone, ignore it.
 
 ## A tick
 
@@ -48,7 +53,7 @@ A tick starts when a message is exactly `hourly tick` or exactly `tick`. Jarrod'
 3. **List the chats once**, with `list_sessions` and `limit: 30`.
    - Use only rows whose title starts `(auto)` and that are not archived.
    - From each, use only the title, `created_at` and `updated_at`.
-   - If the call fails or is denied, start nothing this tick. Add one line to `problems`, and go to step 7.
+   - If the call fails or is denied, start nothing this tick. Add one line to `problems`. Go to step 7, and skip its parts 5 and 7.
    - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
    - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
    - A chat that is neither is **stale**. It stopped without saying so.
@@ -130,11 +135,19 @@ When it shows more than 250K, rotate:
 3. Delete your own task with `delete_trigger`.
 4. Set your title to `(auto) Emberisle dispatcher done`, and end.
 
-If step 2 is denied, do not delete your task. Add one line to `problems`, and keep ticking.
+If step 2 is denied, do not delete your task. Add one line to `problems`, and keep ticking. If a task is already gone at step 3, ignore it.
+
+**After you rotate, you are retired.**
+
+- Answer no message, not even `tick` or `hourly tick`. Chats you started still send `tick` to you. Ignore it: the new dispatcher's hourly tick picks up their work.
+- Start nothing, merge nothing, and write nothing.
+- The new dispatcher archives you at its step 4, 4 hours after your last update.
 
 ## Permissions
 
-The repo's `.claude/settings.json` lists the session tools that run without a prompt. Only Jarrod changes it. In the first night under this flow, no session tool was refused.
+The repo's `.claude/settings.json` lists the session tools that run without a prompt. Only Jarrod changes it. Today it allows `send_message`, `send_later`, `get_session`, `create_session` and `archive_session`. In the first night under this flow, no session tool was refused.
+
+`list_sessions`, `set_session_title`, `list_triggers`, `create_trigger` and `delete_trigger` are not on that list. While a trigger tool is denied, the `send_later` chain above keeps the ticks coming.
 
 - If a tool is denied, add one line to `problems` naming it, and carry on.
 - A builder whose title change is denied keeps working under its first title. The slot stays taken while it works. It is freed 3 hours after the chat goes quiet.

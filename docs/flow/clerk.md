@@ -18,7 +18,7 @@ The page keeps three things in its database. Read and write them with `ArtifactD
 | Where | What | Who writes it |
 |---|---|---|
 | `cards/<card id>` | One question | The clerk, or the planner for an issue |
-| `decisions/<card id>` | His answer: `choice`, `label`, `note`, `at` | The page. The clerk adds `handled_for`, `handled`, `log` and `logged` |
+| `decisions/<card id>` | His answer: `choice`, `label`, `note`, `at` | The page. The clerk adds `handled_for`, `handled`, `comment`, `log` and `logged` |
 | `status/now` | `at`, and the lists `building`, `merged`, `problems` | The dispatcher |
 
 A card id is `q<PR or issue number>-<two or three words>`. A card has:
@@ -82,7 +82,7 @@ Query `decisions` for documents whose `at` is in the last 7 days. An answer is o
      - the PR's head SHA equals the card's `head`.
      This is the one case where an agent adds `owner-ok`: it is his tap, carried over. Then remove `on-desk`.
    - **In every other case,** replace `on-desk` with `answered`. Do this only once no card for that PR or issue is still unanswered.
-6. Update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did). Pin it with `if_version`.
+6. Update the answer with `handled_for` (a copy of `at`), `handled` (one line on what you did) and `comment` (the card's `comment`). Pin it with `if_version`. Tidy may then delete the card.
 7. In the same update, set `log: true` when his answer is a standing rule. See "Which answers are standing rules" below.
 
 ### 2. Post new questions
@@ -91,7 +91,7 @@ For each PR or issue the dispatcher names:
 
 1. Read its newest `Blocked:` or `Question:` comment.
    - If a card already has that comment's id and no answer yet, an earlier clerk stopped half way. Add `on-desk` if it is missing, and write no card.
-   - If that card has an answer and the answer is handled, the question is closed. Treat the PR as having no such comment.
+   - If a card with that comment's id has an answer, or a decision carries that comment's id, the question is closed. Treat the PR as having no such comment. Tidy deletes answered cards, so check `decisions` too.
 2. If it asks about a look and the branch has no pictures, add `no-pictures`. Say so in one comment, and write no card.
    - The exception is a `Blocked:` comment that says the builder could not take pictures. Write the card without them, and say so in its first line.
 3. If it is `Blocked: CI run needs approval` on a fork PR, write one card.
@@ -109,7 +109,7 @@ For each PR or issue the dispatcher names:
 ### 3. Tidy
 
 1. Delete the card of any PR or issue that is merged or closed.
-2. Delete any card whose answer is handled. His answers stay in `decisions`.
+2. Delete any card whose answer is handled and carries `comment`. His answers stay in `decisions`. An older handled answer without `comment` keeps its card until its PR closes.
 3. If a `clerk/decisions-log` PR closed without merging, he turned those rows down. Set `log: false` on the decisions that name it.
 
 ### 4. Log his decisions
