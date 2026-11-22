@@ -17,9 +17,8 @@ function hostExpected(): boolean {
 }
 
 export function OpenTables() {
+  const g = useGame.getState();
   const [openTables, setOpenTables] = useState<OpenTableEntry[]>([]);
-  const joinTable = useGame((s) => s.joinTable);
-  const watchTable = useGame((s) => s.watchTable);
 
   useEffect(() => {
     if (!hostExpected()) return;
@@ -82,12 +81,12 @@ export function OpenTables() {
                     Full
                   </span>
                 ) : (
-                  <Button size="sm" variant="secondary" aria-label={`Join ${t.name}`} data-testid="open-table-join" className="h-11 min-w-0 px-3" onClick={() => joinTable(t.code)}>
+                  <Button size="sm" variant="secondary" aria-label={`Join ${t.name}`} data-testid="open-table-join" className="h-11 min-w-0 px-3" onClick={() => g.joinTable(t.code)}>
                     Join
                   </Button>
                 )
               ) : (
-                <Button size="sm" variant="ghost" aria-label={`Watch ${t.name}`} data-testid="open-table-watch" className="h-11 min-w-0 px-3" onClick={() => watchTable(t.code)}>
+                <Button size="sm" variant="ghost" aria-label={`Watch ${t.name}`} data-testid="open-table-watch" className="h-11 min-w-0 px-3" onClick={() => g.watchTable(t.code)}>
                   Watch
                 </Button>
               )}

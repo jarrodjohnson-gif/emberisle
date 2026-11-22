@@ -4,30 +4,22 @@
 // Real host, two real clients, through the Vite dev server.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
-const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1430-rooms-"));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
-});
-const hostPort = await new Promise((resolve, reject) => {
-  host.on("error", reject);
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  });
-  host.on("exit", (code) => reject(new Error(`host exited ${code}`)));
-});
-const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
-await vite.listen();
-const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
-const browser = await chromium.launch({
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+let rooms;
+let host;
+let hostPort;
+let vite;
+let url;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 });
 const errors = [];
 
@@ -175,6 +167,18 @@ async function sideways(page, tag) {
 }
 
 try {
+  rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1430-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, PROFILES_DIR: path.join(rooms, "profiles"), RESULTS_DIR: `${rooms}/results` },
+  });
+  hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch({
+    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  });
   for (const [width, height] of [[390, 844], [320, 568], [844, 390], [667, 375], [1280, 720]]) {
     const tag = `${width}x${height}`;
     const page = await client("Jarrod", { width, height });
@@ -235,7 +239,13 @@ try {
   assert.deepEqual(errors, [], "zero browser errors");
   console.log("lobby-code-copy-prove: ok; real host, two clients, five viewports; zero browser errors");
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 }

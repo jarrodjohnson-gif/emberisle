@@ -10,11 +10,24 @@ export function PlaceChip() {
   useEffect(() => {
     if (!pending) return;
     const key = (e: KeyboardEvent) => {
-      if (e.key === "Enter") confirmPlace();
-      if (e.key === "Escape") setPendingPlace(null);
+      if (e.key !== "Enter" && e.key !== "Escape") return;
+      const t = e.target as HTMLElement | null;
+      const s = useGame.getState();
+      if (s.howTo || s.costs || s.tradeOpen || s.menuFor || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      if (e.key === "Enter") {
+        if (t?.closest("button, a, summary, [role=button], [role=radio], [role=tab], [role=menuitem], input, select, textarea, [contenteditable]")) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        confirmPlace();
+      } else {
+        if (t?.closest("input, select, textarea, [contenteditable]")) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setPendingPlace(null);
+      }
     };
-    window.addEventListener("keydown", key);
-    return () => window.removeEventListener("keydown", key);
+    window.addEventListener("keydown", key, true);
+    return () => window.removeEventListener("keydown", key, true);
   }, [pending, confirmPlace, setPendingPlace]);
   return null;
 }

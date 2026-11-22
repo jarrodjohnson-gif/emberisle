@@ -10,9 +10,14 @@ import WebSocket from "ws";
 import { hostUrl } from "../src/lib/net/table.ts";
 
 const hosts = [];
-process.on("exit", () => hosts.forEach((h) => h.kill()));
-for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const temp = mkdtempSync(path.join(tmpdir(), "emberisle-dist-"));
+process.on("exit", () => {
+  for (const h of hosts) {
+    if (h.exitCode === null && h.signalCode === null) h.kill("SIGKILL");
+  }
+  rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 let finishing = false;
 async function done(code) {
   if (finishing) return;
@@ -22,7 +27,7 @@ async function done(code) {
     h.once("exit", resolve);
     if (!h.killed) h.kill();
   })));
-  rmSync(temp, { recursive: true, force: true });
+  rmSync(temp, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
   process.exit(code);
 }
 function fail(why) {

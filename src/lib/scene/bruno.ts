@@ -131,6 +131,7 @@ export function makeBruno(): Bruno {
     g,
     lantern: lanternMat,
     update(t: number, walking: boolean) {
+      if (!Number.isFinite(t)) return;
       // Walking he hunches forward and scurries; idle he tiptoes and peeks left, pauses, peeks right.
       lean += ((walking ? 0.35 : 0.06) - lean) * 0.2;
       const peek = walking ? 0 : Math.sin(t * 0.9) > 0.3 ? 1 : Math.sin(t * 0.9) < -0.3 ? -1 : 0;

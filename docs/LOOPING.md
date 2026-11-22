@@ -1,6 +1,6 @@
 # Looping guide for cloud agents
 
-**Opt-in only.** This is not a standing rule and is not part of the default agent reading list. Use it only when Jarrod's prompt for your task says the task should loop (repeat across resets). If your task prompt does not say to loop, do not create automations: creating or changing an automation needs Jarrod's authorization. Every task, looping or not, still needs a handoff (the issue, PR body, claims and checkpoint it names), so read it as usual. Nothing here changes `AGENTS.md` (never merge, claim before you code, the open-PR limit, `To desk:` for the desk). First written at Jarrod's direction on 2026-11-05. Rewritten on 2026-11-09 from the fuller Codex guide Jarrod supplied.
+**Opt-in only.** This is not a standing rule and is not part of the default agent reading list. Use it only when Jarrod's prompt for your task says the task should loop (repeat across resets). If your task prompt does not say to loop, do not create automations: creating or changing an automation needs Jarrod's authorization. Every task, looping or not, still needs a handoff (the issue, PR body, claims and checkpoint it names), so read it as usual. Nothing here changes `AGENTS.md` (never merge, claim before you code, the open-PR limit, `needs-owner` when you need Jarrod). First written at Jarrod's direction on 2026-11-05. Rewritten on 2026-11-09 from the fuller Codex guide Jarrod supplied.
 
 This guide explains how to arrange repeated, authorized coding work that can recover from a reset. It is a design and operator guide; it does not create, enable, disable, or run an automation. Replace every placeholder with values for your own task. An automation for one project must not be reused for another by copying its ID.
 
@@ -236,7 +236,7 @@ Automation prompt:
 Continue the authorized work on jarrodjohnson-gif/emberisle as a Builder. The
 durable checkpoint is the status comment on the issue you are working plus your
 PR body. Allowed: read the repo, edit, run checks, commit, push feature
-branches, open ready (not draft) PRs, post /claim, Question: and To desk:
+branches, open ready (not draft) PRs, post /claim, Question: and Blocked:
 comments. Do not: merge, push to main, force-push, skip or loosen a test, move
 a size ceiling or allowance, make design decisions, create other automations,
 or ask Jarrod questions in chat. Respect any later pause. At startup read
@@ -252,7 +252,7 @@ long browser proofs one at a time and paste real output in the PR. A Question:
 is not a stop: finish what does not need the answer, then take the next issue. Follow the continuation prompt and the
 deterministic startup and resume steps in docs/LOOPING.md. If the fallback
 ladder in docs/LANES.md and the anytime queue are empty, post one
-"To desk: nothing eligible" on #854.
+"Nothing eligible" on #854.
 ```
 
 ---

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConnectionStatus } from "@/components/game/ConnectionStatus";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
@@ -32,8 +32,11 @@ function fitLobbyCode(el: HTMLElement, code: string) {
 // belongs to one seat and one profile: when either changes under it, it is gone.
 function SeatName({ seat }: { seat?: Seat }) {
   const [open, setOpen] = useState<{ el: HTMLElement; key: string }>();
+  const key = seat && !seat.bot ? `${seat.id}:${seat.profile?.profileId ?? ""}` : "";
+  useEffect(() => {
+    if (open && open.key !== key) setOpen(undefined);
+  }, [open, key]);
   if (!seat || seat.bot) return <span className="truncate">{seat ? seat.name : "Empty"}</span>;
-  const key = seat.id + seat.profile?.profileId;
   return (
     <>
       <button type="button" data-testid={`lobby-player-${seat.id}`} onClick={e => setOpen({ el: e.currentTarget, key })}>{seat.name}</button>

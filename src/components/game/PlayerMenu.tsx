@@ -73,6 +73,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
+      e.stopPropagation();
       openMenu(null);
       trigger?.focus();
     };
@@ -163,7 +164,7 @@ export function PlayerMenu({ player: p, className, sheet }: { player: PlayerStat
           <Landmark className="size-4 shrink-0 text-zinc-600" /> Trade…
         </button>
       ) : null}
-      {!own && online && myMain ? (
+      {!own && online && myMain && state.role !== "partner" ? (
         <button
           type="button"
           className={ROW}

@@ -187,7 +187,10 @@ export function profileHandler(store, send) {
     const id = reqId(msg.id);
     if (ws.room || ws.watch) return refuse(ws, id, "tableSocket");
     // From the first profile frame this socket is a profile connection only; host.mjs refuses its table frames.
-    ws.profileSocket = true;
+    if (!ws.profileSocket) {
+      ws.profileSocket = true;
+      ws.once?.("close", () => clearTimeout(ws.profileIdle));
+    }
     ws.profileBucket ??= { tokens: 10, at: Date.now() };
     clearTimeout(ws.profileIdle);
     ws.profileIdle = setTimeout(() => ws.close(1000, "idle"), IDLE_MS);

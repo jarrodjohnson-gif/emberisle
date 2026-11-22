@@ -19,30 +19,23 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 import { RESOURCE_LABEL } from "../src/lib/game/types.ts";
 
-const PORT = Number(process.env.VITE_PORT) || 8097;
+let PORT = Number(process.env.VITE_PORT) || 0;
 const RES = ["timber", "clay", "wool", "grain", "ore"];
 
-// Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
-const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
+let ROOMS_DIR;
+let host;
+let hostPort;
+let vite;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 });
-process.on("exit", () => host.kill());
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
-const hostPort = await new Promise((resolve) =>
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  }),
-);
-const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
-await vite.listen();
-const browser = await chromium.launch();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errors = [];
@@ -138,6 +131,24 @@ const total = (hand) => RES.reduce((n, r) => n + hand[r], 0);
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 try {
+  ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: {
+      ...process.env,
+      PORT: "0",
+      ROOMS_DIR,
+      PROFILES_DIR: path.join(ROOMS_DIR, "profiles"),
+      RESULTS_DIR: `${ROOMS_DIR}/results`,
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: PORT !== 0 }, logLevel: "error" });
+  await vite.listen();
+  PORT = vite.httpServer.address().port;
+  browser = await chromium.launch();
+
   const tabs = [await tab("Ember"), await tab("Tide"), await tab("Pine")];
   const [a, b, c] = tabs;
   await a.page.getByRole("button", { name: "Host a table" }).click();
@@ -832,9 +843,14 @@ try {
   if (errors.length) console.log(errors.join("\n"));
   code = 1;
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
-  if (host.exitCode === null && host.signalCode === null) await Promise.race([once(host, "exit"), new Promise((r) => setTimeout(r, 3000).unref())]);
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (ROOMS_DIR) rmSync(ROOMS_DIR, { recursive: true, force: true });
 }
 process.exit(code);

@@ -7,13 +7,18 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import WebSocket from '../server/node_modules/ws/wrapper.mjs';
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from 'vite';
-const dir=mkdtempSync(path.join(tmpdir(),'emberisle-victory-target-'));
-const port=Number(process.env.VITE_PORT||18547),sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
-let host,hostPort,browser;
+let port=Number(process.env.VITE_PORT)||0,sockets=[];const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let dir,host,hostPort,vite,browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (dir) rmSync(dir, { recursive: true, force: true });
+});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 async function start(){
- let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir, RESULTS_DIR: `${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
- host.stderr.on('data',d=>stderr+=d);hostPort=await new Promise((resolve,reject)=>{host.stdout.on('data',d=>{const m=String(d).match(/listening (\d+)/);if(m)resolve(Number(m[1]));});host.on('exit',c=>reject(Error(`host ${c}: ${stderr}`)));});
+ let stderr='';host=spawn(process.execPath,['--import','./register.mjs','host.mjs'],{cwd:new URL('../server/',import.meta.url),env:{...process.env,PORT:'0',ROOMS_DIR:dir,PROFILES_DIR:path.join(dir,'profiles'),RESULTS_DIR:`${dir}/results`,SAVE_MS:'20',GRACE_MS:'600000',HOLD_MS:'600000',LOBBY_HOLD_MS:'600000',TURN_MS:'600000',ACT_CAP:'1000',ACT_RATE:'1000'},stdio:['ignore','pipe','pipe']});
+ host.stderr.on('data',d=>stderr+=d);hostPort=await waitForHostPort(host);
 }
 async function client(hello,retryTaken){
  const ws=new WebSocket(`ws://127.0.0.1:${hostPort}`),messages=[];sockets.push(ws);let state;
@@ -30,9 +35,10 @@ async function room(){const peers=[await client({name:'Ember'})],code=peers[0].w
 async function setting(table,n){for(const p of table.peers)await p.next('seats',m=>m.victoryTarget===n);}
 async function begin(table){for(const p of table.peers)p.send({type:'ready',value:true});await table.peers[0].next('seats',m=>m.seats.length===3&&m.seats.every(s=>s.ready));table.peers[0].send({type:'start'});return Promise.all(table.peers.map(p=>p.next('state')));}
 async function saved(code,test){for(let i=0;i<100;i++){try{const s=JSON.parse(readFileSync(path.join(dir,`${code}.json`)));if(test(s))return s;}catch{}await wait(20);}throw Error('save timeout');}
-const vite=await createServer({server:{host:'127.0.0.1',port,strictPort:true},logLevel:'error'});
 try{
- await start();await vite.listen();browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});const errors=[];
+ dir=mkdtempSync(path.join(tmpdir(),'emberisle-victory-target-'));
+ vite=await createServer({server:{host:'127.0.0.1',port,strictPort:port!==0},logLevel:'error'});
+ await start();await vite.listen();port=vite.httpServer.address().port;browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});mkdirSync('test-results',{recursive:true});const errors=[];
  const seven=await room(),ten=await room(),change=await room();const tables=[seven,ten,change];
  seven.peers[1].send({type:'setVictoryTarget',value:7});assert.equal((await seven.peers[1].next('error')).message,'Only the host can choose the target.');
  seven.peers[0].send({type:'setVictoryTarget',value:8});assert.equal((await seven.peers[0].next('error')).message,'Choose 7 or 10 points.');
@@ -86,4 +92,15 @@ try{
  const endContext=await browser.newContext({viewport:{width:390,height:844},hasTouch:true});await endContext.addInitScript(w=>{localStorage.setItem('emberisle-seat',JSON.stringify({code:w.code,secret:w.secret}));localStorage.setItem('emberisle-seat-live',w.code);},hostWelcome);
  const end=await endContext.newPage();end.on('pageerror',e=>errors.push(e.message));await end.goto(`http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`);await end.getByTestId('win-screen').waitFor();await end.getByRole('radio',{name:'10 points',exact:true}).click();await end.waitForFunction(()=>window.__emberisle.getState().tableVictoryTarget===10);assert.equal(await end.evaluate(()=>window.__emberisle.getState().state.victoryTarget),7);await end.getByTestId('win-again').click();await end.waitForFunction(()=>window.__emberisle.getState().state.phase==='rollOff');assert.equal(await end.evaluate(()=>window.__emberisle.getState().state.victoryTarget),10);await endContext.close();
  assert.deepEqual(errors,[]);console.log('victory-target-prove: all passed; default 10, public choices, guest/invalid/live refusal, restart, 7 vs 10 wins, inherited and changed rematches');
-}finally{await browser?.close();await vite.close();for(const ws of sockets)ws.terminate();host?.kill('SIGKILL');rmSync(dir,{recursive:true,force:true});}
+}finally{
+ for(const ws of sockets)ws.terminate();
+ if(browser)await browser.close().catch(()=>{});
+ if(vite)await vite.close().catch(()=>{});
+ if(host&&host.exitCode===null&&host.signalCode===null){
+  const exited=new Promise(resolve=>host.once('exit',resolve));
+  host.kill();
+  await Promise.race([exited,new Promise(resolve=>setTimeout(resolve,2000))]);
+  if(host.exitCode===null&&host.signalCode===null)host.kill('SIGKILL');
+ }
+ if(dir)rmSync(dir,{recursive:true,force:true});
+}

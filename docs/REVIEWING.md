@@ -1,6 +1,6 @@
 # Reviewing a PR
 
-This is the brief for a review subagent. The review desk passes it with the PR number, the head SHA and the reviewer's model.
+This is the brief for a review subagent. The PR's builder chat starts it and passes the PR number, the head SHA and the reviewer's model ([DESK.md](DESK.md), "A builder chat").
 
 ## Use CI, don't repeat it
 
@@ -12,16 +12,16 @@ Run locally only what CI can't show:
 - **Screenshots:** for a `ux` PR, at 390x844, 844x390 and 1280x720.
 - **Proofs CI skips:** any proof the PR touches that `ci.yml` doesn't run.
 
-Run each local browser proof alone (AGENTS.md rule 11). The review desk's machine uses `flock /tmp/claude-0/emberisle-browser.lock` for this.
+Run each local browser proof alone (AGENTS.md rule 11). Use `flock /tmp/claude-0/emberisle-browser.lock` for this.
 
 ## What to check
 
 1. **A different model.** The reviewer's model is not the builder's model.
-2. **Claims and scope.** The claim is posted with its files, one issue per PR, and no file overlap with another active claim.
-3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md).
+2. **Claims and scope.** The claim is posted with its files, one issue per PR, and no file overlap with another active claim. The clerk's `clerk/decisions-log` PR has no issue and no claim: check only that each row matches the owner's answer on its card.
+3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md). The rows in an open `clerk/decisions-log` PR count too.
 4. **No test loosened.** Diff every changed proof against main: removed assertions, wider tolerances, dropped sizes or skipped cases.
-5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`.
-6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue.
+5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`. Any other change to `ci.yml` is blocking unless the issue asks for it: no job removed, skipped or given more permissions.
+6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue. A change to `docs/DECISIONS.md` is blocking, except in the clerk's `clerk/decisions-log` PR or in a PR that also changes another rule document. Elsewhere the builder puts main's copy back ([DESK.md](DESK.md), "A builder chat").
 7. **Size.** Any growth beyond the allowance is explained in the PR body.
 8. **Server and protocol PRs:** message validation, a stale or spoofed sender, unbounded maps or timers, and state across a restart.
 
@@ -29,6 +29,8 @@ Run each local browser proof alone (AGENTS.md rule 11). The review desk's machin
 
 Give blocking findings, then non-blocking ones, each with `file:line`. Paste real output tails, and say which checks you relied on CI for. Also flag to-do lists in files.
 
-For a `ux` PR, attach the screenshots and don't judge the look. Visual changes wait for Jarrod.
+For a `ux` PR, attach the screenshots and don't judge the look. Visual changes wait for Jarrod unless a Fable `Look check:` comment at this head says `small and fine` ([DESK.md](DESK.md), "Small look fixes need no card"). Without one, check that the PR has the `needs-owner` label, and add it if it is missing. When the look check says `small and fine`, do not write about Jarrod or the owner in your review: auto-merge reads such a line as a request to hold the PR. Also write one plain line in the review, such as "Waiting on Jarrod for the look." Auto-merge holds the PR on that line until `owner-ok` is added, so never write such a line in a review that needs nothing from him.
 
-A review subagent never merges or pushes. The review desk merges, once the review is clean, CI is green on the head SHA, and Jarrod has OK'd any visual change.
+**Post the review yourself**, as one comment on the PR, in the exact shape in [DESK.md](DESK.md#the-review-comment). The builder never writes or edits it. Hand back one line to the builder: clean, or the number of blocking findings.
+
+A review subagent never merges, pushes or adds `owner-ok`. Auto-merge merges, once the review is clean and CI is green on the head SHA, and Jarrod has added `owner-ok` to any PR that carries `needs-owner`.

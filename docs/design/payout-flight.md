@@ -246,3 +246,20 @@ Assert no new pickables, pointer interception, focus changes or accessibility an
 Check idle rendering, production flashes, hand cards, touch placement and existing bundle budgets during implementation validation.
 Screenshots must show distinct goods, unclipped targets and readable gains at every required orientation.
 This design has source validation only; runtime and visual acceptance belong to the implementation proof.
+
+## Evidence-status note, 2026-11-17 (#1630 adoption)
+
+This remains the [#740 design](https://github.com/jarrodjohnson-gif/emberisle/issues/740), implemented by neither this note nor its withdrawn duplicate.
+At main `787d386185a299d108058f09a40654d7f4d5722b`, `src/lib/scene/payout-flight.ts` is absent.
+There is no built flight geometry behind the duplicate's claimed observed triangle count.
+The existing 24-record/mesh bound above is not a triangle or draw-call measurement.
+No new triangle, draw-call, gzip or fps ceiling follows from it.
+[Question 6941359839](https://github.com/jarrodjohnson-gif/emberisle/issues/642#issuecomment-6941359839)
+asks to retain the existing contract and leave new cost limits to measured evidence and owner decisions.
+
+Current [lastProduction](../../src/lib/game/types.ts#L162) records canonical public grants.
+The [payment path](../../src/lib/game/rules.ts#L373) records the actual amount paid.
+The grant, origin, blocking and timing rules earlier in this document remain unchanged.
+The duplicate's conflicting prescriptions and unmeasured geometry values are withdrawn.
+The parent #642 remains runtime work, with fresh claims and integrated acceptance still required.
+I checked cited sources, link targets and diff whitespace; I ran no runtime or performance proof for this note.

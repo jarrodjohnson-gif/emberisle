@@ -1,0 +1,807 @@
+{
+  "note": "Estimated Duo Safari viewports in CSS px (secondary sources, not Apple). Layout findings are data, not failures; see README.md.",
+  "browser": "153.0.8010.12",
+  "sizes": [
+    {
+      "size": "466x678",
+      "name": "folded upright",
+      "screens": {
+        "title": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 9,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.026
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.563,
+              "widthShare": 0.948,
+              "areaShare": 0.534,
+              "chromeWidthShare": 0.026
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.563,
+            "met": false
+          }
+        },
+        "build": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.026
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.563,
+              "widthShare": 0.948,
+              "areaShare": 0.534,
+              "chromeWidthShare": 0.026
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.563,
+            "met": false
+          }
+        },
+        "results": {
+          "viewport": [
+            466,
+            678
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.558,
+              "widthShare": 0.948,
+              "areaShare": 0.529,
+              "chromeWidthShare": 0.026
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.882,
+              "widthShare": 0.948,
+              "areaShare": 0.837,
+              "chromeWidthShare": 0.026
+            }
+          },
+          "law3": {
+            "note": "board covered by the win sheet: not compared with law 3"
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "678x466",
+      "name": "folded sideways",
+      "screens": {
+        "title": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 9,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.419
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.419
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.828,
+              "columnWidthShare": 0.419
+            },
+            "met": true
+          }
+        },
+        "build": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.419
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.419
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.828,
+              "columnWidthShare": 0.419
+            },
+            "met": true
+          }
+        },
+        "results": {
+          "viewport": [
+            678,
+            466
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.563,
+              "areaShare": 0.467,
+              "chromeWidthShare": 0.419
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.828,
+              "widthShare": 0.965,
+              "areaShare": 0.799,
+              "chromeWidthShare": 0.018
+            }
+          },
+          "law3": {
+            "note": "board covered by the win sheet: not compared with law 3"
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "626x890",
+      "name": "opened upright",
+      "screens": {
+        "title": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 9,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.019
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.667,
+              "widthShare": 0.962,
+              "areaShare": 0.642,
+              "chromeWidthShare": 0.019
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.667,
+            "met": true
+          }
+        },
+        "build": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.019
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 228,
+                "left": 12
+              },
+              "heightShare": 0.667,
+              "widthShare": 0.962,
+              "areaShare": 0.642,
+              "chromeWidthShare": 0.019
+            }
+          },
+          "law3": {
+            "rule": "upright: island height share >= 0.60",
+            "value": 0.667,
+            "met": true
+          }
+        },
+        "results": {
+          "viewport": [
+            626,
+            890
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 232,
+                "left": 12
+              },
+              "heightShare": 0.663,
+              "widthShare": 0.962,
+              "areaShare": 0.638,
+              "chromeWidthShare": 0.019
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.91,
+              "widthShare": 0.962,
+              "areaShare": 0.875,
+              "chromeWidthShare": 0.019
+            }
+          },
+          "law3": {
+            "note": "board covered by the win sheet: not compared with law 3"
+          }
+        }
+      },
+      "unreached": []
+    },
+    {
+      "size": "890x626",
+      "name": "opened sideways",
+      "screens": {
+        "title": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 9,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "lobby": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 23,
+          "issues": [],
+          "island": null,
+          "law3": null
+        },
+        "pre-roll": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 20,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.319
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.319
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.872,
+              "columnWidthShare": 0.319
+            },
+            "met": true
+          }
+        },
+        "build": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 27,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.319
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.319
+            }
+          },
+          "law3": {
+            "rule": "sideways: a column of at most 0.42 of the width (the height share is reported, the header takes the top)",
+            "value": {
+              "heightShare": 0.872,
+              "columnWidthShare": 0.319
+            },
+            "met": true
+          }
+        },
+        "results": {
+          "viewport": [
+            890,
+            626
+          ],
+          "horizontalScroll": null,
+          "verticalScroll": null,
+          "controls": 21,
+          "issues": [],
+          "island": {
+            "declared": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 284
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.667,
+              "areaShare": 0.582,
+              "chromeWidthShare": 0.319
+            },
+            "live": {
+              "hole": {
+                "top": 68,
+                "right": 12,
+                "bottom": 12,
+                "left": 12
+              },
+              "heightShare": 0.872,
+              "widthShare": 0.973,
+              "areaShare": 0.849,
+              "chromeWidthShare": 0.013
+            }
+          },
+          "law3": {
+            "note": "board covered by the win sheet: not compared with law 3"
+          }
+        }
+      },
+      "unreached": []
+    }
+  ],
+  "fold": [
+    {
+      "label": "practice main, Build list open",
+      "steps": [
+        {
+          "viewport": [
+            626,
+            890
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            53,
+            566,
+            573,
+            890
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            103,
+            255,
+            523,
+            534
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078510997,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            890,
+            626
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            185,
+            302,
+            705,
+            626
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 12,
+            "left": 284
+          },
+          "hexExtent": [
+            384,
+            187,
+            778,
+            496
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078510997,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            466,
+            678
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            0,
+            354,
+            466,
+            678
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            83,
+            157,
+            383,
+            357
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078510997,
+          "statesEqual": true
+        }
+      ]
+    },
+    {
+      "label": "hosted roll-off, real clock, table menu open",
+      "steps": [
+        {
+          "viewport": [
+            626,
+            890
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            354,
+            64,
+            610,
+            640
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            103,
+            255,
+            523,
+            534
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078553440,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            890,
+            626
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            622,
+            64,
+            878,
+            610
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 12,
+            "left": 284
+          },
+          "hexExtent": [
+            384,
+            187,
+            778,
+            496
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078553440,
+          "statesEqual": true
+        },
+        {
+          "viewport": [
+            466,
+            678
+          ],
+          "sheetWithinViewport": true,
+          "sheetRect": [
+            194,
+            64,
+            450,
+            640
+          ],
+          "hole": {
+            "top": 68,
+            "right": 12,
+            "bottom": 232,
+            "left": 12
+          },
+          "hexExtent": [
+            83,
+            157,
+            383,
+            357
+          ],
+          "hexesInside": "19/19",
+          "deadline": 1795078553440,
+          "statesEqual": true
+        }
+      ]
+    }
+  ],
+  "errors": []
+}

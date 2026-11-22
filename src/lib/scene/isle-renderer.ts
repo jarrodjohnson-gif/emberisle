@@ -26,6 +26,8 @@ import {
   type PlayView,
   type Rect,
 } from "@/lib/scene/mobile-fit";
+import { clampZoom, glideProgress, safeEyeDistance } from "./camera.ts";
+import { calcPanLimit, clampPanOffset, PAN_DEAD } from "./pan-zoom.ts";
 import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
@@ -37,12 +39,15 @@ import { worldOfHex } from "@/lib/game/board";
 import { HEX_SIZE, SQRT3, hexCorners, hexesInRadius, vertexId } from "@/lib/game/hex";
 import { LAND_MS } from "@/lib/scene/landing";
 import { LandingDust } from "@/lib/scene/landing-dust";
+import { BotCues, type CueTarget } from "@/lib/scene/bot-cues";
 import { hashStr } from "@/lib/utils";
-import { boot, chunkUrl } from "@/lib/lazy";
+import { boot, chunk } from "@/lib/lazy";
 import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
+import type { LandAppearance, LandHex, LandLook, LandStatus } from "@/lib/scene/land-appearance";
+import type { AppearanceHost } from "@/lib/scene/appearance-controller";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { makeBruno, type Bruno } from "@/lib/scene/bruno";
@@ -62,13 +67,13 @@ export function topOf(_terrain: Terrain) {
 // The Hex Jelly scenes load as their own chunk; the board shows plain slabs until every scene is built, then the island swaps
 // in whole (the owner, 2026-10-16: wait for it, no pop-in). A failed load leaves the slabs (the board still plays) and tries
 // again a few seconds on (five times at most), under a fresh query: the browser remembers a module that failed for the life of the page (lazy.ts).
-let jellyFailed: string | undefined;
-let jellyRetries = 0;
-const loadJelly = (): Promise<typeof import("@/lib/scene/jelly-board")> =>
-  (jellyFailed ? import(/* @vite-ignore */ `${jellyFailed}?retry=${++jellyRetries}`) : import("@/lib/scene/jelly-board")).catch((e: unknown) => {
-    jellyFailed = chunkUrl(e) ?? jellyFailed;
-    throw e;
-  });
+const landModules = {
+  jelly: chunk(() => import("@/lib/scene/jelly-board"), /\/(jelly-board|hex-jelly)-[\w-]+\.js$/),
+  classic: chunk(() => import("@/lib/scene/classic-board"), /\/classic-board-[\w-]+\.js$/),
+};
+// #1341: the shared build-and-swap is its own entry, so a failed fetch of it retries under its own fresh query.
+const controller = chunk(() => import("@/lib/scene/appearance-controller"), /\/appearance-controller-[\w-]+\.js$/);
+const loadLand = (look: LandLook) => Promise.all([landModules[look].load(), controller.load()]);
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
 const JELLY_PIECES = (() => {
@@ -80,19 +85,7 @@ const JELLY_PIECES = (() => {
 })();
 // How far beside a hex's token the wayfarer stands (robberSpot).
 const WAYFARER_ASIDE = 0.43;
-// The jelly shore is its own chunk (harbor-jelly), loaded once the hexes have swapped in.
-const loadShore = () => import("@/lib/scene/harbor-jelly");
-let shoreFailed = false;
-// The jelly shore (docs/design/harbor-jelly-prompt.md; the owner signed it off 2026-10-16) on every full board; ?harbor=0 or
-// emberisle-harbor = "plain" in storage keeps the plain beach and docks.
-const HARBOR_JELLY = (() => {
-  try {
-    return new URLSearchParams(location.search).get("harbor") !== "0" && localStorage.getItem("emberisle-harbor") !== "plain";
-  } catch {
-    return true;
-  }
-})();
-type TerrainStats = { ready: boolean } & JellyStats;
+type TerrainStats = { ready: boolean } & Omit<JellyStats, "quality" | "objects">;
 // The stand-in slab and the unseen pick block: a hex prism the jelly block's size (corners at 30 + 60k degrees, as the
 // board's pointy-top hexes), standing on its base.
 const SLAB_GEO = new THREE.CylinderGeometry(HEX_SIZE * 0.98, HEX_SIZE * 0.98, BLOCK_H, 6).translate(0, BLOCK_H / 2, 0);
@@ -144,11 +137,6 @@ const FIT_KEYS: (keyof Pose)[] = ["left", "right", "top", "bottom", "tx", "tz", 
 const NO_FIT = { left: 0, right: 0, top: 0, bottom: 0, tx: 0, tz: 0, focal: 0, dist: 0, cx: 0, cy: 0 };
 const EYE_KEYS: (keyof Pose)[] = ["polar", "azimuth", "zoom"];
 const ORBIT_RADIUS = 18;
-// How far a pan may carry the look-at point from home, about the island's own radius: its centre stays on screen.
-const PAN_RADIUS = 5;
-const PAN_VIEW = 0.6;
-// Pixels a pinch's midpoint may drift before it also pans.
-const PAN_DEAD = 8;
 const GATE_EVENTS = ["pointerdown", "pointermove", "pointerup", "pointercancel", "lostpointercapture"] as const;
 const GLIDE_MS = 280;
 // Frames after a resize that measure the hole again: the HUD settles into its new layout a frame or two after the event.
@@ -216,6 +204,7 @@ export class IsleRenderer {
   private unshrunkTop = 0;
   private unshrunkWorldH = 0;
   private unshrunkDiorama: DioramaFit | null = null;
+  private parent: HTMLElement | null = null;
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
   private land = new THREE.Group();
@@ -239,16 +228,26 @@ export class IsleRenderer {
   private docks: Dock[] = [];
   private piers: THREE.Mesh[] = [];
   private shore: Shore | null = null;
+  private liteMarkTex: THREE.CanvasTexture | null = null;
   private beach!: THREE.Mesh;
   // The crystal sea's own lace, kept while a shore's moved one stands in for it.
   private baseWash: THREE.Mesh | null = null;
   // The island's Hex Jelly scenes, batched (jelly-board.ts), once built; until then `slabs` stand in.
-  private jelly: JellyBoard | null = null;
+  private get jelly(): JellyBoard | null { return this.landState.displayed === "jelly" ? this.appearance as JellyBoard | null : null; }
+  private appearance: LandAppearance | null = null;
+  private landState: Omit<LandStatus, "quality" | "ready"> = { requested: "jelly", displayed: null, loading: false, error: null };
+  private appearanceRetry: ReturnType<typeof setTimeout> | undefined;
+  onLand: (status: LandStatus) => void = () => {};
+  // Hands the shown look this frame's camera and tokens; appearance-controller.ts installs it with the first look.
+  seeLand = () => {};
+  // A token's glyph bottom, below its centre (the look keeps the numeral in sight).
+  readonly glyphDrop = 0.13 * (TOKEN_FACE / 0.29);
   // Whether the GPU is software, and whether the board is lite (the ground only).
   software = false;
   lite = false;
   private slabs: THREE.InstancedMesh | null = null;
   private landGen = 0;
+  private boardGen = 0; // bumped per board build; the dock marks drop on a rebuild, not on a look switch
   // The scenes' clock as last advanced (they hold at it under reduced motion).
   private jellyT = 0;
   private lastLand: string | null = null;
@@ -262,6 +261,8 @@ export class IsleRenderer {
   private landStart = new Map<string, number>();
   private landings: { obj: THREE.Object3D; kind: PieceKind; start: number; restY: number; dusted?: boolean }[] = [];
   private dust = new LandingDust();
+  // #722: the decorative cue under a bot's line. Its own group: never in marks or pickables.
+  private cues = new BotCues();
   private legalIds = new Set<string>();
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
@@ -466,15 +467,16 @@ export class IsleRenderer {
     this.wayfarer = this.bruno.g;
     this.lantern = this.bruno.lantern;
     this.living.add(this.wayfarer);
-    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group);
+    this.scene.add(this.land, this.living, this.pieces, this.marks, this.dust.group, this.cues.group);
 
     canvas.style.touchAction = "none";
     canvas.addEventListener("pointerdown", this.onDown);
     canvas.addEventListener("pointerup", this.onUp);
     canvas.addEventListener("pointermove", this.onMove);
     canvas.addEventListener("pointercancel", this.onCancel);
+    this.parent = canvas.parentElement;
     // Capture phase on the shell, so the pinch gate sees a move before the orbit controls do.
-    for (const t of GATE_EVENTS) canvas.parentElement?.addEventListener(t, this.gate, true);
+    for (const t of GATE_EVENTS) this.parent?.addEventListener(t, this.gate, true);
     // OrbitControls' private pan step; the gate holds a pinch's midpoint still. If a three.js upgrade drops it, pinch just pans a little.
     const oc = this.orbit as unknown as { _pan?: (x: number, y: number) => void };
     const pan = oc._pan?.bind(this.orbit);
@@ -484,8 +486,8 @@ export class IsleRenderer {
     window.visualViewport?.addEventListener("resize", this.onViewport);
     window.addEventListener("keydown", this.onKey);
     // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
-    canvas.parentElement?.addEventListener("focusin", this.remeasure);
-    canvas.parentElement?.addEventListener("focusout", this.onFocusOut);
+    this.parent?.addEventListener("focusin", this.remeasure);
+    this.parent?.addEventListener("focusout", this.onFocusOut);
     this.resize();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -635,7 +637,7 @@ export class IsleRenderer {
       this.flashes = this.flashes.filter((f) => f.mat !== mat);
       this.flashes.push({ mat, id, age: 0 });
     }
-    if (!this.calm()) this.jelly?.roll(ids);
+    if (!this.calm()) this.appearance?.roll(ids);
   }
 
   // The caps' emissive for each flash at its age. Reduced motion steps to the peak and back with no ramp.
@@ -646,7 +648,7 @@ export class IsleRenderer {
       const a = f.age;
       const level = a >= FLASH_S ? 0 : calm ? 1 : a < FLASH_IN_S ? 1 - (1 - a / FLASH_IN_S) ** 3 : 1 - (a - FLASH_IN_S) / (FLASH_S - FLASH_IN_S);
       f.mat.emissiveIntensity = FLASH_PEAK * level;
-      this.jelly?.glow(f.id, f.mat.emissiveIntensity);
+      this.appearance?.glow(f.id, f.mat.emissiveIntensity);
     }
     this.flashes = this.flashes.filter((f) => f.age < FLASH_S);
   }
@@ -699,6 +701,35 @@ export class IsleRenderer {
     this.payingPieces = this.payingPieces.filter((p) => p.age - p.delay < duration);
   }
 
+  // #722 (#608): show the decorative cue for one bot line, in `actor`'s seat colour, until `until` (performance.now() ms).
+  // Replaces any cue already up. Returns how many of `targets` drew: an id the board lacks is skipped, and an older epoch's
+  // line or an unknown seat draws nothing. With no targets it only ends the cue, and with a newer `epoch` it also starts that
+  // epoch (a new deal, a welcome, a rematch), refusing older lines. It never touches highlights, picking, the camera or the
+  // pieces.
+  cueTargets(epoch: number, actor: string, targets: readonly string[], until: number): number {
+    this.wake();
+    const color = this.lastState?.players.find((p) => p.id === actor)?.color;
+    return this.cues.show({ epoch, targets, color, until }, this.cueAt);
+  }
+
+  // Where a corner, path or hex id sits on the board last set. The cues and `screenOf` read it.
+  private cueAt = (id: string): CueTarget | null => {
+    const s = this.lastState;
+    if (!s) return null;
+    const tops = hexTops(s);
+    const at = (id: string) => s.vertices.find((x) => x.id === id)!;
+    const v = at(id);
+    const e = s.edges.find((x) => x.id === id);
+    const h = s.hexes.find((x) => x.id === id);
+    if (v) return { kind: "vertex", x: v.x, y: vertexTop(tops, v), z: v.z };
+    if (e) {
+      const a = at(e.va);
+      const b = at(e.vb);
+      return { kind: "edge", x: (a.x + b.x) / 2, y: edgeTop(tops, a, b), z: (a.z + b.z) / 2, rot: Math.atan2(b.x - a.x, b.z - a.z), span: Math.hypot(b.x - a.x, b.z - a.z) };
+    }
+    return h ? { kind: "hex", ...worldOfHex(h), y: topOf(h.terrain) } : null;
+  };
+
   setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
     this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
@@ -721,12 +752,16 @@ export class IsleRenderer {
     if (landChanged) {
       this.buildLand(state);
       this.lastLand = land;
+      // #722: a new island is a new deal; the last deal's cue never carries over, even onto ids the new board shares.
+      this.cues.clear();
     }
     if (this.lastSeq !== state.seq) {
       this.buildPieces(state, landChanged || this.lastSeq === -1);
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
+    // #722: the same ids, placed on the board as it is now; a target that is gone drops out. Only while a cue is up.
+    this.cues.resync(this.cueAt);
     if (landChanged) this.payingPieces = [];
     if (rolled) {
       this.flashHexes(payingHexes(state));
@@ -748,7 +783,7 @@ export class IsleRenderer {
   // #826: blocked terrain/token with readable light ink (waste / missing → restore).
   private shadeRobber(rh?: HexCell) {
     const id = rh && rh.terrain !== "waste" ? rh.id : null;
-    this.jelly?.robber(id);
+    this.appearance?.robber(id);
     for (const t of this.tokens) {
       const blocked = id === t.userData.hex;
       for (const c of t.children as THREE.Mesh[]) {
@@ -799,7 +834,7 @@ export class IsleRenderer {
     const w = worldOfHex(rh);
     if (rh.pip === null) return this.robberTarget.set(w.x, topOf(rh.terrain), w.z);
     const [dx, dz] = [-Math.cos(DIORAMA_AZIMUTH) * WAYFARER_ASIDE, Math.sin(DIORAMA_AZIMUTH) * WAYFARER_ASIDE];
-    const g = this.jelly?.groundAt(rh.id, dx, dz);
+    const g = this.appearance?.groundAt(rh.id, dx, dz);
     return this.robberTarget.set(w.x + dx, g !== undefined && Number.isFinite(g) ? g : topOf(rh.terrain), w.z + dz);
   }
 
@@ -822,24 +857,8 @@ export class IsleRenderer {
 
   // Where a hex, corner, or edge id sits on screen, in page pixels. For the chat proof, which checks nothing covers a target.
   screenOf(id: string): { x: number; y: number } | null {
-    const st = this.lastState;
-    if (!st) return null;
-    const tops = hexTops(st);
-    const vmap = new Map(st.vertices.map((v) => [v.id, v]));
-    const p = new THREE.Vector3();
-    const v = vmap.get(id);
-    const e = st.edges.find((x) => x.id === id);
-    const h = st.hexes.find((x) => x.id === id);
-    if (v) p.set(v.x, vertexTop(tops, v), v.z);
-    else if (e) {
-      const a = vmap.get(e.va)!;
-      const b = vmap.get(e.vb)!;
-      p.set((a.x + b.x) / 2, edgeTop(tops, a, b), (a.z + b.z) / 2);
-    } else if (h) {
-      const w = worldOfHex(h);
-      p.set(w.x, topOf(h.terrain), w.z);
-    } else return null;
-    return this.screenAt(p.x, p.y, p.z);
+    const p = this.cueAt(id);
+    return p && this.screenAt(p.x, p.y, p.z);
   }
 
   // Where a world point sits on screen, in page pixels, through the camera in use. Proofs read it too.
@@ -901,16 +920,20 @@ export class IsleRenderer {
 
   dispose() {
     clearTimeout(this.keyboardSettle);
+    this.cues.dispose();
     this.cancelPlop();
     this.clearPayers();
     this.stopped = true;
     this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
     this.fps?.el?.remove();
-    this.jelly?.dispose();
-    this.jelly = null;
+    this.cancelAppearance();
+    this.appearance?.dispose();
+    this.appearance = null;
     this.shore?.dispose();
     this.shore = null;
+    this.liteMarkTex?.dispose();
+    this.liteMarkTex = null;
     this.renderer?.setAnimationLoop(null);
     this.controls?.dispose?.();
     this.orbit?.dispose?.();
@@ -919,9 +942,14 @@ export class IsleRenderer {
     window.removeEventListener("resize", this.resize);
     window.visualViewport?.removeEventListener("resize", this.onViewport);
     window.removeEventListener("keydown", this.onKey);
-    this.renderer?.domElement?.parentElement?.removeEventListener("focusin", this.remeasure);
-    this.renderer?.domElement?.parentElement?.removeEventListener("focusout", this.onFocusOut);
-    for (const t of GATE_EVENTS) this.renderer?.domElement?.parentElement?.removeEventListener(t, this.gate, true);
+    if (this.parent) {
+      this.parent.removeEventListener("focusin", this.remeasure);
+      this.parent.removeEventListener("focusout", this.onFocusOut);
+      for (const t of GATE_EVENTS) this.parent.removeEventListener(t, this.gate, true);
+      this.parent = null;
+    }
+    this.gesture.reset();
+    this.fingers.clear();
     this.renderer?.domElement?.removeEventListener("pointerdown", this.onDown);
     this.renderer?.domElement?.removeEventListener("pointerup", this.onUp);
     this.renderer?.domElement?.removeEventListener("pointermove", this.onMove);
@@ -1089,23 +1117,28 @@ export class IsleRenderer {
   // cap level over the island's centre, the lens axis meeting the canvas at (cx, cy), so the island sits in the hole.
   private applyPose(p: Pose) {
     this.docksDirty = true;
+    const zoom = clampZoom(p.zoom, this.orbit.minZoom, this.orbit.maxZoom);
+    const tx = Number.isFinite(p.tx) ? p.tx : this.isle.cx;
+    const tz = Number.isFinite(p.tz) ? p.tz : this.isle.cz;
     if (this.view === "diorama") {
       const c = this.persp;
       const [w, h] = [this.sizeW || 1, this.sizeH || 1];
       // A frame centred on the lens axis that holds the canvas, and the canvas as a view into it.
       const fullW = 2 * Math.max(p.cx, w - p.cx, 1);
       const fullH = 2 * Math.max(p.cy, h - p.cy, 1);
-      c.fov = (2 * Math.atan(fullH / 2 / p.focal) * 180) / Math.PI;
+      const focal = Number.isFinite(p.focal) && p.focal > 0 ? p.focal : fullH / 2;
+      c.fov = (2 * Math.atan(fullH / 2 / focal) * 180) / Math.PI;
       c.aspect = fullW / fullH;
       c.setViewOffset(fullW, fullH, fullW / 2 - p.cx, fullH / 2 - p.cy, w, h);
-      this.lens = { focal: p.focal, dist: p.dist, cx: p.cx, cy: p.cy };
+      this.lens = { focal, dist: p.dist, cx: p.cx, cy: p.cy };
       this.orbit.minDistance = p.dist / this.orbit.maxZoom;
       this.orbit.maxDistance = p.dist / this.orbit.minZoom;
-      this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+      this.orbit.target.set(tx, CAP_LEVEL, tz);
       // The lens frame is wider than the canvas, so a pan step in pixels is scaled to match the finger.
       this.orbit.panSpeed = h / fullH;
       c.up.set(0, 1, 0);
-      c.position.setFromSphericalCoords(p.dist / p.zoom, p.polar, p.azimuth).add(this.orbit.target);
+      const eyeDist = safeEyeDistance(p.dist, zoom);
+      c.position.setFromSphericalCoords(eyeDist, p.polar, p.azimuth).add(this.orbit.target);
       c.lookAt(this.orbit.target);
       c.updateProjectionMatrix();
       return;
@@ -1115,8 +1148,8 @@ export class IsleRenderer {
     o.right = p.right;
     o.top = p.top;
     o.bottom = p.bottom;
-    o.zoom = p.zoom;
-    this.orbit.target.set(p.tx, CAP_LEVEL, p.tz);
+    o.zoom = zoom;
+    this.orbit.target.set(tx, CAP_LEVEL, tz);
     this.orbit.panSpeed = 1;
     o.up.set(0, 1, 0);
     o.position.setFromSphericalCoords(ORBIT_RADIUS, p.polar, p.azimuth).add(this.orbit.target);
@@ -1141,8 +1174,7 @@ export class IsleRenderer {
   private stepGlide(now: number) {
     const g = this.glide;
     if (!g) return;
-    const u = this.calm() ? 1 : Math.min(1, (now - g.start) / GLIDE_MS);
-    const e = 1 - (1 - u) ** 3;
+    const { e, done } = glideProgress(now, g.start, GLIDE_MS, this.calm());
     const p = this.pose();
     for (const k of g.keys) {
       let d = g.to[k] - g.from[k];
@@ -1151,7 +1183,7 @@ export class IsleRenderer {
       p[k] = g.from[k] + d * e;
     }
     this.applyPose(p);
-    if (u >= 1) this.glide = null;
+    if (done) this.glide = null;
   }
 
   // The legal marks a ray passes near, in the diorama view: a corner or a path within `pickReach` of the ray where it passes
@@ -1207,7 +1239,7 @@ export class IsleRenderer {
     if (!f) return 0;
     const h = this.keyboardShrunk ? this.unshrunkH : this.sizeH;
     const half = "focal" in f ? (f.dist * Math.min(this.sizeW, h)) / 2 / f.focal : Math.min(f.right - f.left, f.top - f.bottom) / 2;
-    return Math.min(PAN_RADIUS + this.isle.grow, PAN_VIEW * half);
+    return calcPanLimit(half, this.isle.grow);
   }
 
   // The eye moves with the target, so the view does not lag a frame.
@@ -1216,17 +1248,13 @@ export class IsleRenderer {
     const home = this.fitPose(this.fit);
     const t = this.orbit.target;
     const cam = this.orbit.object;
-    const max = this.panLimit();
-    const dx = t.x - home.tx;
-    const dz = t.z - home.tz;
-    const d = Math.hypot(dx, dz);
-    if (d <= max) return;
+    const res = clampPanOffset(t.x, t.z, home.tx, home.tz, this.panLimit());
+    if (!res.clamped) return;
     this.docksDirty = true;
-    const k = max / d - 1;
-    t.x += dx * k;
-    t.z += dz * k;
-    cam.position.x += dx * k;
-    cam.position.z += dz * k;
+    t.x = res.x;
+    t.z = res.z;
+    cam.position.x += res.shiftX;
+    cam.position.z += res.shiftZ;
   }
 
   // Back to the fitted view, zoom 1, over the hole's centre.
@@ -1326,7 +1354,7 @@ export class IsleRenderer {
   private onCancel = (e: PointerEvent) => {
     this.cancelPlop();
     this.trail = null;
-    this.gesture.up(e.pointerId);
+    this.gesture.cancel(e.pointerId);
   };
 
   private onUp = (e: PointerEvent) => {
@@ -1466,7 +1494,7 @@ export class IsleRenderer {
     if (this.calm() || this.landings.length) return;
     const parts = this.land.children.filter((o) => o.userData.hex === id);
     this.wobble.start(id, parts, TILE_Y, performance.now());
-    this.jelly?.tap(id);
+    this.appearance?.tap(id);
     this.wake();
   }
 
@@ -1493,6 +1521,8 @@ export class IsleRenderer {
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
     if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
+    // A cue's end lands even when reduced motion runs no frames; with motion, each new pulse step keeps frames coming.
+    if (this.cues.step(now, calm)) this.wake();
     if (this.relayout > 0) {
       this.relayout--;
       this.refitDue = true;
@@ -1502,7 +1532,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.jelly?.busy() || this.dust.active;
+    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.appearance?.busy() || this.dust.active;
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? (boot.lift ? 0 : 1000 / 30) : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
@@ -1540,7 +1570,7 @@ export class IsleRenderer {
     if (calm) {
       this.oceanLife.step(0, false, this.oceanViewport);
       // The scenes hold still; a dulling or a glow still lands.
-      this.jelly?.update(this.jellyT, false, true);
+      this.appearance?.update(this.jellyT, false, true);
       this.shore?.update(this.jellyT);
       this.pulseMarks(0, true);
       this.draw();
@@ -1553,7 +1583,7 @@ export class IsleRenderer {
     this.foam.material.opacity = 0.32 + 0.23 * (0.5 + 0.5 * Math.sin(t * 0.8));
     this.jellyT = t;
     // Title and lobby show a demo island: hold board-age stories (the ore climber) at 0 until play (#966).
-    this.jelly?.update(t, false, false, this.titleMode);
+    this.appearance?.update(t, false, false);
     this.shore?.update(t);
     if (this.walk) {
       const w = this.walk;
@@ -1719,6 +1749,7 @@ export class IsleRenderer {
       _held.add(this.controls.target);
     }
     this.poseTokens();
+    this.seeLand();
     this.fadeSea();
     if (lift) {
       const fog = this.scene.fog as THREE.Fog;
@@ -1813,14 +1844,15 @@ export class IsleRenderer {
   // The jelly board (#599, jelly-board.ts): its draw calls and triangles in the main pass, read by board-look-prove through
   // `window.__terrain`; before it is built, the stand-in slabs.
   terrainStats(): TerrainStats {
-    if (this.jelly) return { ready: true, ...this.jelly.stats() };
     const n = this.slabs?.count ?? 0;
-    return { ready: false, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24, kinds: 0, batches: 0, bakes: 0, sprites: 0 };
+    return { ready: this.appearance !== null, lite: this.lite, drawCalls: n ? 1 : 0, triangles: n * 24,
+      kinds: 0, batches: 0, bakes: 0, sprites: 0, ...this.appearance?.stats() };
+
   }
 
   // Ready once the island's scenes are built and showing (the proofs wait on it).
   get landReady() {
-    return this.jelly !== null;
+    return this.appearance !== null;
   }
 
   // The jelly board, for the proofs (its ground and clearance).
@@ -1828,71 +1860,64 @@ export class IsleRenderer {
     return this.jelly;
   }
 
-  private growScenes(gen: number, key: string, hexes: { id: string; terrain: Terrain; x: number; z: number; y: number }[], tries = 0) {
+  get landStatus(): LandStatus {
+    return { ...this.landState, quality: this.lite ? "lite" : "full", ready: this.appearance !== null };
+  }
+
+  // Appearance-neutral proof access; jellyBoard keeps its original Jelly-only identity.
+  get landAppearance() { return this.appearance; }
+
+  setLandLook(look: LandLook) {
+    if (this.stopped || this.landState.requested === look) return;
+    this.landState.requested = look;
+    this.requestAppearance();
+  }
+
+  retryLandLook() {
+    if (!this.stopped && this.landState.error) this.requestAppearance();
+  }
+
+  private reportLand() { this.onLand(this.landStatus); }
+
+  private cancelAppearance() {
+    ++this.landGen;
+    clearTimeout(this.appearanceRetry);
+    this.appearanceRetry = undefined;
+  }
+
+  private requestAppearance() {
+    this.cancelAppearance();
+    this.landState.error = null;
+    const state = this.lastState;
+    if (!state) return this.reportLand();
+    const key = landKey(state);
+    this.landState.loading = this.landState.displayed !== this.landState.requested;
+    this.reportLand();
+    if (!this.landState.loading) return;
+    const hexes = state.hexes.map((h) => Object.freeze({ id: h.id, terrain: h.terrain, q: h.q, r: h.r, ...worldOfHex(h), y: TILE_Y }));
+    this.growScenes(this.landGen, key, Object.freeze(hexes), this.landState.requested);
+  }
+
+  private growScenes(gen: number, key: string, hexes: readonly LandHex[], look: LandLook, tries = 0) {
     const alive = () => gen === this.landGen && !this.stopped;
-    // Not until the board's first frame is on screen: the chunk's parse and the first kind's build would otherwise hold it.
+    if (!alive()) return;
+    // Wait for the first playable stand-in frame before importing either builder.
     if (this.renders === 0) {
-      requestAnimationFrame(() => alive() && this.growScenes(gen, key, hexes, tries));
+      requestAnimationFrame(() => alive() && this.growScenes(gen, key, hexes, look, tries));
       return;
     }
     performance.mark("props-start");
-    loadJelly()
-      .then(({ JellyBoard }) => (alive() ? JellyBoard.create(hexes, (kind) => hashStr(`${key}|${kind}`), () => new Promise<boolean>((r) => setTimeout(() => r(alive()), 0)), this.lite) : null))
-      // Its shaders compile before it swaps in (in parallel where the browser can, KHR_parallel_shader_compile), not in the
-      // first frame that draws it. Compiled in place, into the composer's own target, so the programs are the frame's.
-      .then(async (jelly) => {
-        // Without parallel compile it would only move the same stall earlier (and three warns), so there it is skipped.
-        if (!jelly || !alive() || !this.renderer.extensions.has("KHR_parallel_shader_compile")) return jelly;
-        jelly.update(this.jellyT, true, true);
-        this.living.add(jelly.group);
-        const was = this.renderer.getRenderTarget();
-        this.renderer.setRenderTarget(this.composer.readBuffer);
-        const done = this.renderer.compileAsync(this.scene, this.cam());
-        this.renderer.setRenderTarget(was);
-        this.living.remove(jelly.group);
-        await done;
-        return jelly;
-      })
-      .then(
-        (jelly) => {
-          if (!jelly) return;
-          if (!alive()) return jelly.dispose();
-          this.jelly = jelly;
-          const rh = this.lastState?.hexes.find((h) => h.id === this.lastState?.robberHex);
-          this.shadeRobber(rh);
-          // The scenes' ground beside the token can stand off the flat cap: he steps onto it.
-          if (rh) {
-            this.robberSpot(rh);
-            if (!this.walk) this.wayfarer.position.copy(this.robberTarget);
-          }
-          jelly.update(this.jellyT, true, true);
-          if (this.slabs) {
-            this.land.remove(this.slabs);
-            this.slabs.dispose();
-            (this.slabs.material as THREE.Material).dispose();
-            this.slabs = null;
-          }
-          this.living.add(jelly.group);
-          this.whenDrawn(() => (boot.scenes = true));
-          // A shore that fails to load or build leaves the plain beach and docks (said once a page).
-          if (HARBOR_JELLY && !this.lite)
-            loadShore()
-              .then(({ buildShore }) => alive() && this.swapShore(buildShore(this.coast, this.docks, hashStr(`${key}|shore`))))
-              .catch((e: unknown) => {
-                if (!shoreFailed) console.warn("The jelly shore did not load; the plain beach stays.", e);
-                shoreFailed = true;
-              })
-              .finally(() => this.whenDrawn(() => (boot.shore = true)));
-          else this.whenDrawn(() => (boot.shore = true));
-          (window as unknown as { __terrain: TerrainStats }).__terrain = this.terrainStats();
-          this.wake();
-          performance.mark("props-end");
-        },
-        () => {
-          if (tries < 5) setTimeout(() => alive() && this.growScenes(gen, key, hexes, tries + 1), JELLY_RETRY_MS);
-          else boot.scenes = boot.shore = true;
-        },
-      );
+    // The build and swap live in their own chunk (appearance-controller.ts); a failed import or build retries here.
+    void loadLand(look).then(([m, c]) => { if (alive()) return c.growWith(m.create, this as unknown as AppearanceHost, { key, hexes, look, alive }); }).catch(() => {
+      if (!alive()) return;
+      this.landState.error = `${look === "classic" ? "Classic" : "Jelly"} could not load`;
+      this.landState.loading = tries < 5;
+      this.reportLand();
+      if (tries < 5) this.appearanceRetry = setTimeout(() => {
+        if (alive()) this.growScenes(gen, key, hexes, look, tries + 1);
+      }, JELLY_RETRY_MS);
+      else boot.scenes = boot.shore = true;
+    });
   }
 
   // The coast of these hexes, from their middle (cx, cz): its loop and miters, the beach and the foam, and a fresh crystal sea.
@@ -1936,15 +1961,19 @@ export class IsleRenderer {
   }
 
   private buildLand(state: GameState) {
+    const boardGen = ++this.boardGen;
     this.setIsle(state);
     this.docksDirty = true;
-    this.jelly?.dispose();
-    this.jelly = null;
+    this.appearance?.dispose();
+    this.appearance = null;
+    this.landState.displayed = null;
     this.slabs = null;
     disposeGroup(this.land);
     disposeGroup(this.living);
     this.shore?.dispose();
     this.shore = null;
+    this.liteMarkTex?.dispose();
+    this.liteMarkTex = null;
     this.beach.visible = true;
     if (this.crystal && this.baseWash && this.crystal.wash !== this.baseWash) {
       this.crystal.group.remove(this.crystal.wash);
@@ -1991,8 +2020,7 @@ export class IsleRenderer {
 
     // The scenes: loaded and built a kind per task after the first draw (#543 restore budget), so no one task holds the page;
     // then the island swaps in whole. A rebuild or a dispose before then drops them.
-    const gen = ++this.landGen;
-    this.growScenes(gen, landKey(state), state.hexes.map((h) => ({ id: h.id, terrain: h.terrain, ...worldOfHex(h), y: TILE_Y })));
+    this.requestAppearance();
 
     // A dock spans a coastal edge, so both its corners carry the harbor; the deal spaces docks at least three edges apart, so two
     // neighbouring harbor corners on the coast loop of one kind are always one dock. One pier and one boat per dock.
@@ -2028,6 +2056,31 @@ export class IsleRenderer {
       boat.userData.kind = va.harbor;
       this.living.add(boat);
       this.boats.push(boat);
+    }
+    // #1593: the lite board (no harbour shore) paints a smaller dock plank on each plain pier in one merged mesh.
+    if (this.lite && this.docks.length) {
+      const docks = [...this.docks];
+      const land = this.land;
+      // The small dock-marks chunk, not the harbour shore's. A rebuild or a dispose before it lands drops it (as growScenes).
+      void import("./dock-marks").then(({ markCanvas, PLATE_KINDS }) => {
+        if (boardGen !== this.boardGen || this.stopped) return;
+        this.liteMarkTex?.dispose();
+        const atlas = (this.liteMarkTex = new THREE.CanvasTexture(markCanvas(PAINT)));
+        atlas.colorSpace = THREE.SRGBColorSpace;
+        const mat = new THREE.MeshStandardMaterial({ map: atlas, emissive: 0x6a645a, emissiveMap: atlas, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -1 });
+        const parts = docks.map((d) => {
+          const pl = new THREE.PlaneGeometry(0.24, 0.12);
+          const row = PLATE_KINDS.indexOf(d.kind);
+          const uv = pl.attributes.uv as THREE.BufferAttribute;
+          for (let i = 0; i < uv.count; i++) uv.setY(i, 1 - (row + 1 - uv.getY(i)) / PLATE_KINDS.length);
+          // At the pier's root: the boat's sail stands in front of the pier's end on piers that face the camera.
+          return pl.rotateX(-Math.PI / 2).translate(d.cx + d.mx * 0.29, 0.128, d.cz + d.mz * 0.29);
+        });
+        const merged = mergeGeometries(parts);
+        parts.forEach((p) => p.dispose());
+        if (merged) land.add(new THREE.Mesh(merged, mat));
+        this.wake();
+      });
     }
   }
 
@@ -2097,6 +2150,13 @@ export class IsleRenderer {
       if (sail && sail.material instanceof THREE.MeshStandardMaterial) {
         sail.material.color.set(claimed ? pmap.get(claimed)?.color ?? "#eee" : "#f4efe4");
       }
+    }
+    // #1593: a claimed dock's pennant goes up in the claiming seat's colour.
+    for (const pen of (this.shore?.group.userData.pennants as THREE.Group[] | undefined) ?? []) {
+      const claimed = ((pen.userData.vids as string[]).map((id) => vmap.get(id)).find((v) => v?.building) ?? null)?.building?.playerId;
+      pen.visible = Boolean(claimed);
+      const cloth = pen.children[1] as THREE.Mesh;
+      if (claimed) (cloth.material as THREE.MeshStandardMaterial).color.set(pmap.get(claimed)?.color ?? "#ccc");
     }
   }
 
@@ -2240,19 +2300,36 @@ export class IsleRenderer {
       this.marks.add(pick);
       this.pickables.push(pick);
     }
+    // Ivory path bars need a dark rim on pale ground; keep it outside the pickable set, like the corner outlines.
+    const edgeOutlines = seat.getHex() === 0xf3ecd9 && eset.size
+      ? new THREE.InstancedMesh(new THREE.BoxGeometry(0.32, 0.068, 1), new THREE.MeshBasicMaterial({ color: RIM.dark }), eset.size)
+      : null;
+    if (edgeOutlines) {
+      edgeOutlines.userData = { kind: "edge-outlines" };
+      this.marks.add(edgeOutlines);
+    }
+    let edgeInstance = 0;
     for (const e of state.edges) {
       if (!eset.has(e.id)) continue;
       const a = vmap.get(e.va)!;
       const b = vmap.get(e.vb)!;
+      const span = Math.hypot(b.x - a.x, b.z - a.z);
       const m = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 0.07, Math.hypot(b.x - a.x, b.z - a.z) * 0.72),
+        new THREE.BoxGeometry(0.16, 0.07, span * 0.72),
         new THREE.MeshStandardMaterial({ color: seat, emissive: glow, emissiveIntensity: 0.45 }),
       );
       m.position.set((a.x + b.x) / 2, edgeTop(tops, a, b) + 0.035, (a.z + b.z) / 2);
       m.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
       m.userData = { kind: "edge", id: e.id, baseGlow: 0.45 };
       this.marks.add(m);
-      const len = Math.hypot(b.x - a.x, b.z - a.z) * PICK_EDGE.lengthScale;
+      if (edgeOutlines) {
+        dummy.position.set(m.position.x, m.position.y - 0.001, m.position.z);
+        dummy.rotation.copy(m.rotation);
+        dummy.scale.set(1, 1, span * 0.8);
+        dummy.updateMatrix();
+        edgeOutlines.setMatrixAt(edgeInstance++, dummy.matrix);
+      }
+      const len = span * PICK_EDGE.lengthScale;
       const pick = new THREE.Mesh(new THREE.BoxGeometry(PICK_EDGE.w, PICK_EDGE.h, len), new THREE.MeshBasicMaterial());
       pick.visible = false;
       pick.position.copy(m.position);
@@ -2261,6 +2338,7 @@ export class IsleRenderer {
       this.marks.add(pick);
       this.pickables.push(pick);
     }
+    if (edgeOutlines) edgeOutlines.instanceMatrix.needsUpdate = true;
     for (const h of state.hexes) {
       if (!hset.has(h.id)) continue;
       const { x, z } = worldOfHex(h);

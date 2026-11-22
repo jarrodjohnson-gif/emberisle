@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RESOURCE_ICON } from "@/components/game/ResourceSymbols";
+import { useTrayFocus } from "@/components/game/tray-focus";
 import { setDiscardPicked } from "@/lib/game/discard-pick";
 import { RESOURCES, RESOURCE_LABEL, type Resource } from "@/lib/game/types";
 import { useGame } from "@/lib/game/store";
@@ -17,13 +18,14 @@ export function DiscardBar({ id, n }: { id: string; n: number }) {
   const [counts, setCounts] = useState(NONE);
   const picked = RESOURCES.reduce((sum, r) => sum + counts[r], 0);
   const left = n - picked;
+  const trayFocus = useTrayFocus();
   useEffect(() => {
     setDiscardPicked(picked);
     return () => setDiscardPicked(0);
   }, [picked]);
   const pick = (r: Resource, d: number) => setCounts({ ...counts, [r]: counts[r] + d });
   return (
-    <div className="discard-pick" data-testid="discard-pick">
+    <div className="discard-pick" data-testid="discard-pick" {...trayFocus.props}>
       <div className="discard-goods">
         {RESOURCES.map((r) => {
           const Icon = RESOURCE_ICON[r];

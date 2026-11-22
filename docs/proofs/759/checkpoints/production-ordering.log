@@ -1,0 +1,36 @@
+NAV http://127.0.0.1:8201/
+info %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+log PRELOADADD undefined e=>n(T(e.payload)??`?`)
+log PRELOADREMOVE undefined
+log PRELOADADD undefined e=>n(T(e.payload)??`?`)
+info Emberisle board: lite (the jelly ground) (emberisle-jelly=lite)
+info Emberisle board: lite (the jelly ground) (emberisle-jelly=lite)
+log PRELOADADD true e=>{let t=u(e.payload)??``;/\/(classic-board|jelly-board|hex-jelly)-[\w-]+\.js$/.test(t)&&e.stopImmediatePropagation()}
+log PRELOADREMOVE true
+log PRELOADADD true e=>{let t=u(e.payload)??``;/\/(classic-board|jelly-board|hex-jelly)-[\w-]+\.js$/.test(t)&&e.stopImmediatePropagation()}
+CLASSICREQUEST http://127.0.0.1:8201/assets/classic-board-CQLX662R.js
+error Failed to load resource: net::ERR_FAILED
+log PRELOADEVENT TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:8201/assets/classic-board-CQLX662R.js
+NAV http://127.0.0.1:8201/
+log STOPCALLED
+log PRELOADREMOVE true
+NAV http://127.0.0.1:8201/
+info %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+log PRELOADADD undefined e=>n(T(e.payload)??`?`)
+log PRELOADREMOVE undefined
+log PRELOADADD undefined e=>n(T(e.payload)??`?`)
+info Emberisle board: lite (the jelly ground) (emberisle-jelly=lite)
+info Emberisle board: lite (the jelly ground) (emberisle-jelly=lite)
+log PRELOADADD true e=>{let t=u(e.payload)??``;/\/(classic-board|jelly-board|hex-jelly)-[\w-]+\.js$/.test(t)&&e.stopImmediatePropagation()}
+log PRELOADREMOVE true
+RESULT {
+  status: {
+    requested: 'jelly',
+    displayed: 'jelly',
+    loading: false,
+    error: null,
+    quality: 'lite',
+    ready: true
+  },
+  reloads: '["http://127.0.0.1:8201/assets/classic-board-CQLX662R.js"]'
+}

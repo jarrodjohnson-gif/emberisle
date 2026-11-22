@@ -19,15 +19,15 @@ export async function writeDurable(dir, name, text) {
   const tmp = path.join(dir, `.${name}.${process.pid}.${randomBytes(6).toString("hex")}.tmp`);
   const fh = await fs.open(tmp, "wx", 0o600);
   try {
-    await fh.writeFile(text);
-    await fh.sync();
-  } finally {
-    await fh.close();
-  }
-  try {
+    try {
+      await fh.writeFile(text);
+      await fh.sync();
+    } finally {
+      await fh.close();
+    }
     await fs.rename(tmp, path.join(dir, name));
   } catch (e) {
-    await fs.rm(tmp, { force: true });
+    await fs.rm(tmp, { force: true }).catch(() => {});
     throw e;
   }
   if (process.platform === "win32") return;
@@ -88,14 +88,23 @@ export function openJournal(dir, { fault = () => {} } = {}) {
       console.error(`results: pending outcome ${name} is unreadable (${e.message}); kept for repair`);
     }
   }
-  // One write per game at a time: a retry or a second caller waits for the first and then finds it done.
-  const inflight = new Map();
+  // One operation per game at a time: put, replace and done never interleave on the same id.
+  const tails = new Map();
+  function serial(id, fn) {
+    const prev = tails.get(id) ?? Promise.resolve();
+    const next = prev.then(fn);
+    const tail = next.then(() => {}, () => {}).finally(() => {
+      if (tails.get(id) === tail) tails.delete(id);
+    });
+    tails.set(id, tail);
+    return next;
+  }
   async function put(outcome) {
     if (!validOutcome(outcome)) throw new Error("bad outcome");
     const id = outcome.gameId;
-    if (ids.has(id)) return false;
-    if (inflight.has(id)) return inflight.get(id);
-    const run = (async () => {
+    if (ids.has(id) && !tails.has(id)) return false;
+    return serial(id, async () => {
+      if (ids.has(id)) return false;
       fault("journal-before");
       await writeDurable(dir, `${id}.json`, JSON.stringify(outcome));
       ids.add(id);
@@ -103,37 +112,39 @@ export function openJournal(dir, { fault = () => {} } = {}) {
       outcomes.set(id, outcome);
       fault("journal-after");
       return true;
-    })();
-    inflight.set(id, run);
-    try {
-      return await run;
-    } finally {
-      inflight.delete(id);
-    }
+    });
   }
   // Profile deletion (#891): a pending outcome rewritten in place, durably, with a deleted profile's rows redacted. Its game
   // stays pending under the same id.
   async function replace(outcome) {
-    if (!validOutcome(outcome) || !ids.has(outcome.gameId)) throw new Error("bad outcome");
-    await writeDurable(dir, `${outcome.gameId}.json`, JSON.stringify(outcome));
-    outcomes.set(outcome.gameId, outcome);
+    if (!validOutcome(outcome)) throw new Error("bad outcome");
+    const id = outcome.gameId;
+    if (!ids.has(id) && !tails.has(id)) throw new Error("bad outcome");
+    return serial(id, async () => {
+      if (!ids.has(id)) throw new Error("bad outcome");
+      await writeDurable(dir, `${id}.json`, JSON.stringify(outcome));
+      outcomes.set(id, outcome);
+    });
   }
   // Step 6 (#890): once the game's receipt has committed, its pending file is removed, durably. From then on the receipt in
   // the profile store fences that game id, so the host checks both.
   async function done(id) {
-    if (!ids.has(id)) return false;
-    await fs.rm(path.join(dir, `${id}.json`), { force: true });
-    if (process.platform !== "win32") {
-      const d = await fs.open(dir, "r");
-      try {
-        await d.sync();
-      } finally {
-        await d.close();
+    if (!ids.has(id) && !tails.has(id)) return false;
+    return serial(id, async () => {
+      if (!ids.has(id)) return false;
+      await fs.rm(path.join(dir, `${id}.json`), { force: true });
+      if (process.platform !== "win32") {
+        const d = await fs.open(dir, "r");
+        try {
+          await d.sync();
+        } finally {
+          await d.close();
+        }
       }
-    }
-    ids.delete(id);
-    outcomes.delete(id);
-    return true;
+      ids.delete(id);
+      outcomes.delete(id);
+      return true;
+    });
   }
   return {
     dir,

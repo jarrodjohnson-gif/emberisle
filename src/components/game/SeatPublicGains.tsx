@@ -36,6 +36,8 @@ useGame.subscribe((next, previous) => {
   }
 });
 
+const fmt = (n: number) => `${n > 0 ? '+' : '−'}${Math.abs(n)}`;
+
 // Portals attach to existing seat boxes without changing card dimensions or the map hole. The group hangs outside the
 // box as a tag tucked behind the seat's edge (under a strip seat, right of a rail seat: seat-public-gains.css), so it
 // never covers the name or the score.
@@ -51,8 +53,8 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
     if (!anchor) return null;
     const name = players?.find(p => p.id === change.player)?.name ?? '';
     // Gains on the left, losses on the right, at every seat (owner q1530-gain-finalists A).
-    const active = RESOURCES.filter(r => change.goods[r]! > 0).concat(RESOURCES.filter(r => change.goods[r]! < 0));
-    const label = active.map(r => `${change.goods[r]! > 0 ? '+' : '−'}${Math.abs(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
+    const active = RESOURCES.filter(r => change.goods[r]).sort((a, b) => Math.sign(change.goods[b]!) - Math.sign(change.goods[a]!));
+    const label = active.map(r => `${fmt(change.goods[r]!)} ${RESOURCE_LABEL[r]}`).join(', ');
     return createPortal(
       <span data-testid="seat-public-gains" data-player={change.player} data-scope={scope} role="status" aria-label={`${name}: ${label}`}
         className="seat-public-gains"
@@ -62,7 +64,7 @@ export function SeatPublicGains({ scope }: { scope: 'rail' | 'seat' }) {
           const n = change.goods[resource]!, Icon = SYMBOLS[resource];
           return <span key={resource} data-testid="seat-public-pill" data-sign={n > 0 ? '+' : '-'} data-resource={resource}
             className="seat-public-pill" aria-hidden="true">
-            <Icon width={17} height={17} /><span>{n > 0 ? '+' : '−'}{Math.abs(n)}</span>
+            <Icon width={17} height={17} /><span>{fmt(n)}</span>
           </span>;
         })}
       </span>, anchor, `${scope}-${change.player}`,
