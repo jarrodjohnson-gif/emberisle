@@ -31,7 +31,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
 
 1. **Build and open the PR**, ready for review, with `Agent: <your agent name>` and your model in the body. Then set your chat's title to `(auto) <your agent name> #<PR number> building` with `set_session_title`. The dispatcher reads only titles, so the title is how it knows your slot is busy.
 2. **Wait for CI with `subscribe_pr_activity`.** Never sleep or poll. Fix a red CI.
-3. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool.
+3. **When `checks` is green on the head, start one reviewer subagent** with the Agent tool. If the PR will need Jarrod (see "When you need Jarrod" below), add the `needs-owner` label first: a clean review can merge the PR within seconds, and the label is what holds it.
    - Its model is never yours, and never a model that built any part of the PR. Sonnet 5.5 reviews Opus work and Opus 5.5 reviews Sonnet work. Haiku 5.5 may review a docs-only PR.
    - Give it [REVIEWING.md](REVIEWING.md), the PR number and the full head SHA.
    - It posts its review on the PR itself. You never write, edit or delete a review comment.
@@ -42,9 +42,10 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
    - `blocked` when you added `needs-owner`;
    - `(auto) <your agent name> nothing eligible` when you found no issue to take.
 
-**When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Do this when:
+**When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Add the label as soon as you know, and always before you start the reviewer. On 2026-11-22 a design PR (#1841) merged in the same minute its builder posted two questions for Jarrod, because the label came after the clean review. Do this when:
 
 - the PR changes anything a player sees or hears. Put real screenshots in the PR body first, at the sizes in [REVIEWING.md](REVIEWING.md) plus Jarrod's phone (440x956 and 956x440), or the audio;
+- the PR is a design, a mock or a set of options for Jarrod to choose from, even if it is docs only;
 - the review still has findings after three rounds;
 - the issue needs a design decision ([AGENTS.md](../AGENTS.md) rule 12).
 
