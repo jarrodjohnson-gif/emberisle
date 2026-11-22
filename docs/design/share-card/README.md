@@ -1,7 +1,7 @@
 # Design: Share-Your-Game Card (#1454)
 
 - date: 2026-11-17
-- status: design packet (Step 1; awaiting owner choices on #1454)
+- status: design packet (Step 1; owner choices recorded 2026-11-22)
 - lane: hud (tier 1, prio:p1)
 - issue: [#1454](https://github.com/jarrodjohnson-gif/emberisle/issues/1454)
 - dependencies: #1450, #1452, DECISIONS 2026-10-27
@@ -18,7 +18,7 @@ Both choices are decided (Desk page, 2026-11-22).
 - **Card look: Option A, the ocean-framed tray card.** The owner picked it.
 - **Share button place: Option A, the action bar beside Hide scores.** The owner said "Ask fable To audit this screen and decide". A Fable 5.2 audit of `WinScreen.tsx` and `win-screen.css` chose Option A with one change: do not add Share to the hidden-scores `win-chip`, since it already holds three buttons (`WinScreen.tsx:149-159`) and `Show scores` is one tap away.
   - Why: the bar is quiet buttons plus one primary, so a secondary Share fits; Option B's 44 px header button would shorten the winner's name (`WinScreen.tsx:205`) and cost height at 956 × 440.
-  - Step 2 must prove: practice and hotseat at 390 wide (no `Next game` or `React`, four buttons may wrap), and 956 × 440 online host (six items may wrap). Add practice mode at 390 to `scripts/win-sheet-prove.mjs`.
+  - Step 2 must prove: practice and hotseat at 390 wide (no `Next game` or `React`, four buttons may wrap), and 956 × 440 online host (six items may wrap). Extend `scripts/win-sheet-prove.mjs` (it already plays a practice game at 390 × 844) to assert Share's row count there.
 
 ### Decision 1: Share Button Placement on WinScreen
 The results screen currently places actions in `.win-actions` (`src/components/game/WinScreen.tsx:223-265`).
