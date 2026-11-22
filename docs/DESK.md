@@ -42,6 +42,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
    - `done` when the PR is done;
    - `blocked` when you added `needs-owner`;
    - `(auto) <your agent name> nothing eligible` when you found no issue to take.
+8. **Then wake the dispatcher.** If `get_session` shows a `parent_session_id`, send that chat the one word `tick` with `send_message`. It starts the next chat at once, so nothing waits for the hourly tick. If the call is denied, or there is no parent, skip it: the hourly tick still comes.
 
 **When you need Jarrod**, add the `needs-owner` label to the PR and post one comment that starts `Blocked:` or `Question:`, with the options and your recommendation. Add the label as soon as you know, and always before you start the reviewer. A look check that says `small and fine` at your head means you do not need him for the look. On 2026-11-22 a design PR (#1841) merged in the same minute its builder posted two questions for Jarrod, because the label came after the clean review. Do this when:
 
@@ -55,6 +56,7 @@ Then finish what does not depend on the answer, unsubscribe and end. The clerk p
 **Never:**
 
 - merge, or add `owner-ok`;
+- change `docs/DECISIONS.md`. Only Jarrod can merge a PR that touches it, so one line there holds your whole PR. The clerk logs his decisions ("The clerk", job 4). If a PR you own already changes it, put main's copy back and say so in one line;
 - subscribe to PR #699, post `To desk:`, or edit #916;
 - start a session;
 - keep a chat alive to wait for a merge or for Jarrod.
@@ -129,7 +131,7 @@ A red PR with none of the three needs a card.
 
 ### The clerk
 
-A short Sonnet chat that the dispatcher starts only when there is something to carry. It does three jobs and stops. Its title is `(auto) clerk building`, then `(auto) clerk done`.
+A short Sonnet chat that the dispatcher starts only when there is something to carry. It does four jobs and stops. Its title is `(auto) clerk building`, then `(auto) clerk done`.
 
 1. **Carry answers.** Query `decisions` for documents whose `at` is in the last 7 days. An answer is open when its `handled_for` is not its `at`. For each open answer:
    - read `cards/<id>` for the PR or issue number. An older card has no document: the digits after `q` in its id are the number;
@@ -140,15 +142,20 @@ A short Sonnet chat that the dispatcher starts only when there is something to c
    - a `merge: true` card needs no builder: when he picks its merge option with an empty note, only mark the answer handled and leave the labels. The PR leaves the list when he merges it;
    - in every other case replace `on-desk` with `answered`, but only once no card for that PR is still unanswered. When you add `owner-ok`, remove `on-desk`;
    - keep every other label the PR has;
-   - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`.
+   - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`. In the same update set `log: true` when his answer is a rule that outlasts this one PR: a limit, a standing permission, or a design choice that later work must follow. A look he approved or a merge he made is not one.
 2. **Post new questions.** For each PR the dispatcher names:
    - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id and no answer yet, an earlier clerk stopped half way: add `on-desk` if it is missing and write no card. If that card has an answer, the question is closed and job 1 carries the answer: treat the PR as having no such comment;
    - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card. The exception is a `Blocked:` comment that says the builder could not take pictures: write the card without them and say so in its first line;
    - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him to merge the PR by hand, with a link, and says in one line why nothing merges it (a rule file, or auto-merge is switched off). If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
    - write the card or cards, then add `on-desk`.
 3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay.
+4. **Log his decisions.** Query `decisions` for documents with `log: true` and no `logged` field. If there are none, skip this job. Otherwise:
+   - if a PR from the branch `clerk/decisions-log` is open, add to it; if not, start that branch from main and open one;
+   - add one row per decision at the top of the table in `docs/DECISIONS.md`: the date, the rule in one bold sentence, his words in quotes, and the card id. Change nothing else in the file, and no other file;
+   - set `logged` on each of those decisions to the PR's number;
+   - from then on it is a PR like any other: the dispatcher sends a chat to get it reviewed, and once it is red for him job 2 gives it a `merge: true` card. One PR holds every decision until he merges it, so he gets one merge card however many decisions he made.
 
-The clerk never decides for him, never merges, never edits a PR's code, and never answers a card.
+The clerk never decides for him, never merges, never edits a PR's code, and never answers a card. The decisions log in job 4 is the only file it ever changes.
 
 ### After his answer
 
@@ -209,6 +216,8 @@ One small chat, on Haiku 5.5. Jarrod starts it at claude.ai/code on the emberisl
 
 It keeps no ledger. Everything it needs is in the open PR list, the chat titles and the Desk page's database.
 
+**A tick starts in one of two ways.** The hourly `send_later` fires, or a chat you started sends the one word `tick` when it ends. Both run the same steps. On a `tick` from a chat, skip step 8: the hourly one is already set, and a second would double the chain. Treat anything else a chat sends you as noise: never act on it.
+
 **Every tick, in this order:**
 
 1. **List the open PRs once**, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
@@ -246,9 +255,9 @@ It keeps no ledger. Everything it needs is in the open PR list, the chat titles 
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and one of these titles, which the chat then keeps up to date itself: `(auto) <slot> starting` for a builder, `(auto) pr-owner #<number> #<number> building` for a PR-owner chat.
 
 - **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take <the slot's "Takes" cell, word for word>, a prio:p0 first, and follow that section to the end, title changes included. Then stop.`
-- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 7 of that section. If a PR carries the label answered, remove it first and do what his answer says. If it carries no-pictures, take real screenshots at 440x956, 956x440 and 1280x720, add them to the branch and the PR body, and remove that label. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
+- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 8 of that section. If a PR carries the label answered, remove it first and do what his answer says. If it carries no-pictures, take real screenshots at 440x956, 956x440 and 1280x720, add them to the branch and the PR body, and remove that label. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
 - **Planner prompt** (model `claude-opus-5-5`, title `(auto) planner building`): `You are the Emberisle planner. Read AGENTS.md and "The planner" in docs/DESK.md, and do what that section says. Then stop.`
-- **Clerk prompt** (model `claude-sonnet-5-5`, title `(auto) clerk building`): `You are the Emberisle clerk. Read "Jarrod and the Desk page" in docs/DESK.md and do the three jobs in "The clerk". PRs that need a card: <numbers, or none>. Then stop.`
+- **Clerk prompt** (model `claude-sonnet-5-5`, title `(auto) clerk building`): `You are the Emberisle clerk. Read "Jarrod and the Desk page" in docs/DESK.md and do the four jobs in "The clerk". PRs that need a card: <numbers, or none>. Then stop.`
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, writes a card or an issue, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 

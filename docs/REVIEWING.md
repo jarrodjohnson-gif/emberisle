@@ -21,7 +21,7 @@ Run each local browser proof alone (AGENTS.md rule 11). Use `flock /tmp/claude-0
 3. **The diff against the issue.** Check its completion test, the owner comments on it, and [DECISIONS.md](DECISIONS.md).
 4. **No test loosened.** Diff every changed proof against main: removed assertions, wider tolerances, dropped sizes or skipped cases.
 5. **New proofs registered** in `package.json` and `.github/workflows/ci.yml`. Any other change to `ci.yml` is blocking unless the issue asks for it: no job removed, skipped or given more permissions.
-6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue.
+6. **No unrelated changes.** Use "Closes #N" only when the PR finishes the issue. A change to `docs/DECISIONS.md` in any PR but the clerk's `clerk/decisions-log` is blocking: the builder puts main's copy back ([DESK.md](DESK.md), "A builder chat").
 7. **Size.** Any growth beyond the allowance is explained in the PR body.
 8. **Server and protocol PRs:** message validation, a stale or spoofed sender, unbounded maps or timers, and state across a restart.
 
