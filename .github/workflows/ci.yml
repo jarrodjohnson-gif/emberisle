@@ -359,6 +359,8 @@ jobs:
             timeout -k 10 120 npm run profile-recovery-prove || status=$?
             timeout -k 10 60 npm run server-needs-prove || status=$?
             timeout -k 10 60 npm run submodules-guards-prove || status=$?
+            timeout -k 10 60 npm run server-award-tally-prove || status=$?
+            timeout -k 10 60 npm run results-story-prove || status=$?
             timeout -k 10 60 npm run server-play-again-prove || status=$?
             timeout -k 10 60 npm run expanded-persist-prove || status=$?
             timeout -k 10 90 npm run expanded-lobby-prove || status=$?
@@ -834,6 +836,8 @@ jobs:
         run: npm run win-action-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-list-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
+        run: npm run results-story-ui-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run win-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'

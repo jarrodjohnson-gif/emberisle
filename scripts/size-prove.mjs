@@ -40,7 +40,7 @@ const CEILINGS = [
   // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
   // start from the Play page; index measured 127,203 B.
   { name: "index", gzipBytes: 128000 },
-  { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
+  { name: "IslandCanvas", gzipBytes: 204500 }, // #1857, 2026-11-22: raised from 203,500 B to 204,500 B (was #1307, 2026-11-04)
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
@@ -98,6 +98,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #1452 and #1453, 2026-11-09: the results screen's island awards and dice strip, one chunk the win screen fetches as the
+  // table starts; measured 2,048 B gzip. New chunk only; the desk set this ceiling on #1452 (q-size-standing, option A).
+  { name: "ResultsStory", gzipBytes: 2200 },
   // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
   // New chunk only; the desk sets this ceiling.
   { name: "ambience", gzipBytes: 550 },
