@@ -20,12 +20,14 @@ const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 // [width, height, touch, which shots]. Jarrod's phone (440x956) and desktop (1280x720) were added in review: the phone zoomed
-// out and close up, the desktop at the home view.
+// out and close up, the desktop at the home view, and the phone sideways (956x440).
 const SIZES = [
   [390, 844, true, ["1-out", "2-home", "3-close"]],
   [820, 1180, true, ["1-out", "2-home", "3-close"]],
   [844, 390, true, ["1-out", "2-home", "3-close"]],
   [440, 956, true, ["1-out", "3-close", "4-owned", "5-far"]],
+  // Jarrod's phone held sideways, added for the owner's look at the built fix 3.
+  [956, 440, true, ["1-out", "2-home", "3-close"]],
   [1280, 720, false, ["2-home"]],
 ];
 const LITE = process.env.LITE === "1";
