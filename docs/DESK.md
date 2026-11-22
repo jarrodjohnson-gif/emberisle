@@ -101,12 +101,12 @@ It keeps no ledger. Everything it needs is in two listings: the open PRs and the
 
 1. **List the open PRs once**, with only these fields: `number`, `title`, `draft`, `labels`, `updated_at`. Never read a PR body, a diff, a review, #916 or #699.
 2. **Merge what the workflow handed over.** For each PR in the list that carries both `signal:green` and `merge-by-chat`: read that one PR's head SHA and labels again, and if both labels are still there, squash-merge it pinned to that SHA. Never merge a PR without both labels, and never add either label yourself. This step is the one exception to "never merge" in AGENTS.md rule 7, and it is yours alone. If the merge is refused, leave it and go on. If the same PR is refused at two ticks, tell Jarrod once in your chat, with its number and the error.
-3. **List the chats once**: `list_sessions` with `limit: 20`. Use only rows whose title starts `(auto)` and that are not archived, and from each only the title, `created_at` and `updated_at`. If the call fails or is denied, start nothing this tick, say so once, and go to step 7.
+3. **List the chats once**: `list_sessions` with `limit: 30`. Use only rows whose title starts `(auto)` and that are not archived, and from each only the title, `created_at` and `updated_at`. If the call fails or is denied, start nothing this tick, say so once, and go to step 7.
    - A chat is **ended** when its title ends in `done`, `blocked` or `nothing eligible`.
    - A chat is **live** when it is not ended and its `updated_at` is less than 3 hours old. A builder waiting for CI is live: its title still ends in `building`.
    - A chat that is neither is **stale**: it stopped without saying so.
-4. **Archive** every ended chat whose title ends in `done` or `blocked`, and every stale chat. Leave a `nothing eligible` chat until it is 6 hours old, then archive it. Never archive your own chat or one whose title does not start `(auto)`.
-5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, whose number is in no live chat's title. A `signal:red` PR is an orphan too when it was updated in the last 3 hours and its number is in no live chat's title: Jarrod has answered. Start one PR-owner chat for up to three orphans, and two such chats per tick at most.
+4. **Archive** every stale chat, every `nothing eligible` chat whose `created_at` is 6 or more hours old, and every `done` or `blocked` chat whose `updated_at` is 2 or more hours old. Leave any other chat alone. Never archive your own chat or one whose title does not start `(auto)`.
+5. **Send help to orphans.** An orphan is a `signal:yellow` PR updated in the last 7 days, with no update for 3 hours, whose number is in no live chat's title. A `signal:red` PR is an orphan too when it was updated in the last 3 hours and no chat left in the listing after step 4, live or ended, has its number in its title: nobody has worked on it since Jarrod's answer. Start one PR-owner chat for up to three orphans, and two such chats per tick at most.
 6. **Fill the builder slots.** There are three. A slot is taken while a live chat's title names it.
 
    | Slot | Model | Takes |
@@ -121,13 +121,13 @@ It keeps no ledger. Everything it needs is in two listings: the open PRs and the
 **Start chats with `create_session`**, `source_url` `https://github.com/jarrodjohnson-gif/emberisle`, and one of these titles, which the chat then keeps up to date itself: `(auto) <slot> starting` for a builder, `(auto) pr-owner #<number> #<number> building` for a PR-owner chat.
 
 - **Builder prompt:** `Work on Emberisle as builder "<slot>", model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". Take <the slot's "Takes" cell, word for word>, a prio:p0 first, and follow that section to the end, title changes included. Then stop.`
-- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is <slot>, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 6 of that section. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, done or blocked. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
+- **PR-owner prompt:** `You own these open Emberisle PRs until each is done: <numbers>. Your agent name is pr-owner, model <model>. Read AGENTS.md and docs/DESK.md, "A builder chat". For each PR, read its newest comments, then follow steps 2 to 6 of that section. Your title is "(auto) pr-owner" with the PR numbers and a last word of building, then blocked if any PR ended blocked, else done. Take no new issue. Then stop.` Use Opus 5.5 for a PR whose issue is `tier:1`, and Sonnet 5.5 otherwise.
 
 **The dispatcher never** reviews, decides a merge, labels, comments on GitHub, answers a question, or reads a chat's transcript. It posts in its own chat only when `create_session` fails, once, with the error.
 
 **Its own size.** A tick adds about 8K tokens, most of it the chat listing. When `get_session` shows more than 300K, tell Jarrod once: "Please start a fresh dispatcher," with the start line. Check this once a day, not every tick. If PRs sit yellow for half a day with no chat, the tick chain broke: start a fresh dispatcher.
 
-**Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. `list_sessions` and `set_session_title` are not on that list. Only Jarrod changes it. If a tool is denied, say which, once, and carry on. A builder whose title change is denied just ends: the dispatcher sees its chat go stale after 3 hours and frees the slot.
+**Permissions.** The repo's `.claude/settings.json` allows `create_session`, `archive_session`, `send_later`, `get_session` and `send_message`. `list_sessions` and `set_session_title` are not on that list. Only Jarrod changes it. If a tool is denied, say which, once, and carry on. A builder whose title change is denied keeps working under its first title: the slot stays taken while it works, and the dispatcher frees it 3 hours after the chat goes quiet.
 
 ## Keep it cheap
 
