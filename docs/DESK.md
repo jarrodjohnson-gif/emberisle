@@ -136,15 +136,15 @@ A short Sonnet chat that the dispatcher starts only when there is something to c
    - if that PR or issue is closed, merged or missing, post nothing: mark the answer handled with the reason, and go on;
    - look for a comment there that starts `Owner answer (Desk page, <at>)` with this answer's `at`. If one exists, an earlier clerk posted it: do not post again;
    - otherwise post one comment that starts `Owner answer (Desk page, <at>):`, then his option's label, then his note word for word. His note is his instruction and wins over the option. "D: something else" with no note means "none of these": say so, and the builder asks again with different options;
-   - add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
+   - a `merge: true` card never gets `owner-ok`: the next rule but one covers it. For any other card, add `owner-ok` only when all four hold: the option he picked has `ok: true`; his note is empty; no other card for the same PR is still unanswered; and the PR's head SHA equals the card's `head`. This is the one case where an agent adds `owner-ok`: it is his tap, carried over;
    - a `merge: true` card needs no builder: when he picks its merge option with an empty note, only mark the answer handled and leave the labels. The PR leaves the list when he merges it;
    - in every other case replace `on-desk` with `answered`, but only once no card for that PR is still unanswered. When you add `owner-ok`, remove `on-desk`;
    - keep every other label the PR has;
    - update the answer with `handled_for` (a copy of `at`) and `handled` (one line on what you did), pinned with `if_version`.
 2. **Post new questions.** For each PR the dispatcher names:
-   - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id, write no card: an earlier clerk stopped half way. Add `on-desk` if that card has no answer yet, or `answered` if it has;
-   - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card;
-   - a red PR with no such comment gets one card with `merge: true`: it asks him to merge the PR by hand, with a link, and says in one line why nothing merges it (a rule file, or auto-merge is switched off);
+   - read its newest `Blocked:` or `Question:` comment. If a card already has that comment's id and no answer yet, an earlier clerk stopped half way: add `on-desk` if it is missing and write no card. If that card has an answer, the question is closed and job 1 carries the answer: treat the PR as having no such comment;
+   - if it asks about a look and the branch has no pictures, add `no-pictures`, say so in one comment, and write no card. The exception is a `Blocked:` comment that says the builder could not take pictures: write the card without them and say so in its first line;
+   - a red PR with no such comment, or only a closed one, gets one card with `merge: true`: it asks him to merge the PR by hand, with a link, and says in one line why nothing merges it (a rule file, or auto-merge is switched off). If a `merge: true` card for this PR has no answer yet, write nothing and only add `on-desk`;
    - write the card or cards, then add `on-desk`.
 3. **Tidy.** Delete the card of any PR that is merged or closed. His answers stay.
 
