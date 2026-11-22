@@ -7,7 +7,8 @@
 //   P4A: Escape from anywhere in the panel (input, tab, sticker, sound chip, mute list) closes only the panel: an armed build
 //        stays armed and a second Escape disarms it. Escape, Minimize and Close give the focus back to Open chat. Only the
 //        selected tab is in the Tab order and Left/Right switch tabs. There is no focus trap: Tab leaves the panel.
-// Run: npm run quick-react-prove. Screenshots go to test-results/.
+// Run: npm run quick-react-prove. Screenshots of the open panel at 1280x720, 440x956, 956x440, 390x844, 844x390 and 320x640
+// go to test-results/quick-react-*.jpg.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -52,7 +53,8 @@ async function until(fn, what, ms = 10_000) {
 }
 
 async function tab(name, viewport, phone) {
-  const ctx = await browser.newContext(phone ? { viewport, hasTouch: true, isMobile: true, deviceScaleFactor: 1 } : { viewport });
+  // deviceScaleFactor 2: the screenshots are for the owner's look (docs/REVIEWING.md).
+  const ctx = await browser.newContext(phone ? { viewport, hasTouch: true, isMobile: true, deviceScaleFactor: 2 } : { viewport, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
@@ -299,7 +301,13 @@ check(await a.page.getByTestId("stickers").getByRole("button").first().isEnabled
 await until(async () => !(await talk(a)).resting, "the sound wait ends", 5000);
 check(await a.page.getByTestId("soundboard").getByRole("button").nth(1).isEnabled(), "waits: the sound chips are enabled again after the 3 s rest");
 
-// P2A at the narrowest width the design names: Moss's phone turned to 320x640.
+// P2A at the review sizes (docs/REVIEWING.md: 390x844 and 844x390) and the narrowest width the design names, 320x640.
+await b.page.setViewportSize({ width: 390, height: 844 });
+await sizes(b, "390x844 phone sheet");
+await shot(b, "quick-react-390x844.jpg");
+await c.page.setViewportSize({ width: 844, height: 390 });
+await sizes(c, "844x390 phone sheet");
+await shot(c, "quick-react-844x390.jpg");
 await b.page.setViewportSize({ width: 320, height: 640 });
 await sizes(b, "320x640 phone sheet");
 await shot(b, "quick-react-320x640.jpg");
