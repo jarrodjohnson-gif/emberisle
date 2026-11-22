@@ -241,6 +241,7 @@ export class IsleRenderer {
   lite = false;
   private slabs: THREE.InstancedMesh | null = null;
   private landGen = 0;
+  private boardGen = 0; // bumped per board build; the dock marks drop on a rebuild, not on a look switch
   // The scenes' clock as last advanced (they hold at it under reduced motion).
   private jellyT = 0;
   private lastLand: string | null = null;
@@ -1861,6 +1862,7 @@ export class IsleRenderer {
   }
 
   private buildLand(state: GameState) {
+    const boardGen = ++this.boardGen;
     this.setIsle(state);
     this.docksDirty = true;
     this.appearance?.dispose();
@@ -1962,7 +1964,7 @@ export class IsleRenderer {
       const land = this.land;
       // The small dock-marks chunk, not the harbour shore's. A rebuild or a dispose before it lands drops it (as growScenes).
       void import("./dock-marks").then(({ markCanvas, PLATE_KINDS }) => {
-        if (gen !== this.landGen || this.stopped) return;
+        if (boardGen !== this.boardGen || this.stopped) return;
         this.liteMarkTex?.dispose();
         const atlas = (this.liteMarkTex = new THREE.CanvasTexture(markCanvas(PAINT)));
         atlas.colorSpace = THREE.SRGBColorSpace;
