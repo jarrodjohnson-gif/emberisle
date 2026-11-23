@@ -4,7 +4,7 @@
 - issue: #845
 - date: 2026-11-13
 - author: builder-size
-- revision: Codex-p (GPT-6.1 Sol), 2026-11-17
+- revision: Codex-p (GPT-6.1 Sol), 2026-11-23
 
 ## Approval and current starting point
 
@@ -14,15 +14,18 @@ The owner must listen before the implementation merges.
 
 Current [sound.ts](../../src/lib/sound.ts#L273) uses one looping `HTMLAudioElement`, `BG_VOLUME = 0.12` and `BG_DUCK = 0.3`.
 Its gain is `BG_VOLUME * (ducked ? BG_DUCK : 1) * categoryGain("music")`.
-Retain its gesture unlock, retry, mute, music-toggle and sting-ducking contracts while the open policy questions wait.
-The approved proposal specifies total music gain `0.25`; current code uses `0.12`. These conflict; this note chooses neither.
-The approved proposal keeps title/game-over silence. The current [wanted-screen caller](../../src/components/game/EmberisleApp.tsx#L50) includes title music.
-[Question 6940531449](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-6940531449) asks the owner to resolve both conflicts.
-The desk placed them on card `q845-music-today`; no gain or screen-policy change is authorized before the answer.
+Retain its gesture unlock, retry, mute, music-toggle and sting-ducking contracts.
+[Owner direction recorded on November 23](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-7090472198)
+cites the November 18 answer to Desk card `q845-music-today`: keep today's music at `0.12`, with music on the title screen.
+This resolves [Question 6940531449](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-6940531449).
+The earlier proposal's `0.25` and title silence are superseded by that answer.
+The current [wanted-screen caller](../../src/components/game/EmberisleApp.tsx#L50) already includes title music;
+no gain or screen-policy change is needed to retain the answered policy.
+The win screen still stops this bed for its end music, as [sound.md](../design/sound.md#game-music-814) records.
 
 The [October 24 level decision](../DECISIONS.md) requires levelling by type, with all game music equally loud.
 Table effects and reactions have their own type levels. The owner approves targets by ear.
-The observed `0.12` is not a choice of adaptive gain or a replacement levelling policy.
+The answered `0.12` is the background-bed gain, not a replacement for levelling files by type or the player’s mixer.
 
 ## Approved selection and linear transition
 
@@ -44,7 +47,7 @@ Keep lobby and setup Calm. “Final turns” means public match-point proximity,
 A transition lasts three seconds, with progress `t` from 0 to 1.
 Outgoing and incoming weights are `1 - t` and `t`.
 At the midpoint both weights are 0.5; their sum stays 1. Do not substitute cosine/sine equal-power curves.
-Retarget from the current weights when the desired track changes. Keep ducking/category controls separate from the unresolved gain choice.
+Retarget from the current weights when the desired track changes. Keep ducking/category controls separate from the answered `0.12` bed gain.
 Mute or music-off stops every fading track. This note selects no new playback engine or timing constants.
 
 ## Size estimates, not budgets
