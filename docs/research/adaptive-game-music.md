@@ -12,7 +12,7 @@ The [November 6 owner decision](https://github.com/jarrodjohnson-gif/emberisle/i
 The tracks are The Old Tower Inn, Market Day and Battle, with three-second linear crossfades.
 The owner must listen before the implementation merges.
 
-Current [sound.ts](../../src/lib/sound.ts#L273) uses one looping `HTMLAudioElement`, `BG_VOLUME = 0.12` and `BG_DUCK = 0.3`.
+Current [sound.ts](../../src/lib/sound.ts#L281) uses one looping `HTMLAudioElement`, `BG_VOLUME = 0.12` and `BG_DUCK = 0.3`.
 Its gain is `BG_VOLUME * (ducked ? BG_DUCK : 1) * categoryGain("music")`.
 Retain its gesture unlock, retry, mute, music-toggle and sting-ducking contracts.
 [Owner direction recorded on November 23](https://github.com/jarrodjohnson-gif/emberisle/issues/845#issuecomment-7090472198)
