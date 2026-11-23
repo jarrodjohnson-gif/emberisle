@@ -131,7 +131,9 @@ try {
   await page.evaluate(() => {
     window.__screenOfOverride = () => ({ x: NaN, y: NaN });
   });
-  await page.waitForFunction(() => document.querySelectorAll('[data-testid="setup-pip-hint"]').length === 0, null, { timeout: 3000 });
+  // The hint follows the board on requestAnimationFrame, so it changes only when a frame runs. On the software-GL CI runner
+  // frames take seconds, so every hint wait here is frame-bound and gets the step limit, not a fixed 3 s or 5 s (#1846).
+  await page.waitForFunction(() => document.querySelectorAll('[data-testid="setup-pip-hint"]').length === 0, null, { timeout: STEP_MS });
   assert.equal(await hint.count(), 0, "SetupPipHints removes tooltip when coordinates become NaN");
   console.log("ok   SetupPipHints: non-finite projection guard");
 
@@ -142,7 +144,7 @@ try {
     const s = window.__emberisle;
     s.setState({ pendingPlace: { kind: "vertex", id: vid } });
   }, legalVertexId);
-  await hint.waitFor({ timeout: 5000 });
+  await hint.waitFor({ timeout: STEP_MS });
   await page.waitForFunction(() => {
     const el = document.querySelector('[data-testid="setup-pip-hint"]');
     if (!el) return false;
