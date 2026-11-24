@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ConnectionStatus } from "@/components/game/ConnectionStatus";
+import { NumbersSwitch } from "@/components/game/NumbersSwitch";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import type { Seat } from "@/lib/net/table";
@@ -12,7 +13,7 @@ const HowTo = rules.pick(m => m.HowTo);
 const Card = chunk(() => import("@/components/game/OtherProfileCard")).pick(m => m.OtherProfileCard);
 void lobby.prefetch();
 export function Lobby() {
-  return <LobbyView ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} SeatName={SeatName} prefetchRules={rules.prefetch} fitCode={fitLobbyCode} />;
+  return <LobbyView Numbers={NumbersSwitch} ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} SeatName={SeatName} prefetchRules={rules.prefetch} fitCode={fitLobbyCode} />;
 }
 
 // Fits host-issued code text; the view owns observation and cleanup.

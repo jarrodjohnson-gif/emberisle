@@ -1,8 +1,10 @@
 // #1156: the "Number tokens" setting through the real title and lobby, against a real host.
-// At 320x568, 390x844, 844x390 and 1280x720: Game options shows "Online numbers" with Official spiral picked and its plain
-// sentence; the choice is a 44 px control. A table hosted with Random says "random numbers" in the host's lobby and in a guest
-// browser's lobby, every socket hears Random, and the started board is the Random deal for its seed. A table hosted with the
-// default says "official numbers" and deals the spiral. Leaving for the title puts the choice back to Official spiral.
+// At 320x568, 390x844, 440x956, 844x390, 956x440 and 1280x720: Game options shows "Online numbers" with Official spiral
+// picked and its plain sentence; the choice is a 44 px control. In the lobby header, right of the code, the host's Numbers
+// switch (owner answer B) names the setting in full and is a 44 px switch that doesn't touch the code; flipping it changes the
+// table for every socket, and back. A guest browser reads the same words with no switch, and follows the host's flip. A table
+// hosted with Random deals the Random deal for its seed; the default deals the spiral. Leaving for the title puts the choice
+// back to Official spiral.
 // Pictures: test-results/number-tokens-<title|lobby>-<width>x<height>.png.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
@@ -46,6 +48,9 @@ async function saved(code, test) {
 const url = () => `http://127.0.0.1:${port}/?host=${encodeURIComponent(`ws://127.0.0.1:${hostPort}`)}`;
 const pips = (hexes) => hexes.map((h) => `${h.id}:${h.pip}`).join(" ");
 const caption = (page) => page.getByTestId("lobby-caption");
+const NAME = { official: "Official spiral", random: "Random" };
+const OTHER = { official: "random", random: "official" };
+const numbers = (page) => page.getByTestId("lobby-numbers");
 
 try {
   host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
@@ -60,7 +65,7 @@ try {
   browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   mkdirSync("test-results", { recursive: true });
 
-  const views = [[320, 568, "random"], [390, 844, "official"], [844, 390, "random"], [1280, 720, "official"]];
+  const views = [[320, 568, "random"], [390, 844, "official"], [440, 956, "random"], [844, 390, "random"], [956, 440, "official"], [1280, 720, "official"]];
   for (const [width, height, mode] of views) {
     const tag = `${width}x${height}`;
     const touch = width < 900;
@@ -86,12 +91,16 @@ try {
     await page.getByTestId("lobby-card").waitFor();
     await page.waitForFunction(() => window.__emberisle.getState().code.length === 4);
     const code = await page.evaluate(() => window.__emberisle.getState().code);
-    const words = `${mode} numbers`;
-    await page.waitForFunction((w) => document.querySelector('[data-testid="lobby-caption"]')?.textContent.endsWith(w), words);
-    assert.match(await caption(page).textContent(), new RegExp(`^Wayfarer on · ${words}$`), `${tag}: the host's lobby names the setting`);
-    assert.equal(await page.getByLabel("Online number tokens").count(), 0, `${tag}: the lobby offers no way to change it`);
-    const fit = await caption(page).evaluate((el) => ({ full: el.scrollWidth <= el.clientWidth + 1, scrollWidth: el.scrollWidth, clientWidth: el.clientWidth }));
-    console.log(`${tag}: lobby caption "${await caption(page).textContent()}" ${fit.full ? "fits" : `is cut (${fit.scrollWidth} px of text in ${fit.clientWidth} px)`}`);
+    await page.waitForFunction(() => document.querySelector('[data-testid="lobby-caption"]')?.textContent === "Wayfarer on");
+    assert.equal(await caption(page).textContent(), "Wayfarer on", `${tag}: the caption is the wayfarer alone`);
+    const toggle = page.getByRole("switch", { name: "Random numbers", exact: true });
+    assert.equal(await toggle.getAttribute("aria-checked"), String(mode === "random"), `${tag}: the host's switch is ${mode}`);
+    assert.equal(await numbers(page).innerText(), `Numbers\n${NAME[mode]}`, `${tag}: the host's lobby names the setting`);
+    const sw = await toggle.boundingBox(), cb = await page.locator(".lobby-code").boundingBox();
+    assert.ok(sw.height >= 44 && sw.width >= 44 && sw.x >= 0 && sw.x + sw.width <= width && sw.x >= cb.x + cb.width, `${tag}: a 44 px switch on screen, right of the code: ${JSON.stringify({ sw, cb })}`);
+    const whole = await numbers(page).evaluate((el) => [...el.querySelectorAll("span, b")].every((t) => t.scrollWidth <= t.clientWidth + 1));
+    assert.ok(whole, `${tag}: the Numbers words are shown in full`);
+    console.log(`${tag}: lobby switch ${Math.round(sw.width)}x${Math.round(sw.height)} px at x ${Math.round(sw.x)}, code ends at ${Math.round(cb.x + cb.width)}`);
 
     const guests = [await client({ code, name: "Tide" }), await client({ code, name: "Pine" })];
     for (const g of guests) {
@@ -100,6 +109,15 @@ try {
     }
     await page.getByTestId("lobby-players").waitFor();
     await page.screenshot({ path: `test-results/number-tokens-lobby-${tag}.png` });
+    // The host flips the switch: every socket hears the other setting, and back.
+    for (const want of [OTHER[mode], mode]) {
+      await toggle.click();
+      for (const g of guests) assert.equal((await g.next("seats", (m) => m.numberTokens === want)).numberTokens, want, `${tag}: a guest hears ${want}`);
+      await page.waitForFunction((v) => document.querySelector('[data-testid="lobby-numbers"]')?.getAttribute("aria-checked") === String(v === "random"), want);
+      assert.equal(await numbers(page).innerText(), `Numbers\n${NAME[want]}`, `${tag}: the switch reads ${want}`);
+      if (want !== mode && (tag === "440x956" || tag === "956x440")) await page.screenshot({ path: `test-results/number-tokens-lobby-flipped-${tag}.png` });
+    }
+    assert.equal((await saved(code, (s) => s.numberTokens === mode)).numberTokens, mode, `${tag}: flipped back, the table is saved with ${mode}`);
 
     if (tag === "390x844") {
       // A real guest browser joining by the link reads the same caption.
@@ -109,8 +127,14 @@ try {
       await guestPage.goto(`${url()}&code=${code}`);
       await guestPage.getByRole("button", { name: `Join table ${code}`, exact: true }).click();
       await guestPage.getByTestId("lobby-card").waitFor();
-      await guestPage.waitForFunction((w) => document.querySelector('[data-testid="lobby-caption"]')?.textContent.endsWith(w), words);
-      assert.match(await caption(guestPage).textContent(), new RegExp(`· ${words}$`), "a guest browser's lobby names the setting");
+      await guestPage.waitForFunction((n) => document.querySelector('[data-testid="lobby-numbers"]')?.innerText.endsWith(n), NAME[mode]);
+      assert.equal(await numbers(guestPage).innerText(), `Numbers\n${NAME[mode]}`, "a guest browser's lobby names the setting");
+      assert.equal(await guestPage.getByRole("switch").count(), 0, "a guest browser has no switch");
+      await toggle.click();
+      await guestPage.waitForFunction((n) => document.querySelector('[data-testid="lobby-numbers"]')?.innerText.endsWith(n), NAME[OTHER[mode]]);
+      await toggle.click();
+      await guestPage.waitForFunction((n) => document.querySelector('[data-testid="lobby-numbers"]')?.innerText.endsWith(n), NAME[mode]);
+      console.log(`${tag}: a guest browser reads "${NAME[mode]}" with no switch, and follows the host's flip`);
       await guest.close();
     }
 

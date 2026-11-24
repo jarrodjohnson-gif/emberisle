@@ -210,7 +210,8 @@ export interface TableClient {
   // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
   // #1350: it also sends the card read, ttt("tableProfileCard", { id, profileId }); the host answers with the same `id`.
   // The table chunk sits at its size ceiling, so the read shares this sender and adds no second one.
-  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard", fields: Record<string, unknown>): void;
+  // #1156: and the host's number tokens, ttt("setNumberTokens", { value }), which keeps the table chunk inside its ceiling.
+  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard" | "setNumberTokens", fields: Record<string, unknown>): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
