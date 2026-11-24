@@ -352,7 +352,7 @@ const expandedRoom = (room) => room.variant === "expanded";
 const expandedTag = (room) => (expandedRoom(room) ? { variant: "expanded" } : {});
 // #1156: how the table lays its number tokens, fixed when the table opens: the official spiral (the default) or Random.
 // Anything else reads as Random: a room saved before the setting had its board dealt at random, so it stays Random.
-const NUMBERS_FIXED = "Number tokens are fixed when the table is created.";
+const NUMBERS_FIXED = "The host chooses the number tokens in the lobby.";
 const NUMBER_TOKENS = ["official", "random"];
 const tokensOf = (room) => (room.numberTokens === "official" ? "official" : "random");
 const paletteOf = (room) => (expandedRoom(room) ? EXPANDED_COLORS : PLAYER_COLORS);
@@ -2269,7 +2269,7 @@ function handle(ws, raw) {
   const room = ws.room;
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
-  if (msg.numberTokens !== undefined || msg.type === "setNumberTokens") return send(ws, { type: "error", message: NUMBERS_FIXED });
+  if (msg.numberTokens !== undefined) return send(ws, { type: "error", message: NUMBERS_FIXED });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (TTT_TYPES.has(msg.type)) {
     const now = Date.now();
@@ -2293,6 +2293,14 @@ function handle(ws, raw) {
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
     if (msg.value !== 7 && msg.value !== 10) return send(ws, { type: "error", message: "Choose 7 or 10 points." });
     room.victoryTarget = msg.value;
+    return publish(room);
+  }
+  // #1156, owner answer B: the host may change the number tokens in the lobby, and between games, like the target.
+  if (msg.type === "setNumberTokens") {
+    if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the number tokens." });
+    if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "Number tokens are fixed for this game." });
+    if (!NUMBER_TOKENS.includes(msg.value)) return send(ws, { type: "error", message: "Choose Official spiral or Random number tokens." });
+    room.numberTokens = msg.value;
     return publish(room);
   }
   if (msg.type === "ready") {
