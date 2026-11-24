@@ -244,6 +244,9 @@ for (const type of ["create", "join"]) {
   check(`${type} guest retry persists no profile binding`, !("profileId" in guestSaved.seats.find((s) => s.id === guest.you)));
 }
 
+// A profile hosts one live table at a time (#944): Ember leaves her alias table before she opens the next one below.
+await aliasHost.close();
+
 // A one-human bot game is frozen as not eligible.
 const solo = await client(h);
 solo.send({ type: "hello", name: "Solo" });

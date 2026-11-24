@@ -160,6 +160,9 @@ async function run({ width, height }) {
   await ember.page.evaluate(() => window.__emberisle.getState().addBot());
   await seats(tide.page, 4);
   const coral = await open("Coral", P.Coral);
+  // Coral stands for another browser. This context's pages share storage, so her page forgets the host tags Ember's
+  // welcome left there; with them, the host would refuse her table as Ember's second one (#944).
+  await coral.page.evaluate(() => localStorage.removeItem("emberisle-host-tags"));
   await coral.page.evaluate(() => window.__emberisle.getState().hostTable());
   await lobby(coral.page);
 

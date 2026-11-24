@@ -242,6 +242,7 @@
     "proto-prove": "node --import ./server/register.mjs server/proto-prove.mjs",
     "cap-prove": "node --import ./server/register.mjs server/cap-prove.mjs",
     "restart-prove": "node --import ./server/register.mjs server/restart-prove.mjs",
+    "host-player-prove": "node --import ./server/register.mjs server/host-player-prove.mjs",
     "expanded-persist-prove": "node --import ./server/register.mjs server/expanded-persist-prove.mjs",
     "number-tokens-host-prove": "node --import ./server/register.mjs server/number-tokens-host-prove.mjs",
     "expanded-lobby-prove": "node --import ./server/register.mjs server/expanded-lobby-prove.mjs",

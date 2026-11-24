@@ -207,6 +207,17 @@ await C.page.getByRole("button", { name: "Host a table" }).click();
 await until(() => C.page.getByTestId("lobby-card").isVisible().catch(() => false), "Sidecar's lobby card", 10000);
 const privateCode = await C.page.evaluate(() => window.__emberisle.getState().code);
 check(typeof privateCode === "string" && privateCode.length === 4, `private host got a code (got ${privateCode})`);
+// #944: one live table per host player. A second tab of the same browser shares its storage, so it sends Sidecar's host
+// tag back and is refused a second table while Sidecar's is live.
+const C2 = await C.ctx.newPage();
+C2.on("pageerror", (e) => errors.push(`Sidecar tab 2: ${e}`));
+await C2.goto(baseUrl);
+await C2.getByTestId("title-card").waitFor();
+await C2.getByRole("button", { name: "Host a table" }).click();
+await until(() => C2.evaluate(() => window.__emberisle.getState().error === "You're already hosting a table."), "Sidecar's second tab is refused a second table");
+check(await C2.evaluate((code) => window.__emberisle.getState().screen === "title" && window.__emberisle.getState().code !== code, privateCode), "the refused tab stays on the title and never joins as host");
+check(await C2.evaluate(() => JSON.parse(localStorage.getItem("emberisle-host-tags")).length >= 1), "the browser keeps the host tag from Sidecar's welcome");
+await C2.close();
 
 // A fresh Tab D should see only one open table (Jarrod's), not the private one.
 const D = await openTab("Observer");
