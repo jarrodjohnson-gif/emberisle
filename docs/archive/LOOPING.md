@@ -1,3 +1,5 @@
+> **Archived on 2026-11-22 (#1861).** Nobody follows this file now. The flow is in [`docs/DESK.md`](../DESK.md).
+
 # Looping guide for cloud agents
 
 **Opt-in only.** This is not a standing rule and is not part of the default agent reading list. Use it only when Jarrod's prompt for your task says the task should loop (repeat across resets). If your task prompt does not say to loop, do not create automations: creating or changing an automation needs Jarrod's authorization. Every task, looping or not, still needs a handoff (the issue, PR body, claims and checkpoint it names), so read it as usual. Nothing here changes `AGENTS.md` (never merge, claim before you code, the open-PR limit, `needs-owner` when you need Jarrod). First written at Jarrod's direction on 2026-11-05. Rewritten on 2026-11-09 from the fuller Codex guide Jarrod supplied.
