@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction, chooseRecoveryAction, logBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
@@ -1463,6 +1463,23 @@ function seatColor(room, raw) {
   return palette.find((c) => !room.seats.some((s) => s.color === c));
 }
 
+// A seat's host tag is a one-way digest of its secret, sent with every welcome. The browser sends its tags back when it
+// opens another table, so the host can tell who already holds a host seat. A tag never sits anyone down (#944).
+const hostTag = (secret) => createHash("sha256").update(`host-tag:${secret}`).digest("hex").slice(0, 32);
+
+// One live table per host player (#944): a player who holds the host seat of a table whose game is not over, with
+// someone connected, can't open another. The player is the verified profile, or the tags this browser was given here.
+function hostingAlready(profileId, tags) {
+  const mine = new Set(Array.isArray(tags) ? tags.slice(0, 8).filter((t) => typeof t === "string") : []);
+  if (!profileId && !mine.size) return false;
+  for (const room of rooms.values()) {
+    if (room.game?.phase === "over" || !room.seats.some((s) => s.ws)) continue;
+    const host = room.seats.find((s) => s.id === room.host);
+    if (host && ((profileId && host.profileId === profileId) || mine.has(hostTag(host.secret)))) return true;
+  }
+  return false;
+}
+
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
   if (msg.variant !== undefined && msg.variant !== "classic" && msg.variant !== "expanded") return send(ws, { type: "error", message: "Choose 4, 5 or 6 seats." });
@@ -1471,6 +1488,7 @@ function openTable(ws, msg) {
   // An optional profile, verified before the table opens; a refusal opens nothing (#764).
   const profile = seatCredential(profiles, ws, msg, () => false);
   if (profile?.code) return send(ws, { type: "error", ...profile });
+  if (hostingAlready(profile?.profileId, msg.hostTags)) return send(ws, { type: "error", message: "You're already hosting a table." });
   const now = Date.now();
   const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;
   if (mine && !allow(mine, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS)) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });
@@ -1497,13 +1515,10 @@ function openTable(ws, msg) {
   };
   room.seats.push(seat);
   room.host = seat.id;
-  if (visibility === "open" && !registerOpenTable(room)) {
-    rooms.delete(room.code);
-    return send(ws, { type: "error", message: "An open table is already listed." });
-  }
+  if (visibility === "open") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1535,7 +1550,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1756,7 +1771,7 @@ async function replay(ws, room, live, isLive, variant) {
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
   for (const seat of room.seats) seat.turnKey = undefined;
-  // Reclaim a finished open room's slot only if no successor has taken it (#986).
+  // A finished open room is listed again for its rematch, beside any newer open table (#986, #944).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
@@ -2331,11 +2346,11 @@ function rejoin(ws, msg) {
   seat.ws = ws;
   seat.caps = Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [];
   seat.gone = null;
-  // Restore discovery after a reload, without displacing a newer open table.
+  // Restore discovery after a reload, beside any newer open table.
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
   resendTtt(seat, send);

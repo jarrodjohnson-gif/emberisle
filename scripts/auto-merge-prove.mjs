@@ -35,6 +35,7 @@ const EXCLUDED = [
   // Governance files, even inside docs/.
   "AGENTS.md", "CLAUDE.md", "README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md",
   "docs/design/AGENTS.md", "docs/CLAUDE.md", "docs/framework.md", "Docs/DESK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/GEMINI.md", "docs/.mcp.json",
+  "docs/OWNER.md", "docs/DECISIONS-archive.md", "docs/flow/builder.md", "docs/flow/dispatcher.md", "docs/Flow/clerk.md", "docs/flow/new/deep.md",
   // Hard excludes. .github/** beats the .github/ISSUE_TEMPLATE/** allow entry: the exclude list wins.
   ".github/workflows/ci.yml", ".github/workflows/auto-merge.yml", ".github/ISSUE_TEMPLATE/bug.md", ".github/flaky.json",
   "package.json", "package-lock.json", "server/package.json", "server/package-lock.json", "docs/package.json",
@@ -134,7 +135,7 @@ const REG_CHANGES = [
   ["ci.yml with a deletion count and no removed line in the patch", { ...reg(".github/workflows/ci.yml"), deletions: 1 }],
   ["package.json renamed away", { ...reg("tools/package.json"), status: "renamed", previous_filename: "package.json" }],
 ];
-const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/workflows/CI.yml", ".github/workflows/Ci.yml", ".github/workflows/ci.yml2", ".github/flaky.json", "GEMINI.md", ".mcp.json", "docs/HELPERS.md",
+const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "docs/OWNER.md", "docs/DECISIONS-archive.md", "docs/flow/builder.md", "docs/FLOW/merging.md", "src/CLAUDE.md", ".github/workflows/auto-merge.yml", ".github/workflows/CI.yml/x", ".github/workflows/CI.yml", ".github/workflows/Ci.yml", ".github/workflows/ci.yml2", ".github/flaky.json", "GEMINI.md", ".mcp.json", "docs/HELPERS.md",
   ".claude/settings.json", "scripts/auto-merge-eligible.mjs", "scripts/desk-gate.mjs", "scripts/desk-board-prove.mjs", "scripts/pr-signal.mjs", "src/../AGENTS.md",
   // #1860 item 4: the proof guards and the size ceilings.
   "scripts/loosen-prove.mjs", "scripts/registered-prove.mjs", "scripts/size-prove.mjs", "scripts/Size-Prove.mjs"];

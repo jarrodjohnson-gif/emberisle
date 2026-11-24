@@ -1,5 +1,5 @@
 // L13.4 Debug: open the browser client, play setup and one roll versus the bots, and fail on any console error.
-import { mkdirSync } from "node:fs";
+import { mkdirSync, statfsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -1006,6 +1006,18 @@ try {
       const booted = await page.evaluate(() => !!window.__emberisle).catch(() => "page unavailable");
       console.log("host-down title wait failed; app booted:", booted, "; failed requests since the reload:", failedRequests.length);
       for (const f of failedRequests.slice(0, 40)) console.log("  failed request:", f);
+      // #1166: every fetch's response gets a 2 MiB shared-memory file, kept in TMPDIR (with --disable-dev-shm-usage) or
+      // /dev/shm. About 300 are alive at once on this reload, so under about 640 MB free there the fetches fail with
+      // ERR_INSUFFICIENT_RESOURCES and the app never boots (docs/proofs/1166/README.md). Print that space to tell.
+      for (const dir of [process.env.TMPDIR || "/tmp", "/dev/shm"]) {
+        try {
+          const s = statfsSync(dir);
+          const mib = (blocks) => Math.round((blocks * s.bsize) / 2 ** 20);
+          console.log("  shared memory space:", dir, mib(s.bavail), "MiB free of", mib(s.blocks), "MiB (free is read after the failure)");
+        } catch {
+          console.log("  shared memory space:", dir, "unreadable");
+        }
+      }
       throw e;
     }
     const downMs = Date.now() - downAt;

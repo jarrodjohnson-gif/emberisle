@@ -20,7 +20,9 @@ import { pathToFileURL } from "node:url";
 export const MAX_CHANGED_LINES = 400;
 const ALLOW = ["docs/", ".github/ISSUE_TEMPLATE/"];
 // Governance docs: agents and the desk act on these, so they keep the desk's own merge.
-const EXCLUDE_EXACT = ["README.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md"];
+const EXCLUDE_EXACT = ["README.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/OWNER.md", "docs/DECISIONS-archive.md"];
+// Governance folders inside docs/: the flow's role files (#1861).
+const EXCLUDE_DOCS_PREFIX = ["docs/flow/"];
 const EXCLUDE_PREFIX = [".github/", "scripts/", "server/", "src/"];
 // Matched on the file name in any folder: agents read a nested AGENTS.md or CLAUDE.md, and GitHub reads docs/CODEOWNERS.
 const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".mcp.json", "CODEOWNERS", ".gitignore"];
@@ -52,6 +54,7 @@ export function codeRefusal(path) {
   const lower = path.toLowerCase();
   const name = lower.slice(lower.lastIndexOf("/") + 1);
   if (EXCLUDE_EXACT.some((p) => p.toLowerCase() === lower)) return "governance file";
+  if (EXCLUDE_DOCS_PREFIX.some((p) => lower.startsWith(p))) return "governance folder";
   if (EXCLUDE_NAME.some((n) => n.toLowerCase() === name)) return "governance file name";
   if (CODE_EXCLUDE_SCRIPT.test(lower)) return "merge machinery";
   if (CODE_EXCLUDE_PREFIX.some((p) => lower.startsWith(p)) && !CODE_ALLOW_EXACT.includes(path)) return "governance folder";
@@ -131,6 +134,7 @@ export function pathRefusal(path) {
   const lower = path.toLowerCase();
   const name = lower.slice(lower.lastIndexOf("/") + 1);
   if (EXCLUDE_EXACT.some((p) => lower === p.toLowerCase())) return "excluded governance file";
+  if (EXCLUDE_DOCS_PREFIX.some((p) => lower.startsWith(p))) return "excluded governance folder";
   if (EXCLUDE_PREFIX.some((p) => lower.startsWith(p.toLowerCase()))) return "excluded folder";
   if (EXCLUDE_NAME.some((n) => name === n.toLowerCase())) return "excluded file name";
   if (/^package.*\.json$/.test(name)) return "excluded package file";
