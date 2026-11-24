@@ -1,10 +1,11 @@
 // #1156: the "Number tokens" match setting, over real sockets to a real host.
 // 1. A new table lays the official spiral unless its creator asks for Random; any other value opens nothing.
-// 2. Every seat and a watcher hear the table's setting in `welcome` and `seats`; nobody can change it once the table is open.
+// 2. Every seat and a watcher hear the table's setting in `welcome` and `seats`. Only the host changes it, with
+//    `setNumberTokens`, in the lobby or between games (owner answer B); a stray field on any other message changes nothing.
 // 3. The setting is saved with the table, the started board is the generator's board for that seed and setting, and a
 //    restart keeps it.
 // 4. A room saved before the setting loads as Random, in the lobby and mid-game, and its dealt board is untouched.
-// 5. A rematch keeps the setting, for Official spiral and for Random.
+// 5. A rematch keeps the setting, for Official spiral and for Random, or deals the one the host picked after the game.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -136,19 +137,31 @@ try {
   }
   console.log("refused: seven other values open no table");
 
-  // 2. Fixed once open: a joiner, a seat and a watcher cannot change it.
+  // 2. Only the host changes it, with setNumberTokens. A joiner's hello field and a stray field change nothing.
   const late = await client(port, { code: random.code, name: "Late", numberTokens: "official" });
-  assert.equal((await late.next("error")).message, "Number tokens are fixed when the table is created.");
+  assert.equal((await late.next("error")).message, "The host chooses the number tokens in the lobby.");
   const [hostSeat, guest] = random.peers;
+  guest.send({ type: "setNumberTokens", value: "official" });
+  assert.equal((await guest.next("error")).message, "Only the host can choose the number tokens.");
   for (const p of [hostSeat, guest]) {
-    p.send({ type: "setNumberTokens", value: "official" });
-    assert.equal((await p.next("error")).message, "Number tokens are fixed when the table is created.");
     p.send({ type: "ready", value: true, numberTokens: "official" });
-    assert.equal((await p.next("error")).message, "Number tokens are fixed when the table is created.");
+    assert.equal((await p.next("error")).message, "The host chooses the number tokens in the lobby.");
   }
-  assert.equal((await saved(random.code, (s) => s.seats.length === 3)).numberTokens, "random", "the lobby is saved with Random");
+  for (const bad of ["spiral", "", null, 1, ["random"]]) {
+    hostSeat.send({ type: "setNumberTokens", value: bad });
+    assert.equal((await hostSeat.next("error")).message, "Choose Official spiral or Random number tokens.", `${JSON.stringify(bad)} is refused`);
+  }
+  await wait(60);
+  assert.equal((await saved(random.code, (s) => s.seats.length === 3)).numberTokens, "random", "refused changes leave Random");
+  hostSeat.send({ type: "setNumberTokens", value: "official" });
+  for (const p of random.peers) assert.equal((await p.next("seats", (m) => m.numberTokens === "official")).numberTokens, "official", "every seat hears the host's change");
+  assert.equal((await saved(random.code, (s) => s.numberTokens === "official")).numberTokens, "official", "the change is saved");
+  hostSeat.send({ type: "setNumberTokens", value: "random" });
+  for (const p of random.peers) await p.next("seats", (m) => m.numberTokens === "random");
+  for (const p of random.peers) p.inbox.length = 0;
+  assert.equal((await saved(random.code, (s) => s.seats.length === 3 && s.numberTokens === "random")).numberTokens, "random", "the lobby is saved with Random");
   assert.equal((await saved(plain.code, (s) => s.seats.length === 3)).numberTokens, "official", "the lobby is saved with Official spiral");
-  console.log("fixed: a joiner, the host and a guest are refused; both lobbies are saved with it");
+  console.log("lobby: only the host changes it, every seat hears it, bad values and stray fields change nothing; both lobbies are saved with it");
 
   // 3. The started board follows the setting, and is saved with it.
   await begin(plain);
@@ -160,6 +173,8 @@ try {
   dealtBy(plainSaved.game, "official", plain.code);
   dealtBy(randomSaved.game, "random", random.code);
   for (const p of random.peers) assert.equal(p.state.game.hexes.map((h) => h.pip).join(), randomSaved.game.hexes.map((h) => h.pip).join(), "every seat sees the saved board");
+  random.peers[0].send({ type: "setNumberTokens", value: "official" });
+  assert.equal((await random.peers[0].next("error")).message, "Number tokens are fixed for this game.", "the host can't change it mid-game");
   const watcher = await seated(port, { code: random.code, watch: true });
   assert.equal(watcher.welcome.numberTokens, "random", "a watcher hears the setting");
   console.log("start: each board is its setting's deal for the saved seed, every seat sees it, and a watcher hears the setting");
@@ -211,7 +226,22 @@ try {
     dealtBy(next.game, numberTokens, `${code} rematch`);
     assert.equal((await seats[1].next("seats", () => true)).numberTokens, numberTokens, `${code}: a guest still hears ${numberTokens}`);
   }
-  console.log("rematch: Official spiral and Random tables deal the next game the same way");
+  // After a game, the host may pick the other setting for the rematch.
+  const room = legacyRoom("REMC", "over");
+  writeFileSync(roomFile("REMC"), JSON.stringify({ ...room, numberTokens: "official" }));
+  await stop();
+  port = await start();
+  const after = [];
+  for (let i = 0; i < 3; i++) after.push(await rejoin(port, "REMC", i));
+  after[0].send({ type: "setNumberTokens", value: "random" });
+  for (const p of after) await p.next("seats", (m) => m.numberTokens === "random");
+  const oldSeed = (await saved("REMC", (s) => s.numberTokens === "random")).game.seed;
+  after[0].send({ type: "again" });
+  for (const p of after) await p.next("state", (m) => m.game.phase !== "over");
+  const picked = await saved("REMC", (s) => s.game.phase !== "over" && s.game.seed !== oldSeed);
+  assert.equal(picked.numberTokens, "random", "the rematch uses the host's new pick");
+  dealtBy(picked.game, "random", "REMC rematch");
+  console.log("rematch: Official spiral and Random tables deal the next game the same way, and a host's pick after the game deals the next one");
 
   console.log("number-tokens-prove: all passed");
 } finally {
