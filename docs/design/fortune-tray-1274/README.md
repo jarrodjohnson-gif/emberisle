@@ -41,12 +41,22 @@ Jarrod said of them on 2026-11-06 (card `q1302-fortunes-pictures`): "doesnt look
 
 One thing: **the selected fortune with one fixed Play region.** Everything else in #1302 is on main or was replaced by the one tray.
 
-Whether to build it is Jarrod's call, because it changes how the sheet works:
+Jarrod chose A on 2026-11-24: close #1302 as covered. He asked for a Fable design check too.
 
-- **A (recommended): close #1302 as covered.** Keep today's sheet, with one Play per row.
-  The one tray kept this sheet, and Jarrod approved the built tray. With at most five rows, every Play is easy to reach.
-  A polish of the sheet's look can be its own issue later.
-- **B: keep #1302 open for a redesign.** Fable draws a select-then-Play sheet in the one tray's style, at the four sizes.
-  Nothing is built before his yes.
+## Fable's check, 2026-11-24
 
-The question is on the issue and the PR.
+The sheet as built on main, open with every fortune held and Plenty bought this turn:
+
+| 440x956 | 956x440 | 1280x720 |
+|---|---|---|
+| ![Fortunes sheet at 440x956](sheet-440x956.png) | ![Fortunes sheet at 956x440](sheet-956x440.png) | ![Fortunes sheet at 1280x720](sheet-1280x720.png) |
+
+Fable 5.2's verdict: **covered.** Rows keep normal order. Each playable row has its own Play, one tap.
+Plenty shows "Bought this turn" with Play greyed. Monopoly's Play stays off until a kind is tapped.
+Points has no Play. With five rows at most, a fixed Play region solves no real player problem.
+
+Polish notes, not gaps, for a later issue:
+
+- Monopoly's Play sits above its goods chips, so the eye goes down to pick, then back up.
+- At 956x440 the sheet scrolls. Only the cut-off Monopoly row hints that more is below.
+- The two open checks above still stand: no 320x568 picture, and no proof for an offer under the open sheet.
