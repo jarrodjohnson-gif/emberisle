@@ -12,6 +12,7 @@
 //   J. The same ask, and the person's No at 3 s lets the waiting bot take it at once (#850).
 //   K. The person cancels their own ask before any bot answers: it ends with no taker, and no bot answer lands (#1245).
 import { mock } from "node:test";
+import assert from "node:assert/strict";
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
@@ -244,6 +245,224 @@ if (s().tradeTaker) fail("K: a cancelled offer has a taker", s().tradeTaker);
 mock.timers.tick(20_000);
 if (s().offer || s().declined.length || JSON.stringify(s().state.players.map((p) => p.resources)) !== handsK) fail("K: a bot answered a cancelled offer, or goods moved");
 console.log("K ok: the person's Cancel ends the held offer with no taker, and no bot answers it");
+
+// #1761: counter terms are from the asker's side, against the real store and the same fake clock as A-K.
+const counterHands = { p0: { timber: 2, grain: 2, ore: 1 }, p1: { clay: 2, wool: 1 }, p2: { grain: 2, ore: 2, wool: 2 }, p3: { timber: 1 } };
+function humanOffer(give = { timber: 1 }, want = { clay: 1 }) {
+  const g = game("p0", counterHands, 11);
+  g.players.find(p => p.id === "p1").kind = "human";
+  practice(g);
+  s().askTable(give, want);
+  assert.equal(s().offer?.counter, true);
+  return s().offer.tradeId;
+}
+function as(id) { useGame.setState({ localId: id }); }
+async function sendCounter(id, give = { grain: 1 }, want = { clay: 1 }) {
+  as("p1"); await s().counterTrade(id, give, want); as("p0");
+  return s().counters.at(-1);
+}
+const allHands = () => JSON.stringify(s().state?.players.map(p => p.resources) ?? null);
+
+// Exact IDs, positive/disjoint/different bags, no self/second counter; no funds reserved.
+let id = humanOffer();
+as("p1");
+const loadingCounter = s().counterTrade(id, { grain: 1 }, { clay: 1 });
+s().goTitle();
+await loadingCounter;
+assert.equal(s().offer, null);
+assert.equal(s().state, null);
+assert.equal(s().counters.length, 0);
+assert.equal(s().error, null);
+console.log("first-load ok: leaving while the counter module loads drops the pending action");
+id = humanOffer();
+const beforeInvalid = allHands();
+await s().counterTrade(id, { grain: 1 }, { clay: 1 });
+assert.equal(s().error, "Bad trade.");
+as("p1");
+for (const [tradeId, give, want, error] of [
+  ["old", { grain: 1 }, { clay: 1 }, "Offer is gone."],
+  [id, {}, { clay: 1 }, "Bad trade."],
+  [id, { grain: -1 }, { clay: 1 }, "Bad trade."],
+  [id, { grain: 0.5 }, { clay: 1 }, "Bad trade."],
+  [id, { grain: 1 }, { grain: 1 }, "Bad trade."],
+  [id, { timber: 1 }, { clay: 1 }, "Bad trade."],
+  [id, { grain: 1 }, { ore: 1 }, "You lack those goods."],
+]) {
+  await s().counterTrade(tradeId, give, want);
+  assert.equal(s().error, error);
+  assert.equal(s().counters.length, 0);
+}
+assert.equal(allHands(), beforeInvalid);
+const giveCopy = { grain: 1 }, wantCopy = { clay: 1 };
+await s().counterTrade(id, giveCopy, wantCopy);
+const c = s().counters[0];
+giveCopy.grain = 99; wantCopy.clay = 99;
+assert.deepEqual([c.give, c.want], [{ grain: 1 }, { clay: 1 }]);
+assert.equal(allHands(), beforeInvalid);
+await s().answerCounter(id, c.counterId, true);
+assert.equal(s().error, "Offer is gone."); // Only the original asker answers.
+as("p0");
+await s().answerCounter("old", c.counterId, true);
+assert.equal(s().counters.length, 1);
+await s().answerCounter(id, "old", true);
+assert.equal(s().counters.length, 1);
+const n = s().localTrade;
+await s().answerCounter(id, c.counterId, true);
+assert.equal(s().offer, null);
+assert.equal(s().counters.length, 0);
+assert.equal(s().localTrade, n + 1);
+assert.equal(hand("p0").grain, 1);
+assert.equal(hand("p0").clay, 1);
+assert.equal(hand("p1").grain, 1);
+assert.equal(hand("p1").clay, 1);
+const once = allHands();
+await s().answerCounter(id, c.counterId, true);
+assert.equal(allHands(), once);
+console.log("L ok: exact ids/roles/bags, immutable terms, no reservation, exactly one counter settlement");
+
+for (const why of ["no", "back"]) {
+  id = humanOffer();
+  const c = await sendCounter(id);
+  const hands = allHands();
+  if (why === "no") await s().answerCounter(id, c.counterId, false);
+  else { as("p1"); await s().cancelCounter(id, c.counterId); }
+  assert.equal(s().offer.tradeId, id);
+  assert.equal(s().counterClosed.why, why);
+  assert.equal(allHands(), hands);
+  as("p1"); await s().counterTrade(id, { ore: 1 }, { clay: 1 });
+  assert.equal(s().error, "Bad trade.");
+  s().answerTrade(true);
+  assert.equal(s().offer, null);
+  assert.equal(s().tradeTaker, "p1");
+}
+console.log("M ok: No/back keep the original payable; per-seat allowance stays spent");
+
+id = humanOffer();
+let pending = await sendCounter(id);
+s().state.players.find(p => p.id === "p0").resources.grain = 0;
+await s().answerCounter(id, pending.counterId, true);
+assert.equal(s().error, "You lack those goods.");
+assert.equal(s().counters.length, 1);
+assert.equal(s().offer.tradeId, id);
+s().state.players.find(p => p.id === "p0").resources.grain = 2;
+s().state.players.find(p => p.id === "p1").resources.clay = 0;
+await s().answerCounter(id, pending.counterId, true);
+assert.equal(s().counterClosed.why, "gone");
+assert.equal(s().counters.length, 0);
+assert.equal(s().offer.tradeId, id);
+id = humanOffer({ timber: 1 }, { ore: 1 });
+assert.equal(hand("p1").ore, 0);
+pending = await sendCounter(id);
+assert.equal(s().counters.length, 1);
+await s().answerCounter(id, pending.counterId, true);
+assert.equal(s().tradeTaker, "p1");
+console.log("N ok: both hands revalidated; short asker keeps counter, short sender closes only counter");
+
+id = humanOffer({ timber: 1 }, { wool: 1 });
+pending = await sendCounter(id);
+as("p1"); s().answerTrade(false); as("p0");
+mock.timers.tick(2000);
+assert.equal(s().offer.tradeId, id);
+assert.equal(s().counters.length, 1);
+await s().answerCounter(id, pending.counterId, false);
+assert.equal(s().offer, null);
+console.log("O ok: all Nos hold the offer while a counter waits; last counter close ends it");
+
+id = humanOffer(); pending = await sendCounter(id);
+mock.timers.tick(60000);
+assert.equal(s().offer.tradeId, id);
+assert.equal(s().counters[0], pending);
+for (const end of [() => s().cancelTrade(), () => s().dispatch({ type: "endTurn" }), () => s().goTitle(), () => s().startAi()]) {
+  id = humanOffer(); pending = await sendCounter(id); end();
+  assert.equal(s().offer, null);
+  assert.equal(s().counters.length, 0);
+  const hands = allHands(); mock.timers.tick(20000); assert.equal(allHands(), hands);
+}
+console.log("P ok: human counter has no timeout; cancel/turn/title/new deal clear counters and timers");
+
+// The helpful counter gives the bot two grain instead of one; sender holds all of it at submission.
+function botOffer() {
+  const g = structuredClone(gH);
+  g.players.find(p => p.id === "p0").resources.grain = 3;
+  g.players.find(p => p.id === "p3").resources.grain = 0;
+  rebalance(g); practice(g); s().runBots();
+  assert.equal(s().offer.from, "p2");
+  assert.equal(shouldAcceptTrade(g, "p2", { from: "p0", give: { grain: 2 }, want: { ore: 1 } }), true);
+  return s().offer.tradeId;
+}
+id = botOffer();
+await s().counterTrade(id, { ore: 1 }, { grain: 2 });
+assert.equal(s().counters.length, 1);
+const beforeBot = allHands();
+mock.timers.tick(999); assert.equal(allHands(), beforeBot);
+mock.timers.tick(1001);
+assert.equal(s().offer, null);
+assert.equal(s().tradeTaker, "p0");
+assert.equal(hand("p0").grain, 1);
+assert.equal(hand("p0").ore, 1);
+console.log("Q ok: bot answers useful counter in 1-2 seconds through paired pricing");
+
+id = botOffer(); mock.timers.tick(19000);
+await s().counterTrade(id, { ore: 1 }, { grain: 2 });
+mock.timers.tick(999); assert.equal(s().offer.tradeId, id);
+mock.timers.tick(1); assert.equal(s().offer, null); assert.equal(s().tradeTaker, "p0");
+const expiredHands = allHands(); mock.timers.tick(2000); assert.equal(allHands(), expiredHands);
+console.log("R ok: pending counter answered before 20-second offer expiry, later answer cannot settle twice");
+
+for (const closeEarly of [true, false]) {
+  id = humanOffer(helps.give, helps.want);
+  pending = await sendCounter(id, { timber: 1 }, { clay: 1 });
+  as("p1"); s().answerTrade(false); as("p0");
+  mock.timers.tick(2000); assert.equal(s().offer.tradeId, id);
+  if (closeEarly) {
+    mock.timers.tick(1000); await s().answerCounter(id, pending.counterId, false);
+  } else {
+    mock.timers.tick(5999); assert.equal(s().offer.tradeId, id); mock.timers.tick(1);
+  }
+  assert.equal(s().offer, null); assert.equal(s().tradeTaker, "p2"); assert.equal(s().counters.length, 0);
+}
+console.log("S ok: closing last counter releases held Yes; pending counter cannot extend the 8-second cap");
+
+id = humanOffer({ grain: 1 }, { timber: 1 });
+for (const p of s().state.players) p.kind = "human";
+pending = await sendCounter(id);
+as("p2"); await s().counterTrade(id, { ore: 1 }, { wool: 1 });
+assert.equal(s().counters.length, 2);
+assert.notEqual(s().counters[0].counterId, s().counters[1].counterId);
+as("p3"); s().answerTrade(true);
+assert.equal(s().offer, null); assert.equal(s().counters.length, 0); assert.equal(s().tradeTaker, "p3");
+console.log("T ok: two immutable counter ids; another seat can take the original and closes both");
+
+id = humanOffer(); as("p1");
+useGame.setState({ spectator: true }); await s().counterTrade(id, { grain: 1 }, { clay: 1 }); assert.equal(s().counters.length, 0);
+useGame.setState({ spectator: false });
+s().state.role = "partner"; await s().counterTrade(id, { grain: 1 }, { clay: 1 }); assert.equal(s().error, "Cannot trade now."); assert.equal(s().counters.length, 0);
+s().goTitle();
+console.log("U ok: watcher and partner cannot counter");
+
+// Online commands keep the host's ids/terms and authority; a watcher sends none.
+const sent = [];
+useGame.setState({ mode: "online", spectator: false, net: {
+  tradeCounter: (...args) => sent.push(["make", ...args]),
+  tradeCounterAnswer: (...args) => sent.push(["answer", ...args]),
+  tradeCounterCancel: (...args) => sent.push(["cancel", ...args]),
+  close: () => {},
+} });
+await s().counterTrade("remote-offer", { grain: 1 }, { clay: 1 });
+await s().answerCounter("remote-offer", "remote-counter", true);
+await s().cancelCounter("remote-offer", "remote-counter");
+assert.deepEqual(sent, [
+  ["make", "remote-offer", { grain: 1 }, { clay: 1 }],
+  ["answer", "remote-offer", "remote-counter", true],
+  ["cancel", "remote-offer", "remote-counter"],
+]);
+useGame.setState({ spectator: true });
+await s().counterTrade("remote-offer", { grain: 1 }, { clay: 1 });
+await s().answerCounter("remote-offer", "remote-counter", false);
+await s().cancelCounter("remote-offer", "remote-counter");
+assert.equal(sent.length, 3);
+s().goTitle();
+console.log("V ok: online command forwarding preserves exact ids/terms; watcher sends nothing");
 
 mock.timers.reset();
 console.log("practice trade prove ok");

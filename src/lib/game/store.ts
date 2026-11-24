@@ -169,7 +169,7 @@ const VIEW_KEY = "emberisle-view";
 // The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
 // the new one still starts with.
-function newLog(before: string[], after: string[]) {
+export function newLog(before: string[], after: string[]) {
   for (let k = Math.min(before.length, after.length); k > 0; k--) {
     if (before.slice(-k).every((line, i) => line === after[i])) return after.slice(k);
   }
@@ -181,7 +181,7 @@ function stamp(lines: string[]): GameLogLine[] {
   return lines.map((text) => ({ at, text }));
 }
 
-function appendLog(log: GameLogLine[], lines: string[]) {
+export function appendLog(log: GameLogLine[], lines: string[]) {
   return lines.length ? [...log, ...stamp(lines)].slice(-GAME_LOG_MAX) : log;
 }
 
@@ -235,7 +235,18 @@ interface OpenOffer {
   give: Bag;
   want: Bag;
   until: number | null;
+  counter?: true;
 }
+
+export interface TradeCounter {
+  tradeId: string;
+  counterId: string;
+  by: string;
+  name: string;
+  give: Bag;
+  want: Bag;
+}
+type CounterClose = { tradeId: string; counterId: string; by: string; why: "no" | "back" | "gone" };
 
 // #1609: five or six seats deal the expanded island. expanded.ts loads only then, and registers the paired turn rules
 // (`turnRules.paired`) before the game exists, so no action reaches an expanded state without them. Only the newest deal
@@ -284,15 +295,17 @@ const BOT_ANSWER_MS = 1000;
 const OFFER_MS = 20000;
 // People first (#850), as host.mjs: a bot's Yes waits this long, or until every person asked has said No.
 const PEOPLE_FIRST_MS = 8000;
-let offerTimers: ReturnType<typeof setTimeout>[] = [];
+export let offerTimers: ReturnType<typeof setTimeout>[] = [];
 let peopleUntil = 0;
 // Bots that said Yes inside the people-first window, in the order they said it.
 let heldYes: string[] = [];
 let offerSeq = 0;
+const counterModule = chunk(() => import("./practice-counter"));
+let practiceCounter: typeof import("./practice-counter") | undefined;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
 let botAsked = "";
 // The last proposal every bot was explicitly declined, keyed only by bot and named goods.
-let botDeclined = new Map<string, { give: Bag; want: Bag }>();
+export const botDeclined = new Map<string, { give: Bag; want: Bag }>();
 function clearOfferTimers() {
   for (const t of offerTimers) clearTimeout(t);
   offerTimers = [];
@@ -310,7 +323,7 @@ const clearPlay = (): Partial<GameStore> => ({
   roadPicks: [],
   pendingPlace: null,
   pendingSteal: null,
-  offer: null,
+  offer: null, counters: [], counterUsed: [], counterClosed: null,
   declined: [],
   tradeOutcome: null,
   tradeTaker: null,
@@ -505,6 +518,12 @@ interface GameStore {
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
+  counters: TradeCounter[];
+  counterUsed: string[];
+  counterClosed: CounterClose | null;
+  counterTrade: (tradeId: string, give: Bag, want: Bag) => Promise<void>;
+  answerCounter: (tradeId: string, counterId: string, yes: boolean) => Promise<void>;
+  cancelCounter: (tradeId: string, counterId: string) => Promise<void>;
   tradeOutcome: string | null;
   tradeTaker: string | null;
   tradeOpen: boolean;
@@ -681,7 +700,7 @@ export const useGame = create<GameStore>((set, get) => ({
   water: null,
   viewChoice: savedView(),
   playView: "diorama",
-  offer: null,
+  offer: null, counters: [], counterUsed: [], counterClosed: null,
   declined: [],
   tradeOutcome: null, tradeTaker: null,
   tradeOpen: false,
@@ -1148,8 +1167,7 @@ export const useGame = create<GameStore>((set, get) => ({
               ? "Offer something."
               : null;
     if (error) {
-      set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
-      play("ui_error");
+      get().refuse(error);
       return;
     }
     openOffer(set, get, localId, give, want);
@@ -1160,8 +1178,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") return net?.answer(offer.tradeId, yes);
     const error = respond(set, get, localId, yes);
     if (error) {
-      set({ announcement: null, error, toast: error, errorSeq: get().errorSeq + 1 });
-      play("ui_error");
+      get().refuse(error);
     }
   },
   cancelTrade: () => {
@@ -1170,21 +1187,24 @@ export const useGame = create<GameStore>((set, get) => ({
     if (mode === "online") return net?.cancel(offer.tradeId);
     endOffer(set, get, null);
   },
+  counterTrade: (...args) => counterAction("make", ...args),
+  answerCounter: (...args) => counterAction("answer", ...args),
+  cancelCounter: (...args) => counterAction("cancel", ...args),
   openMenu: (id) => {
     set({ menuFor: id });
   },
 }));
 
-type Set = (partial: Partial<GameStore>) => void;
-type Get = () => GameStore;
+export type Set = (partial: Partial<GameStore>) => void;
+export type Get = () => GameStore;
 
 // The open offer is over, taken by `taker` or by nobody: the toast goes, and the asker reads the outcome for a moment.
-function endOffer(set: Set, get: Get, taker: string | null) {
+export function endOffer(set: Set, get: Get, taker: string | null) {
   const { offer, state, declined } = get();
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
-  set({ offer: null, declined: [] });
+  set({ offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [] });
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
@@ -1204,10 +1224,14 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag, autom
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   // #1245 (owner q-trade-hold B): only a bot's offer runs out; a person's holds until answered (host.mjs openOffer).
   const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
-  set({ offer: { tradeId, from, fromName, give, want, until: runOut ? Date.now() + OFFER_MS : null }, declined: [], tradeOutcome: null, tradeTaker: null });
+  set({ offer: { tradeId, from, fromName, give, want, counter: true, until: runOut ? Date.now() + OFFER_MS : null }, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
   void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
-  if (runOut) offerTimers.push(setTimeout(() => endOffer(set, get, null), OFFER_MS));
+  if (runOut) offerTimers.push(setTimeout(() => {
+    if (get().offer?.tradeId !== tradeId) return;
+    for (const c of [...get().counters]) practiceCounter?.bot(c);
+    if (get().offer?.tradeId === tradeId) endOffer(set, get, null);
+  }, OFFER_MS));
   tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated });
   for (const p of state.players) {
     if (p.kind !== "bot" || p.id === from) continue;
@@ -1224,14 +1248,14 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag, autom
   offerTimers.push(setTimeout(() => releaseHeld(set, get), PEOPLE_FIRST_MS));
 }
 
-function peopleWaiting(get: Get) {
+export function peopleWaiting(get: Get) {
   const { offer, state, declined } = get();
   if (!offer || !state || Date.now() >= peopleUntil) return false;
-  return state.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !declined.includes(p.id));
+  return get().counters.length > 0 || state.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !declined.includes(p.id));
 }
 
 // The first bot to say Yes still takes it (host.mjs releaseHeld).
-function releaseHeld(set: Set, get: Get) {
+export function releaseHeld(set: Set, get: Get) {
   for (const id of heldYes.splice(0)) {
     if (!get().offer) return;
     respond(set, get, id, true);
@@ -1247,7 +1271,7 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
     if (declined.includes(actor)) return null;
     const now = [...declined, actor];
     set({ declined: now, gameLog: appendLog(gameLog, [`${state.players.find((p) => p.id === actor)?.name} declines.`]) });
-    if (state.players.every((p) => p.id === offer.from || now.includes(p.id))) {
+    if (state.players.every((p) => p.id === offer.from || now.includes(p.id)) && !get().counters.length) {
       if (state.players.find((p) => p.id === offer.from)?.kind === "bot") {
         botDeclined.set(offer.from, { give: offer.give, want: offer.want });
       }
@@ -1267,6 +1291,13 @@ function respond(set: Set, get: Get, actor: string, yes: boolean): string | null
   set({ state: { ...accepted.state, log: [...state.log, ...tradeLines].slice(-200) }, localTrade: get().localTrade + 1, gameLog: appendLog(gameLog, tradeLines) });
   endOffer(set, get, actor);
   return null;
+}
+
+async function counterAction(...command: import("./practice-counter").CounterCommand) {
+  const deal = deals;
+  try { practiceCounter ??= await counterModule.load(); }
+  catch { if (deal === deals) useGame.getState().refuse("Could not load. Try again."); return; }
+  if (deal === deals) practiceCounter.action(...command);
 }
 
 // "quiet" is the automatic rejoin on page load: until the first welcome, a dead seat is dropped without telling the player.
@@ -1335,7 +1366,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       clearBanner();
       clearKnocks();
       clearOfferTimers();
-      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
+      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
     }
     get().loadState(game, me, get().isHost, get().code);
     if (recovery && !get().spectator) {
@@ -1365,7 +1396,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       clearOfferTimers();
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1408,7 +1439,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       firstState = true;
       bestSkew = -Infinity;
       clearOfferTimers();
-      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
     },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
@@ -1455,11 +1486,11 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
     },
     log: (text) => set({ lobbyLog: text, gameLog: appendLog(get().gameLog, [text]) }),
     ttt: (ttt) => set({ ttt }),
-    tradeOffer: ({ tradeId, from, give, want, seconds }) => {
+    tradeOffer: ({ tradeId, from, give, want, seconds, counter }) => {
       clearOfferTimers();
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).
-      set({ offer: { tradeId, from, fromName, give, want, until: seconds === null ? null : Date.now() + seconds * 1000 }, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ offer: { tradeId, from, fromName, give, want, counter, until: seconds === null ? null : Date.now() + seconds * 1000 }, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
       void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
       tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated: null });
@@ -1470,6 +1501,17 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
     },
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
+    },
+    tradeCounter: (counter) => {
+      const { offer, counters, counterUsed, localId } = get();
+      if (offer?.tradeId !== counter.tradeId || counters.some((c) => c.counterId === counter.counterId)) return;
+      set({ counters: [...counters, counter], counterUsed: [...counterUsed, counter.by], counterClosed: null });
+      if (offer.from === localId) play("trade_offer");
+    },
+    tradeCounterClosed: ({ tradeId, counterId, why }) => {
+      const { counters } = get();
+      const counter = counters.find((c) => c.tradeId === tradeId && c.counterId === counterId);
+      if (counter) set({ counters: counters.filter((c) => c !== counter), counterClosed: { tradeId, counterId, by: counter.by, why } });
     },
     tableProfileCard: (msg) => cardReply.on?.(msg),
     profileError: (msg) => cardReply.on?.(msg),
