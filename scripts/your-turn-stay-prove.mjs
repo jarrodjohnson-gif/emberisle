@@ -19,6 +19,7 @@
 // Zero console errors. Run: npm run your-turn-stay-prove (ONLY=online, practice, reduced or hotseat runs one part; SHOTS=1 writes
 // docs/proofs/1140). Port from VITE_PORT, default 8485.
 import { mkdirSync } from "node:fs";
+import { monitorEventLoopDelay, performance as nodeClock } from "node:perf_hooks";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -60,6 +61,32 @@ await vite.listen();
 const browser = await chromium.launch({
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
+// Failure-only timing and public lifecycle metadata; credentials and URL queries are excluded. The same error is rethrown.
+const timing = new WeakMap();
+async function observe(page, label, run) {
+  const d = timing.get(page), step = { label, at: nodeClock.now() };
+  d.steps.push(step); if (d.steps.length > 16) d.steps.shift();
+  try { const value = await run(); step.done = nodeClock.now(); return value; }
+  catch (error) {
+    step.failed = nodeClock.now();
+    let timer;
+    const browser = await Promise.race([
+      page.evaluate(() => {
+        const g = window.__emberisle?.getState();
+        return { timing: window.__yourTurnTiming, now: performance.now(), seq: g?.state?.seq, phase: g?.state?.phase,
+          current: g?.state?.current, localId: g?.localId, synced: g?.synced, commit: window.__yourTurnCommit,
+          element: !!document.querySelector('[data-testid="turn-moment"]'), exits: window.__exits?.slice(-8) };
+      }).catch(e => ({ unavailable: e.name })),
+      new Promise(resolve => { timer = setTimeout(() => resolve({ unavailable: "diagnostic deadline" }), 1000); }),
+    ]).finally(() => clearTimeout(timer));
+    console.error("your-turn-wait-diagnostic", JSON.stringify({ label, error: { name: error?.name, message: String(error?.message ?? error).split("\n")[0] },
+      node: { origin: nodeClock.timeOrigin, now: nodeClock.now(), loopMaxMs: d.loop.max / 1e6, loopP99Ms: d.loop.percentile(99) / 1e6,
+        utilization: nodeClock.eventLoopUtilization(d.utilization), steps: d.steps },
+      pendingCount: d.pending.size, pending: [...d.pending.values()].slice(-64), completed: d.completed, browser }));
+    throw error;
+  }
+}
+
 const errors = [];
 let failures = 0;
 function check(ok, label, data) {
@@ -83,6 +110,12 @@ const contrast = (a, b) => {
 // Installed before the app. Every banner that mounts is recorded with the store as it was; the box and the boxes it must stay
 // clear of are measured with the animation paused at its steady part (no transform), the way a player sees it held.
 function recorders() {
+  window.__yourTurnTiming = { origin: performance.timeOrigin, longTasks: [], supported: PerformanceObserver.supportedEntryTypes.includes("longtask") };
+  if (window.__yourTurnTiming.supported) new PerformanceObserver(list => {
+    const tasks = window.__yourTurnTiming.longTasks;
+    for (const e of list.getEntries()) tasks.push({ at: e.startTime, duration: e.duration });
+    tasks.splice(0, Math.max(0, tasks.length - 32));
+  }).observe({ type: "longtask", buffered: true });
   window.__yt = [];
   window.__turnExitStarts = new WeakMap();
   window.__exits = [];
@@ -177,13 +210,27 @@ async function open(view, { reduced = false, before, path = "/", color } = {}) {
     reducedMotion: reduced ? "reduce" : "no-preference",
   });
   const page = await ctx.newPage();
+  const loop = monitorEventLoopDelay({ resolution: 20 }); loop.enable();
+  const d = { loop, utilization: nodeClock.eventLoopUtilization(), steps: [], pending: new Map(), completed: [] };
+  timing.set(page, d);
+  page.on("close", () => loop.disable());
+  page.on("request", request => {
+    const url = new URL(request.url());
+    d.pending.set(request, { path: /^https?:$/.test(url.protocol) ? url.pathname : url.protocol, type: request.resourceType(), at: nodeClock.now() });
+  });
+  const complete = request => {
+    const item = d.pending.get(request);
+    if (item) { d.completed.push({ ...item, done: nodeClock.now() }); if (d.completed.length > 24) d.completed.shift(); }
+    d.pending.delete(request);
+  };
+  page.on("requestfinished", complete); page.on("requestfailed", complete);
   const tag = `${view.width}x${view.height}${reduced ? " reduced" : ""}${color ? " " + color[0] : ""}`;
   page.on("console", (m) => m.type() === "error" && errors.push(`${tag}: ${m.text()}`));
   page.on("pageerror", (e) => errors.push(`${tag}: ${e}`));
   if (view.insets) await (await ctx.newCDPSession(page)).send("Emulation.setSafeAreaInsetsOverride", { insets: view.insets });
   await page.addInitScript(recorders);
   await before?.(ctx, page);
-  await page.goto(`http://127.0.0.1:${PORT}${path}`);
+  await observe(page, `navigation ${tag}`, () => page.goto(`http://127.0.0.1:${PORT}${path}`));
   return { ctx, page, tag };
 }
 
@@ -304,7 +351,7 @@ async function online(me, { cap = false } = {}) {
     let seq = 20;
     const at = (patch) => ({ type: "state", you: me, legal, game: { ...base, ...patch, seq: ++seq } });
     const push = (m) => seatSocket.send(JSON.stringify(m));
-    const loaded = () => page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS });
+    const loaded = () => observe(page, `loaded seq ${seq}`, () => page.waitForFunction((n) => window.__emberisle.getState().state?.seq === n, seq, { timeout: STEP_MS }));
     // Nothing new shows for a while after the state has loaded.
     const stays = async (label, n0) => {
       await loaded();
@@ -313,7 +360,7 @@ async function online(me, { cap = false } = {}) {
       check(now.mounts === n0 && now.up === 0, `${tg} ${label}: no moment`, now);
     };
     // DOM dismissal must be observable even when animation-frame callbacks are delayed.
-    const gone = (ms = 1000) => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms, polling: 50 });
+    const gone = (ms = 1000) => observe(page, `gone ${ms} ms`, () => page.waitForFunction(() => !document.querySelector('[data-testid="turn-moment"]'), null, { timeout: ms, polling: 50 }));
     const shows = async (n) => {
       try {
         await page.waitForFunction((n) => window.__yt.length === n && document.querySelector('[data-testid="turn-moment"]'), n, { timeout: STEP_MS });
