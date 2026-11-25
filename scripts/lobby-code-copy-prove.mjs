@@ -47,10 +47,11 @@ const box = (page, selector) => page.locator(selector).first().evaluate((el) => 
 });
 const near = (a, b, label) => assert.ok(Math.abs(a - b) <= 0.5, `${label} (${a} vs ${b})`);
 
-// The header holds one control, the code. A tap copies the join link, fades the code to "Copied" in place, and fades back.
+// The header holds the code and, for the host, the Numbers switch (#1156, owner answer B). A tap on the code copies the
+// join link, fades the code to "Copied" in place, and fades back.
 async function copies(page, tag, code) {
   for (const gone of ["Copy", "Copy link", "Invite", "Share"]) assert.equal(await page.getByRole("button", { name: gone, exact: true }).count(), 0, `${tag}: no ${gone} button`);
-  assert.equal(await page.locator(".lobby-header button").count(), 1, `${tag}: the header holds only the code`);
+  assert.deepEqual(await page.locator(".lobby-header button").evaluateAll((all) => all.map((b) => b.getAttribute("aria-label"))), [`Table code ${[...code].join(" ")}. Copy link`, "Random numbers"], `${tag}: the header holds only the code and the Numbers switch`);
   const button = page.getByRole("button", { name: `Table code ${[...code].join(" ")}. Copy link`, exact: true });
   await button.waitFor();
   const want = new URL(url);

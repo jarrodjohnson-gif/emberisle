@@ -75,7 +75,7 @@ export function createGame(opts: {
   winnerFirst?: boolean;
   wayfarerMode?: import("./types").WayfarerMode;
   victoryTarget?: VictoryTarget;
-  numberTokens?: "official" | "random";
+  numberTokens?: import("./types").NumberTokens;
 }): GameState {
   const seed = typeof opts.seed === "number" && Number.isFinite(opts.seed) ? opts.seed : (Math.floor(Math.random() * 1e9) | 0);
   const rand = mulberry32(seed);
