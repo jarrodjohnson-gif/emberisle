@@ -488,6 +488,7 @@ export class IsleRenderer {
     // Focus moving into or out of the chrome (the keyboard PlaceList shows while focused) changes the hole.
     this.parent?.addEventListener("focusin", this.remeasure);
     this.parent?.addEventListener("focusout", this.onFocusOut);
+    this.parent?.addEventListener("focusout", this.remeasure);
     this.resize();
     this.clock.connect(document);
     this.composer = new EffectComposer(this.renderer);
@@ -903,7 +904,6 @@ export class IsleRenderer {
       this.resize();
     }
     this.settleKeyboard();
-    this.remeasure();
   };
 
   // A blurred close may settle below the saved height (browser chrome changed). Wait for resize to go quiet.
@@ -945,6 +945,7 @@ export class IsleRenderer {
     if (this.parent) {
       this.parent.removeEventListener("focusin", this.remeasure);
       this.parent.removeEventListener("focusout", this.onFocusOut);
+      this.parent.removeEventListener("focusout", this.remeasure);
       for (const t of GATE_EVENTS) this.parent.removeEventListener(t, this.gate, true);
       this.parent = null;
     }
