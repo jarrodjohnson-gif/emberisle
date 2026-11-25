@@ -94,7 +94,7 @@ async function run({ width, height }) {
   // the host's card answers can be kept back and let through one at a time.
   async function open(name, profile, hold = false) {
     const page = await context.newPage();
-    const wire = { sent: [], got: [], held: [], holding: false, release: () => {} };
+    const wire = { sent: [], got: [], held: [], holding: false, release: () => {}, queueOut: false, outgoing: [] };
     page.on("pageerror", (e) => errors.push(`${name}: ${e}`));
     page.on("console", (m) => { if (m.type() === "error") errors.push(`${name}: ${m.text()}`); });
     if (hold) {
@@ -111,6 +111,8 @@ async function run({ width, height }) {
         ws.onMessage((m) => {
           const frame = typeof m === "string" && cardFrame(m);
           if (frame) wire.sent.push(frame);
+          // The refused step holds the card's own read so it leaves with the burst, not after the refill.
+          if (frame && wire.queueOut) return void wire.outgoing.push({ message: m, send: (msg) => server.send(msg) });
           server.send(m);
         });
         server.onMessage((m) => {
@@ -295,12 +297,34 @@ async function run({ width, height }) {
   await e.keyboard.press("Escape");
   await card(e).waitFor({ state: "detached" });
 
-  // A refused request. The host lets a socket read ten cards in a burst; twelve reads and the press happen in one task.
-  await t.evaluate(({ seat, profileId }) => {
+  // A refused request. The host lets a socket read ten cards in a burst, then two a second.
+  // The press only opens the card. Its read is sent later, from an effect. A slow effect used to
+  // land after this burst had refilled, so the read on screen was allowed and the error never showed.
+  // Hold that read, send twelve, then release the held read in the same burst. The one the card
+  // waits on is past the ten.
+  tide.wire.queueOut = true;
+  await t.evaluate((seat) => {
+    document.querySelector(`[data-testid="lobby-player-${seat}"]`).click();
+  }, sEmber.id);
+  await waitFor(() => tide.wire.outgoing.length >= 1, `${at}: the dialog read is held`);
+  let heldReads = -1;
+  const stableUntil = Date.now() + 10000;
+  while (Date.now() < stableUntil) {
+    if (tide.wire.outgoing.length === heldReads) break;
+    heldReads = tide.wire.outgoing.length;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  const dialog = tide.wire.outgoing.splice(0);
+  assert.ok(dialog.length >= 1, `${at}: the dialog read is held`);
+  await t.evaluate((profileId) => {
     const net = window.__emberisle.getState().net;
     for (let i = 0; i < 12; i++) net.ttt("tableProfileCard", { id: 9000 + i, profileId });
-    document.querySelector(`[data-testid="lobby-player-${seat}"]`).click();
-  }, { seat: sEmber.id, profileId: P.Ember.id });
+  }, P.Ember.id);
+  await waitFor(() => tide.wire.outgoing.length === 12, `${at}: twelve reads are held with the dialog read`);
+  assert.equal(tide.wire.outgoing.length, 12, `${at}: twelve reads are held with the dialog read`);
+  const burst = tide.wire.outgoing.splice(0);
+  tide.wire.queueOut = false;
+  for (const item of [...burst, ...dialog]) item.send(item.message);
   await t.locator('[data-testid="other-profile-error"]').waitFor();
   assert.equal(tide.wire.got.at(-1).type, "profileError", `${at}: the host refused the last read`);
   assert.deepEqual(await lines(t), ["Ember", "Profiles unavailable on this host."], `${at}: a refusal says so and shows no number`);

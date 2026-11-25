@@ -210,7 +210,7 @@ function withPaths(state: GameState, edgeIds: string[], pid: string): GameState 
   return { ...state, edges: state.edges.map((e) => (edgeIds.includes(e.id) ? { ...e, path: pid } : e)) };
 }
 import { chooseBotAction, chooseTradeAsk, shouldAcceptTrade } from "./ai";
-import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type VictoryTarget, type WayfarerMode } from "./types";
+import { PLAYER_COLORS, RESOURCES, type Action, type BuildMode, type GameState, type NumberTokens, type VictoryTarget, type WayfarerMode } from "./types";
 import type { Bag, ChatLine, Legal, Me, ProfileCardReply, Reaction, Rematch, Seat, TableClient, TableEvents, TttMsg } from "@/lib/net/table";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 import { chunk } from "@/lib/lazy";
@@ -261,6 +261,9 @@ const tableModule = chunk(() => import("@/lib/net/table"));
 // a profile that still exists: its committed total, or null while the host is still saving it. Empty when every such profile
 // was deleted, so each row reads "Not tracked". Anything malformed is dropped, never guessed.
 export type GameResult = { tracked: boolean; wins: Record<string, number | null> };
+// #1156: a host from before the setting sends none and deals the official spiral, which is the generator's default.
+const tokensFrom = (value: unknown): NumberTokens => (value === "random" ? "random" : "official");
+
 function gameResult(r: unknown): GameResult | null {
   const v = r as Partial<GameResult> | null;
   if (!v || typeof v !== "object" || typeof v.tracked !== "boolean" || !v.wins || typeof v.wins !== "object") return null;
@@ -395,6 +398,10 @@ interface GameStore {
   wayfarerChoices: Partial<Record<"ai" | "online" | "hotseat", WayfarerMode>>;
   setWayfarerChoice: (context: "ai" | "online" | "hotseat", mode: WayfarerMode) => void;
   tableWayfarerMode: WayfarerMode;
+  // #1156: how an online table this tab opens lays its number tokens (Game options), and how the joined table lays them.
+  numberTokensChoice: NumberTokens;
+  setNumberTokensChoice: (value: NumberTokens) => void;
+  tableNumberTokens: NumberTokens;
   // #1609: the seats Play with bots and Pass and play deal, set from Game options (SeatChoice); absent is four.
   seatCount?: number;
   startAi: () => void;
@@ -726,6 +733,11 @@ export const useGame = create<GameStore>((set, get) => ({
   setBuildMode: (m) => set({ buildMode: m, roadPicks: [], pendingSteal: null }),
   wayfarerChoices: {},
   tableWayfarerMode: "on",
+  numberTokensChoice: "official",
+  tableNumberTokens: "official",
+  setNumberTokensChoice: (value) => {
+    if (get().screen === "title" && (value === "official" || value === "random")) set({ numberTokensChoice: value });
+  },
   setWayfarerChoice: (context, mode) => {
     if (get().screen === "title" && ["on", "off"].includes(mode)) set({ wayfarerChoices: { ...get().wayfarerChoices, [context]: mode } });
   },
@@ -820,7 +832,7 @@ export const useGame = create<GameStore>((set, get) => ({
     botAsked = "";
     botDeclined.clear();
     get().net?.close();
-    set({ ...clearTable(), wayfarerChoices: {} });
+    set({ ...clearTable(), wayfarerChoices: {}, numberTokensChoice: "official" });
   },
   dispatch: (action, asId, automated = false) => {
     const { state, localId, mode, net, spectator } = get();
@@ -1008,10 +1020,11 @@ export const useGame = create<GameStore>((set, get) => ({
   hostTable: (visibility) => {
     get().commitName();
     const wayfarerMode = get().wayfarerChoices.online ?? "on";
+    const numberTokens = get().numberTokensChoice;
     // #1611: five or six on the Play page's Seats choice open an expanded table.
     const variant = (get().seatCount ?? 4) > 4 ? "expanded" : undefined;
     // The host tags ride on the hello beside the options, so a second table of this browser's is refused (#944).
-    connect(set, get, (t, me, url) => t.open(me, { wayfarerMode, visibility, variant, hostTags: hostTags(url) } as Parameters<TableClient["open"]>[1]));
+    connect(set, get, (t, me, url) => t.open(me, { wayfarerMode, numberTokens, visibility, variant, hostTags: hostTags(url) } as Parameters<TableClient["open"]>[1]));
   },
   joinTable: (code) => {
     get().commitName();
@@ -1355,7 +1368,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       set({ connectionHealth });
     },
     welcome: (w) => {
-      const { proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, variant } = w;
+      const { proto, serverSha, code, you, host, chat, secret, spectator, victoryTarget, wayfarerMode, numberTokens, variant } = w;
       hostTags(url, (w as { hostTag?: unknown }).hostTag);
       pending = false;
       // An expanded table's island needs expanded.ts: it starts loading now, so its first state rarely waits (#1611).
@@ -1365,7 +1378,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       clearOfferTimers();
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableNumberTokens: tokensFrom(numberTokens), tableVariant: variant, offer: null, declined: [], tradeOutcome: null, tradeTaker: null });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1428,12 +1441,12 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       setTimeout(() => set({ reactions: get().reactions.filter((x) => x !== r) }), 2000);
     },
     // A peek answers id/color/ready only (G10); the lobby is not shown until the full broadcast after sitting replaces it.
-    seats: ({ code, seats, watching, victoryTarget, wayfarerMode, variant, choose }) => {
+    seats: ({ code, seats, watching, victoryTarget, wayfarerMode, numberTokens, variant, choose }) => {
       const before = get().seats;
       const after = seats as Seat[];
       const me = get().localId;
       void tradeSounds.then((m) => m?.diggerBell(play, before, after, me));
-      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableVariant: variant, rematchChoice: choose });
+      set({ code, seats: seats as Seat[], watching: watching ?? 0, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableNumberTokens: tokensFrom(numberTokens), tableVariant: variant, rematchChoice: choose });
     },
     // Dice and gain floats present the roll; its words live only in the persistent log.
     rolled: () => {},
