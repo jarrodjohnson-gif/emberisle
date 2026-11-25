@@ -1,0 +1,166 @@
+{
+ "440x956": [
+  [
+   "1-start",
+   {
+    "target": [
+     0,
+     -1.47
+    ],
+    "canvas": [
+     440,
+     956
+    ],
+    "aspect": 0.4603,
+    "pxPerUnit": 40.989,
+    "shrunk": false
+   }
+  ],
+  [
+   "2-panned",
+   {
+    "target": [
+     -0.847,
+     -1.47
+    ],
+    "canvas": [
+     440,
+     956
+    ],
+    "aspect": 0.4603,
+    "pxPerUnit": 40.989,
+    "shrunk": false
+   }
+  ],
+  [
+   "3-input-focused",
+   {
+    "target": [
+     -0.847,
+     -1.47
+    ],
+    "canvas": [
+     440,
+     956
+    ],
+    "aspect": 0.4603,
+    "pxPerUnit": 40.989,
+    "shrunk": false
+   }
+  ],
+  [
+   "4-keyboard-open",
+   {
+    "target": [
+     -0.847,
+     -1.47
+    ],
+    "canvas": [
+     440,
+     560
+    ],
+    "aspect": 0.7857,
+    "pxPerUnit": 40.989,
+    "shrunk": true
+   }
+  ],
+  [
+   "5-keyboard-closed",
+   {
+    "target": [
+     -0.847,
+     -1.47
+    ],
+    "canvas": [
+     440,
+     956
+    ],
+    "aspect": 0.4603,
+    "pxPerUnit": 40.989,
+    "shrunk": false
+   }
+  ]
+ ],
+ "956x440": [
+  [
+   "1-start",
+   {
+    "target": [
+     -4.065,
+     -0.923
+    ],
+    "canvas": [
+     956,
+     440
+    ],
+    "aspect": 2.1727,
+    "pxPerUnit": 33.457,
+    "shrunk": false
+   }
+  ],
+  [
+   "2-panned",
+   {
+    "target": [
+     -5.103,
+     -0.923
+    ],
+    "canvas": [
+     956,
+     440
+    ],
+    "aspect": 2.1727,
+    "pxPerUnit": 33.457,
+    "shrunk": false
+   }
+  ],
+  [
+   "3-input-focused",
+   {
+    "target": [
+     -5.103,
+     -0.923
+    ],
+    "canvas": [
+     956,
+     440
+    ],
+    "aspect": 2.1727,
+    "pxPerUnit": 33.457,
+    "shrunk": false
+   }
+  ],
+  [
+   "4-keyboard-open",
+   {
+    "target": [
+     -5.103,
+     -0.923
+    ],
+    "canvas": [
+     956,
+     250
+    ],
+    "aspect": 3.824,
+    "pxPerUnit": 33.457,
+    "shrunk": true
+   }
+  ],
+  [
+   "5-keyboard-closed",
+   {
+    "target": [
+     -5.103,
+     -0.923
+    ],
+    "canvas": [
+     956,
+     440
+    ],
+    "aspect": 2.1727,
+    "pxPerUnit": 33.457,
+    "shrunk": false
+   }
+  ]
+ ]
+}

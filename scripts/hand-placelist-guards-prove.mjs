@@ -104,6 +104,8 @@ try {
     const cur = s.getState().state;
     s.setState({ state: { ...cur, phase: "setupSettle", current: "p0" }, buildMode: "none" });
   });
+  // Let the canvas see the new phase first: it clears a pending pick when the action changed since its last look.
+  await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
   // A legal vertex: the canvas drops a pending pick that is not highlighted.
   const legalVertexId = legalSettle({ ...g, phase: "setupSettle", current: "p0" }, "p0", true)[0];
   assert.ok(legalVertexId, "a legal setup vertex exists");
