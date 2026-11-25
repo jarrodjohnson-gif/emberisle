@@ -369,6 +369,7 @@ jobs:
             timeout -k 10 60 npm run rematch-extension-prove || status=$?
             timeout -k 10 60 npm run online-sync-reset-prove || status=$?
             timeout -k 10 60 npm run finish-takeover-prove || status=$?
+            timeout -k 10 90 npm run host-player-prove || status=$?
             exit "$status"
           ) > "$side2" 2>&1 &
           pid2=$!

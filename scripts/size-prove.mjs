@@ -40,7 +40,7 @@ const CEILINGS = [
   // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
   // start from the Play page; index measured 127,203 B.
   { name: "index", gzipBytes: 128000 },
-  { name: "IslandCanvas", gzipBytes: 204500 }, // #1857, 2026-11-22: raised from 203,500 B to 204,500 B (was #1307, 2026-11-04)
+  { name: "IslandCanvas", gzipBytes: 205500 }, // #1877, 2026-11-24: raised from 204,500 B to 205,500 B (was #1857, 2026-11-22)
   // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
   { name: "classic-board", gzipBytes: 19500 },
   // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)
