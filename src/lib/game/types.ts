@@ -120,6 +120,8 @@ export interface TradeOffer {
 
 export type WayfarerMode = "on" | "off";
 export type VictoryTarget = 7 | 10;
+// How the number tokens are laid (#1141, #1156): the official letter spiral (the default) or a random deal.
+export type NumberTokens = "official" | "random";
 export type WinTrigger = "outpost" | "stronghold" | "longestPath" | "largestArmy" | "pointFortune" | "turnStart" | "points";
 
 // The five and six seat island (#1604, src/lib/game/expanded.ts). Versioned so a later format can be told apart.
