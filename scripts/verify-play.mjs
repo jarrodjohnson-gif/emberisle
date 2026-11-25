@@ -8,11 +8,11 @@ import { preview } from 'vite';
 import { chromium } from './proof-browser.mjs';
 const start = performance.now(), errors = [], shots = mkdtempSync(path.join(tmpdir(), 'emberisle-verify-'));
 const server = await preview({ preview: {host:'127.0.0.1',port:0,strictPort:false},logLevel:'error' });
-let browser, step='boot', index=0;
+let browser, page, step='boot', index=0;
 const limit=setTimeout(()=>{console.error(`verify-play: FAIL ${step}: 90s total limit`);process.exitCode=1;void browser?.close();void server.close();},90000);
 try {
  browser=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
- const page=await browser.newPage({viewport:{width:440,height:956},hasTouch:true,reducedMotion:'reduce'});
+ page=await browser.newPage({viewport:{width:440,height:956},hasTouch:true,reducedMotion:'reduce'});
  page.setDefaultTimeout(12000);
  page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('pageerror',e=>errors.push(e.message));
  const snap=async name=>{assert.deepEqual(errors,[],`${step}: browser errors`);const file=path.join(shots,`${++index}-${name}.png`);await page.screenshot({path:file});console.log(`verify-play: ${name} ${file}`);};
@@ -24,8 +24,21 @@ try {
  let placed=0,rolled=false,ended=false,next=false,turn;
  for(let actions=0;actions<30;actions++){
   step=ended?'next player':'own action';
-  await page.waitForFunction(({ended,turn})=>{const s=window.__emberisle.getState(),g=s.state;return ended?g.turn>turn||g.current!==s.localId:g.current===s.localId||(g.discardNeeded?.[s.localId]??0)>0;},{ended,turn},{timeout:20000});
+  await page.waitForFunction(({ended,turn})=>{const s=window.__emberisle.getState(),g=s.state;return ended?g.turn>turn||g.current!==s.localId:g.current===s.localId||(g.discardNeeded?.[s.localId]??0)>0||!!(s.offer&&s.offer.from!==s.localId&&!s.declined.includes(s.localId));},{ended,turn},{timeout:20000});
   if(ended){await snap('next-player');next=true;break;}
+  const offer = await page.evaluate(() => {
+   const s = window.__emberisle.getState();
+   if (!s.offer || s.offer.from === s.localId || s.declined.includes(s.localId)) return null;
+   const id = s.offer.tradeId;
+   s.answerTrade(false); // The same production action as No/Dismiss; respond before waiting for the turn.
+   return id;
+  });
+  if (offer) {
+   step = 'decline bot trade';
+   await page.waitForFunction(id => { const s = window.__emberisle.getState(); return s.offer?.tradeId !== id || s.declined.includes(s.localId); }, offer);
+   await snap('decline-bot-trade');
+   continue;
+  }
   const before=await page.evaluate(()=>{const g=window.__emberisle.getState().state;return {seq:g.seq,phase:g.phase,turn:g.turn};});step=before.phase;
   if(['roll','rollOff'].includes(before.phase)){await page.getByRole('button',{name:'Roll',exact:true}).click();if(before.phase==='roll')rolled=true;}
   else if(before.phase==='main'){assert.ok(rolled);turn=before.turn;await page.getByRole('button',{name:'End turn',exact:true}).click();ended=true;}
@@ -42,5 +55,13 @@ try {
  }
  assert.equal(placed,4,'two outposts and two paths');assert.ok(rolled&&ended&&next,'roll, end and next player');assert.deepEqual(errors,[]);
  console.log(`verify-play: PASS ${((performance.now()-start)/1000).toFixed(1)}s; screenshots ${shots}`);
-}catch(e){console.error(`verify-play: FAIL ${step}: ${e.stack}`);process.exitCode=1;}
+}catch(e){
+ let timer;
+ const state=await Promise.race([
+  page?.evaluate(()=>{const s=window.__emberisle?.getState(),g=s?.state;return {phase:g?.phase,current:g?.current,local:s?.localId,seq:g?.seq,turn:g?.turn,offer:s?.offer?{id:s.offer.tradeId,from:s.offer.from,waiting:!s.declined.includes(s.localId)}:null};}).catch(()=> 'unavailable') ?? Promise.resolve('no page'),
+  new Promise(resolve=>{timer=setTimeout(()=>resolve('state read exceeded 1s'),1000);}),
+ ]);clearTimeout(timer);
+ console.error(`verify-play: state ${JSON.stringify(state)}`);
+ console.error(`verify-play: FAIL ${step}: ${e.stack}`);process.exitCode=1;
+}
 finally{clearTimeout(limit);await browser?.close();await server.close();}
