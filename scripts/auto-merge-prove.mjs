@@ -75,6 +75,10 @@ const CASES = [
   ["checks failed", pr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "completed", conclusion: "failure" }] }), false],
   ["checks still running", pr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: SHA, status: "in_progress", conclusion: null }] }), false],
   ["no checks run", pr({ checkRuns: [] }), false],
+  ["a skipped checks run beside a green one", pr({ checkRuns: [checkRun("checks", { conclusion: "skipped" }), checkRun("checks"), checkRun("loosen")] }), true],
+  ["only a skipped checks run", pr({ checkRuns: [checkRun("checks", { conclusion: "skipped" }), checkRun("loosen")] }), false],
+  ["a skipped checks run beside a red one", pr({ checkRuns: [checkRun("checks", { conclusion: "skipped" }), checkRun("checks", { conclusion: "failure" }), checkRun("loosen")] }), false],
+  ["a skipped loosen run beside a green one", pr({ checkRuns: [checkRun("checks"), checkRun("loosen", { conclusion: "skipped" }), checkRun("loosen")] }), true],
   ["checks green from another app only", pr({ checkRuns: [{ name: "checks", app: { id: 1, slug: "fake" }, head_sha: SHA, status: "completed", conclusion: "success" }] }), false],
   ["checks green on another SHA", pr({ checkRuns: [{ name: "checks", app: ACTIONS, head_sha: OTHER, status: "completed", conclusion: "success" }] }), false],
   ["one checks run green, one red", pr({ checkRuns: [
@@ -230,6 +234,8 @@ for (const p of ["docs/x.md", "docs/design/chat-c/README.md", "docs/design/a.htm
 // Mutation check: break one rule at a time in a copy of the script. The cases above must catch every break.
 const source = readFileSync(new URL("./auto-merge-eligible.mjs", import.meta.url), "utf8");
 const MUTANTS = [
+  ["a skipped run blocks the PR", ' && r.conclusion !== "skipped");', ");"],
+  ["a skipped run alone counts as green", 'r.app?.id === ACTIONS_APP_ID && r.conclusion !== "skipped");\n    if (!runs.length)', 'r.app?.id === ACTIONS_APP_ID && r.conclusion !== "skipped");\n    if (false)'],
   ["owner-merge ignored", "if (why && !(ownerMerge && LIFTABLE.test(why))) return no(", "if (why) return no("],
   ["owner-merge lifts unsafe paths too", "!(ownerMerge && LIFTABLE.test(why))", "!ownerMerge"],
   ["owner-merge marker head not compared", "ownerMergeHead(comments) === sha", "ownerMergeHead(comments) !== null"],

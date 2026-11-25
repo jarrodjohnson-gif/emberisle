@@ -194,7 +194,9 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   if (lines >= MAX_CHANGED_LINES) return no(`${lines} changed lines, the limit is under ${MAX_CHANGED_LINES}`);
 
   for (const name of REQUIRED_RUNS) {
-    const runs = (checkRuns ?? []).filter((r) => r.name === name && r.app?.id === ACTIONS_APP_ID);
+    // A skipped run checked nothing, so it neither passes nor fails the PR: CI skips `checks` on some events (a draft's
+    // first run), and that run stays beside the real one at the same head. Every other run must be green.
+    const runs = (checkRuns ?? []).filter((r) => r.name === name && r.app?.id === ACTIONS_APP_ID && r.conclusion !== "skipped");
     if (!runs.length) return no(`no \`${name}\` run on the head SHA`);
     if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success"))
       return no(`\`${name}\` is not green on the head SHA`);
