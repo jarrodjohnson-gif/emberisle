@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, online, openTables, OpenTables, ProfileSheet, profileSheet, SeatChoice, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
+import { OpenModeToggle, HowTo, island, LoadingScreen, Lobby, NumberChoice, online, openTables, OpenTables, ProfileSheet, profileSheet, SeatChoice, SetupPipHints, sheets, WayfarerOptions } from "@/components/game/chunks";
 import { Hud } from "@/components/game/Hud";
 import { PlaceList } from "@/components/game/PlaceList";
 import { TableRecoveryBoundary } from "@/components/game/TableRecoveryBoundary";
@@ -451,6 +451,7 @@ function Title({ arrive }: { arrive: boolean }) {
                 <LazyBoundary failed={null}>
                   <SeatChoice />
                   <WayfarerOptions rules={rules} choose={useGame.getState().setWayfarerChoice} />
+                  <NumberChoice />
                 </LazyBoundary>
               </details>
             </div>

@@ -12,3 +12,16 @@ export function SeatChoice() {
     </select>
   </label>;
 }
+
+// #1156: how an online table opened here lays its number tokens. Fixed when the table opens, like the wayfarer.
+export function NumberChoice() {
+  const value = useGame((s) => s.numberTokensChoice);
+  return <>
+    <label className="flex min-h-11 items-center justify-between gap-2 text-sm">
+      Online numbers<select aria-label="Online number tokens" aria-describedby="number-tokens-help" value={value} onChange={(e) => useGame.getState().setNumberTokensChoice(e.target.value === "random" ? "random" : "official")} className="h-11 min-w-32 rounded-control border bg-surface px-2 text-fg">
+        <option value="official">Official spiral</option><option value="random">Random</option>
+      </select>
+    </label>
+    <p id="number-tokens-help" className="py-2 text-xs text-muted">Official spiral lays the numbers in the printed order. Random shuffles them, and no 6 or 8 touch.</p>
+  </>;
+}
