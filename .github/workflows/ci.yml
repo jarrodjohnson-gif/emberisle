@@ -562,6 +562,8 @@ jobs:
         run: npm run game-log-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run verify-play
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run profiles-client-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
