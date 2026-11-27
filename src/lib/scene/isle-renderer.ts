@@ -49,6 +49,7 @@ import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
 import type { LandAppearance, LandHex, LandLook, LandStatus } from "@/lib/scene/land-appearance";
 import type { AppearanceHost } from "@/lib/scene/appearance-controller";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
+import type { AwardMarkers } from "@/lib/scene/award-markers";
 import { OceanLife } from "@/lib/scene/ocean-life";
 import { makeBruno, type Bruno } from "@/lib/scene/bruno";
 import { makeJellyOutpost, makeJellyPath, makeJellyStronghold } from "@/lib/scene/pieces-jelly";
@@ -73,6 +74,8 @@ const landModules = {
 };
 // #1341: the shared build-and-swap is its own entry, so a failed fetch of it retries under its own fresh query.
 const controller = chunk(() => import("@/lib/scene/appearance-controller"), /\/appearance-controller-[\w-]+\.js$/);
+// #743: the path banner and army flag load the first time a game has a holder.
+const awardModule = chunk(() => import("@/lib/scene/award-markers"), /\/award-markers-[\w-]+\.js$/);
 const loadLand = (look: LandLook) => Promise.all([landModules[look].load(), controller.load()]);
 const JELLY_RETRY_MS = 4000;
 // The jelly pieces (#638, pieces-jelly-prompt.md); ?pieces=slab keeps the slab pieces (for the classic look, #641).
@@ -264,6 +267,9 @@ export class IsleRenderer {
   // #722: the decorative cue under a bot's line. Its own group: never in marks or pickables.
   private cues = new BotCues();
   private legalIds = new Set<string>();
+  // #743: the award markers once their chunk is in, and the hole the play view is fitted to.
+  private awards: AwardMarkers | null = null;
+  private awardHole: Insets | null = null;
   // An armed Upgrade: only the player's own outposts are legal, so a touch tap on one raises it at once, with no Place chip.
   private oneTap = false;
   // A build is armed (#667): a tap on a hex is aimed at a placement, so it makes no touch sound.
@@ -520,6 +526,7 @@ export class IsleRenderer {
     if (v !== this.titleMode) this.onCameraChange();
     this.titleMode = v;
     if (v) this.clearPayers();
+    if (this.lastState) this.syncAwards(this.lastState);
     this.ssao.enabled = !v && !this.play();
     this.setView(v ? "free" : this.playView());
   }
@@ -761,6 +768,7 @@ export class IsleRenderer {
       this.lastSeq = state.seq;
     }
     this.buildMarks(state, highlights, interactive);
+    this.syncAwards(state);
     // #722: the same ids, placed on the board as it is now; a target that is gone drops out. Only while a cue is up.
     this.cues.resync(this.cueAt);
     if (landChanged) this.payingPieces = [];
@@ -920,6 +928,8 @@ export class IsleRenderer {
 
   dispose() {
     clearTimeout(this.keyboardSettle);
+    this.awards?.dispose();
+    this.awards = null;
     this.cues.dispose();
     this.cancelPlop();
     this.clearPayers();
@@ -1067,6 +1077,7 @@ export class IsleRenderer {
     if (!this.play()) return;
     const c = this.renderer.domElement;
     const base = this.insets();
+    this.awardHole = base;
     // The hole's edges on the shell, so the HUD can centre a moment on the island (TurnMoment): the one the map is fitted to.
     for (const k of ["top", "right", "bottom", "left"] as const) c.parentElement?.style.setProperty(`--hole-${k}`, `${base[k]}px`);
     if (this.keyboardShrunk) return;
@@ -1522,6 +1533,7 @@ export class IsleRenderer {
     // Reading `matches` here can swallow the change event, so a flip seen on this frame wakes the loop itself.
     if (calm !== this.wasCalm) this.wake();
     this.stepLandings(now, calm);
+    this.stepAwards();
     // A cue's end lands even when reduced motion runs no frames; with motion, each new pulse step keeps frames coming.
     if (this.cues.step(now, calm)) this.wake();
     if (this.relayout > 0) {
@@ -2207,6 +2219,47 @@ export class IsleRenderer {
     }
     this.landings = this.landings.filter((l) => !calm && now - l.start < LAND_MS[LAND_SOUND[l.kind]]);
     for (const [key, start] of this.landStart) if (calm || now - start >= LAND_MAX) this.landStart.delete(key);
+  }
+
+  // #743: the banner and flag the canonical holders earn; none off the table (the title's demo island). The chunk loads the
+  // first time a game has a holder; until then nothing is drawn. A failed fetch leaves the board unmarked, and the next
+  // state asks again.
+  private syncAwards(state: GameState) {
+    const want = !this.titleMode && Boolean(state.longestRoad || state.largestArmy);
+    if (!this.awards) {
+      if (want) {
+        awardModule.load().then((m) => {
+          if (this.stopped || this.awards) return;
+          // Only the classes it uses: handing over the namespace would keep all of three in this chunk.
+          this.awards = new m.AwardMarkers({
+            BufferGeometry: THREE.BufferGeometry,
+            Float32BufferAttribute: THREE.Float32BufferAttribute,
+            Group: THREE.Group,
+            Mesh: THREE.Mesh,
+            Color: THREE.Color,
+            CylinderGeometry: THREE.CylinderGeometry,
+            MeshStandardMaterial: THREE.MeshStandardMaterial,
+            DoubleSide: THREE.DoubleSide,
+            Box3: THREE.Box3,
+            Vector3: THREE.Vector3,
+          });
+          this.scene.add(this.awards.group);
+          if (this.lastState) this.syncAwards(this.lastState);
+        }, () => {});
+      }
+      return;
+    }
+    if (this.awards.sync(want ? state : null, this.pieces.children, this.lastLand ?? "")) {
+      this.stepAwards();
+      this.wake();
+    }
+  }
+
+  private stepAwards() {
+    const c = this.renderer.domElement;
+    const view = { cam: this.cam(), w: c.clientWidth || 1, h: c.clientHeight || 1, hole: this.play() ? this.awardHole : null };
+    const busy = new Set(this.landings.map((l) => l.obj.userData.key as string));
+    if (this.awards?.step(busy, (id) => this.legalIds.has(id) || this.pending?.id === id, view)) this.wake();
   }
 
   private buildMarks(state: GameState, hi: Highlights, interactive: boolean) {

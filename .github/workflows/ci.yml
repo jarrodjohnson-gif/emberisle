@@ -341,6 +341,7 @@ jobs:
             timeout -k 10 300 npm run dice-prove || status=$?
             timeout -k 10 120 npm run expanded-bots-prove || status=$?
             timeout -k 10 60 npm run expanded-turns-prove || status=$?
+            timeout -k 10 60 npm run award-witness-prove || status=$?
             exit "$status"
           ) > "$side1" 2>&1 &
           pid1=$!
@@ -752,6 +753,8 @@ jobs:
         run: npm run legal-edge-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run bot-cues-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
+        run: npm run award-markers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run landing-dust-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
