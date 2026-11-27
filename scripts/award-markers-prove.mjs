@@ -6,7 +6,8 @@
 //   no flag;
 // - a marker hides while its piece lands, while its edge is a legal or pending target, and while it leaves the hole;
 // - the title's demo island has none; pickables and legal ids are the same with and without markers;
-// - dispose releases the group. Screenshots for the look check go to test-results/award-markers-*.png.
+// - dispose releases the group. Screenshots for the look check (banner and flag) go to test-results/award-markers-<size>.png,
+//   at the four sizes above and Jarrod's phone (440x956, 956x440).
 // Zero console errors. Run: npm run award-markers-prove
 import assert from "node:assert/strict";
 import { mkdirSync } from "node:fs";
@@ -199,8 +200,7 @@ try {
     r = await page.evaluate(READ);
     const flagAt = fx2.corners[2] < fx2.corners[4] ? fx2.corners[2] : fx2.corners[4];
     assert.deepEqual(r.keys.filter((k) => k.startsWith("v:")), [`v:${flagAt}`, `v:${flagAt}`], `${tag}: flag on the smallest stronghold id`);
-    if (w === 1280) await page.screenshot({ path: "test-results/award-markers-flag-1280x720.png" });
-    if (w === 390) await page.screenshot({ path: "test-results/award-markers-390x844.png" });
+    await page.screenshot({ path: `test-results/award-markers-${tag}.png` });
     await push(page, { n: 5, army: true, buildings: ["outpost"] });
     r = await page.evaluate(READ);
     assert.equal(r.keys.length, 0, `${tag}: an army holder with only outposts has no flag`);
