@@ -12,12 +12,11 @@ export function VictoryTargetSelect({ value, onChange, label = "Win at" }: { val
           variant="secondary" className="size-11 p-0 tabular-nums aria-checked:border-fg aria-checked:font-bold aria-checked:underline aria-checked:underline-offset-4"
           onClick={() => onChange(n)}
           onKeyDown={(e) => {
-            if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e.key)) return;
+            if (!/^(Arrow|Home|End)/.test(e.key)) return;
             e.preventDefault();
-            const group = e.currentTarget.parentElement;
             const next = e.key === "Home" ? 7 : e.key === "End" ? 10 : n === 7 ? 10 : 7;
             onChange(next);
-            group?.querySelector<HTMLButtonElement>(`[aria-label="${next} points"]`)?.focus();
+            e.currentTarget.parentElement?.querySelector<HTMLButtonElement>(`[aria-label="${next} points"]`)?.focus();
           }}
         >{n}</Button>)}
       </div> : null}

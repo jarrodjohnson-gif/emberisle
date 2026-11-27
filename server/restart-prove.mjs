@@ -6,7 +6,7 @@
 //    its window is the 1 s the budget has left, so the deadline stays at the 3 s cap, not 1.5 s past the rejoin.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, watch, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -20,6 +20,41 @@ process.on("exit", () => { host?.kill("SIGKILL"); for (const d of dirs) rmSync(d
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => process.exit(130));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+function waitSaved(dir, code, afterSavedAt, ms, label) {
+  const file = path.join(dir, `${code}.json`);
+  const fresh = () => {
+    try {
+      const doc = JSON.parse(readFileSync(file, "utf8"));
+      return doc.savedAt > afterSavedAt ? doc : null;
+    } catch {
+      return null;
+    }
+  };
+  const hit = fresh();
+  if (hit) return Promise.resolve(hit);
+  return new Promise((resolve, reject) => {
+    let done = false;
+    let watcher = null;
+    const finish = (err, doc) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      watcher?.close();
+      if (err) reject(err);
+      else resolve(doc);
+    };
+    const probe = () => {
+      const doc = fresh();
+      if (doc) finish(null, doc);
+    };
+    const timer = setTimeout(() => finish(new Error(`timed out: ${label}`)), ms);
+    const poll = setInterval(probe, 25);
+    try { watcher = watch(dir, probe); } catch {}
+    probe();
+  });
+}
+
 function seed(dir, code) {
   let g = createGame({ humans: [{ name: "Ember" }, { name: "Tide" }, { name: "Pine" }], bots: 0, seed: 11 });
   while (g.phase !== "roll") {
@@ -31,7 +66,9 @@ function seed(dir, code) {
   g.phase = "main";
   g.players.sort((a, b) => a.id.localeCompare(b.id));
   const seats = g.players.map((p, i) => ({ id: `s${i}`, name: p.name, color: p.color, ready: true, pid: p.id, secret: `${code}-${p.id}` }));
-  writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: 3, chat: [], chatSeq: 0, game: g, seats, shape: 2, savedAt: Date.now() }));
+  const savedAt = Date.now() - 1000;
+  writeFileSync(path.join(dir, `${code}.json`), JSON.stringify({ code, host: "s0", next: 3, chat: [], chatSeq: 0, game: g, seats, shape: 2, savedAt }));
+  return savedAt;
 }
 
 async function start(dir, env) {
@@ -80,13 +117,13 @@ try {
   let dir = mkdtempSync(path.join(tmpdir(), "emberisle-restart-"));
   dirs.push(dir);
   let code = "RSAA";
-  seed(dir, code);
+  const seeded1 = seed(dir, code);
   const env1 = { TURN_MS: "8000", TURN_TOTAL_MS: "60000" };
   let port = await start(dir, env1);
   let a = await client(port, code, "p0");
   const d1 = a.state.turnDeadline;
   assert(d1 > Date.now() + 6000, "A has a fresh 8 s window");
-  await sleep(700);
+  await waitSaved(dir, code, seeded1, 5000, "case 1 room save");
   const saved = JSON.parse(readFileSync(path.join(dir, `${code}.json`), "utf8")).seats.find((s) => s.pid === "p0");
   assert.equal(saved.turnDeadline, d1, "the room file carries the deadline");
   a.ws.terminate();
@@ -106,12 +143,12 @@ try {
   dir = mkdtempSync(path.join(tmpdir(), "emberisle-restart-"));
   dirs.push(dir);
   code = "RSBB";
-  seed(dir, code);
+  const seeded2 = seed(dir, code);
   const env2 = { TURN_MS: "2500", TURN_TOTAL_MS: "60000" };
   port = await start(dir, env2);
   a = await client(port, code, "p0");
   const d2 = a.state.turnDeadline;
-  await sleep(700);
+  await waitSaved(dir, code, seeded2, 5000, "case 2 room save");
   a.ws.terminate();
   await kill9();
   await sleep(Math.max(0, d2 + 500 - Date.now()));

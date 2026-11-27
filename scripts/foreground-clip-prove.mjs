@@ -381,7 +381,7 @@ const MUTANTS = [
   { check: "refusals", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined) return;", why: "no owner check on refusal" },
   { check: "silence", file: "/src/lib/sound.ts", from: "subscribeSoundMix(() => { dropSilenced(); ", to: "subscribeSoundMix(() => { ", why: "no cancel on a silenced kind" },
   { check: "endWait", file: "/src/lib/sound.ts", from: "  scope++;\n  clearTimeout(endTimer);", to: "  scope++;", why: "no cancel of the delayed end music" },
-  { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope() && gameEnd(", to: "gameEnd(", why: "no scope check on the game-end chunk" },
+  { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope() && m?.gameEnd(", to: "m?.gameEnd(", why: "no scope check on the game-end chunk" },
   { check: "hide", file: "/src/components/game/WinScreen.tsx", from: "      cancelForeground();\n", to: "\n", why: "no cancel on hide" },
   { check: "callers", file: "/src/lib/game/store.ts", from: "  if (before?.phase === \"over\" && after.phase !== \"over\") cancelForeground();\n", to: "", why: "no cancel on a rematch" },
 ];

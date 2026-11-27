@@ -1,0 +1,54 @@
+CONTROL: delaying Hud mount by 2500ms
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+CONTROL pre-gain { seq: 20, hands: 0, lines: 0 }
+4:22:58 AM [vite] (client) [console.error] ReferenceError: jsxDEV is not defined
+    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1118:2)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:14142:12)
+    at renderWithHooks (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:4400:19)
+    at updateFunctionComponent (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:5775:16)
+    at beginWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:6391:20)
+    at runWithFiberInDEV (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:944:66)
+    at performUnitOfWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9148:92)
+    at workLoopSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9044:37)
+    at renderRootSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9028:6)
+    at performWorkOnRoot (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:8715:27)
+
+The above error occurred in the <DelayedFixtureHud> component.
+
+React will try to recreate this component tree from scratch using the error boundary you provided, RecoveryBoundary.
+
+4:22:58 AM [vite] (client) [console.error] ReferenceError: jsxDEV is not defined
+    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1118:2)
+    at Object.react_stack_bottom_frame (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:14142:12)
+    at renderWithHooks (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:4400:19)
+    at updateFunctionComponent (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:5775:16)
+    at beginWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:6391:20)
+    at runWithFiberInDEV (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:944:66)
+    at performUnitOfWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9148:92)
+    at workLoopSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9044:37)
+    at renderRootSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9028:6)
+    at performWorkOnRoot (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:8715:27) 
+    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1116:28)
+    at RecoveryBoundary (http://127.0.0.1:8476/src/components/game/TableRecoveryBoundary.tsx:6:1)
+    at TableRecoveryBoundary (http://127.0.0.1:8476/src/components/game/TableRecoveryBoundary.tsx:134:41)
+    at div (<anonymous>)
+    at EmberisleApp (http://127.0.0.1:8476/src/components/game/EmberisleApp.tsx:41:17)
+CONTROL: delaying Hud mount by 2500ms
+CONTROL final { seq: undefined, hands: 0, lines: 0, counts: [] }
+390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-testid="resource-flash"]') to be visible[22m
+[2m    - waiting for "http://127.0.0.1:8476/?host=ws%3A%2F%2F127.0.0.1%3A9" navigation to finish...[22m
+[2m    - navigated to "http://127.0.0.1:8476/?host=ws%3A%2F%2F127.0.0.1%3A9"[22m
+
+    at reconnect (/workspace/work/1518/scripts/.1518-control.mjs:873:16)
+    at async file:///workspace/work/1518/scripts/.1518-control.mjs:908:38 {
+  log: [
+    `  - waiting for locator('[data-testid="resource-flash"]') to be visible`,
+    '    - waiting for "http://127.0.0.1:8476/?host=ws%3A%2F%2F127.0.0.1%3A9" navigation to finish...',
+    '    - navigated to "http://127.0.0.1:8476/?host=ws%3A%2F%2F127.0.0.1%3A9"'
+  ],
+  name: 'TimeoutError'
+}
+FAIL zero console errors ["390x844: %o\n\n%s\n\n%s\n ReferenceError: jsxDEV is not defined\n    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1118:2)\n    at Object.react_stack_bottom_frame (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:14142:12)\n    at renderWithHooks (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:4400:19)\n    at updateFunctionComponent (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:5775:16)\n    at beginWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:6391:20)\n    at runWithFiberInDEV (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:944:66)\n    at performUnitOfWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9148:92)\n    at workLoopSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9044:37)\n    at renderRootSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9028:6)\n    at performWorkOnRoot (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:8715:27) The above error occurred in the <DelayedFixtureHud> component. React will try to recreate this component tree from scratch using the error boundary you provided, RecoveryBoundary.","390x844: ReferenceError: jsxDEV is not defined\n    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1118:2)\n    at Object.react_stack_bottom_frame (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:14142:12)\n    at renderWithHooks (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:4400:19)\n    at updateFunctionComponent (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:5775:16)\n    at beginWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:6391:20)\n    at runWithFiberInDEV (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:944:66)\n    at performUnitOfWork (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9148:92)\n    at workLoopSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9044:37)\n    at renderRootSync (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:9028:6)\n    at performWorkOnRoot (http://127.0.0.1:8476/node_modules/.vite/deps/react-dom_client.js?v=dd427f02:8715:27) \n    at DelayedFixtureHud (http://127.0.0.1:8476/src/components/game/Hud.tsx:1116:28)\n    at RecoveryBoundary (http://127.0.0.1:8476/src/components/game/TableRecoveryBoundary.tsx:6:1)\n    at TableRecoveryBoundary (http://127.0.0.1:8476/src/components/game/TableRecoveryBoundary.tsx:134:41)\n    at div (<anonymous>)\n    at EmberisleApp (http://127.0.0.1:8476/src/components/game/EmberisleApp.tsx:41:17)"]
+turn-gain-prove: 2 failed

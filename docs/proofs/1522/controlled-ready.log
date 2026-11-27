@@ -1,0 +1,49 @@
+ok needs validation and shared local/host expiry rules
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok real need frames: public seat projection, malformed/duplicate/oversized rejection; game and clocks unchanged
+DIAG action p0 pass 0 p0 main
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+DIAG connect watch NEED
+DIAG action p1 roll 1 p1 roll
+DIAG action p1 pass 2 p1 main
+DIAG action p2 roll 3 p2 roll
+DIAG action p2 pass 4 p2 main
+DIAG action p0 roll 5 p0 roll
+DIAG action p0 pass 6 p0 main
+ok restart/rejoin keeps one remaining own turn; second own turn clears; watchers cannot change needs
+DIAG action p1 roll 7 p1 roll
+DIAG action p1 tradeBank 8 p1 main
+DIAG action p0 tradeAnswer 9 p1 main
+ok bank and player trades clear only needs satisfied by received goods, for both participants
+ok need updates share the ACT rate limit
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok real start transition clears restored needs from every public seat
+DIAG connect p0 NEED
+DIAG connect p1 NEED
+DIAG connect p2 NEED
+ok finished-game need ACT is refused with public state and existing need preserved
+ok real rematch transition clears prior needs from every public seat
+DIAG connect p0 NEED
+DIAG connect p2 NEED
+DIAG action p2 roll 1 p2 roll
+DIAG action p2 pass 2 p2 main
+CONTROL delay p0 roll-state delivery200ms 3
+DIAG action p0 roll 3 p0 roll
+DIAG action p0 pass 4 p0 main
+ok runBots decrements only the acting bot’s need; it survives one own turn and expires on the second
+DIAG connect p0 TAKE
+DIAG connect p1 TAKE
+DIAG connect p2 TAKE
+ok a dropped human keeps the public need during grace
+DIAG connect p0 TAKE
+ok the same person rejoining before takeover keeps the public need
+ok actual bot takeover clears the public need before any two-turn expiry
+DIAG connect p0 TAKE
+ok takeover clears saved needs and the returning person has none
+needs server prove ok

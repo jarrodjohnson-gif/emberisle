@@ -6,7 +6,8 @@ import { useViewport } from "@/lib/viewport";
 export function ConnectionStatus({ className }: { className?: string }) {
   const mode = useGame((s) => s.mode);
   const { status, rtt } = useGame((s) => s.connectionHealth);
-  if (mode !== "online") return null;
+  // Reachable is the healthy line. It stays off the screen; Reconnecting and Offline are the ones a friend needs.
+  if (mode !== "online" || status === "Reachable") return null;
   return (
     <p data-testid="connection-status" role="status" aria-live="polite" className={cn("min-w-0 break-words px-2 text-xs text-muted", className)}>
       {status}{rtt === null ? "" : ` · ${rtt} ms`}

@@ -3,7 +3,6 @@
 // Sizes 390x844, 844x390, 1280x720. Optional screenshots: SHOTS=docs/proofs/1112 node scripts/robber-prompt-prove.mjs
 // Run: CHROMIUM_PATH=/usr/bin/chromium node scripts/robber-prompt-prove.mjs (VITE_PORT defaults to 8452).
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -11,7 +10,7 @@ const port = Number(process.env.VITE_PORT) || 8452;
 const shots = process.env.SHOTS;
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined), args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+const browser = await chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const errors = [];
 let code = 0;
 

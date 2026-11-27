@@ -89,12 +89,19 @@ clips are the only reactions that play a sound for the table (Decision 3).
   - Non-square is accepted within 256×256 (owner decision on #663, 2026-11-06; `dark-smile` is 196×256). The tray, the seat bubble and the chat log draw every sticker with `object-fit: contain` in a square box, so it is never stretched or cropped. `npm run stickers-prove` checks the files and `npm run sticker-tray-prove` checks the display.
   - At most **50 KB** per file.
   - At most **24 stickers**, which fills 4 rows of 6 in the tray.
+  - **Animated stickers** (#1363): an animated PNG or WebP may be up to 300 KB, and one loop may last at most **3 s**,
+    summed from its frame delays (a delay of 10 ms or less counts as the 100 ms browsers play it). A GIF is converted to
+    animated WebP before commit; the check fails a `.gif` and says so. `npm run stickers-prove` checks both limits.
   - These caps belong in a check in `chat-prove`, or a small `sticker-prove`, so a bad drop fails CI rather than
     the page.
   - Vite inlines files under 4 KB into the JS chunk (the default `assetsInlineLimit`). This only matters if
     `size-prove`'s budget gets tight.
-- **Display:** 32 px inside the tray, as today. 48 px when floating over a seat. On a 440 px wide phone, 6 per row
+- **Display:** 36 px inside the 44 px tray button (28 px in the dense 32 px one), a little bigger than the first 32 px at
+  the owner's ask on #1364 (#1363). 48 px when floating over a seat. On a 440 px wide phone, 6 per row
   is about 300 px, which fits. Art must stay readable at 32 px.
+- **Motion** (#1363): an animated sticker plays while it is on screen, in the seat bubble and the chat log. In the tray
+  it plays one loop each time the tray opens, then rests on its first frame. With reduced motion it shows its first
+  frame only, everywhere, and no animated frame is ever drawn. `npm run sticker-motion-prove` checks all three.
 
 ### Soundboard (Decision 6 amended 2026-10-25) [#635]
 

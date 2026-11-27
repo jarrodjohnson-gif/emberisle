@@ -208,9 +208,14 @@ try {
     check(arrive >= 1500 && arrive <= 5000, `${tag}: Start pushes through the clouds and the title card arrives near the end of the 2.4 s push`, { ms: arrive });
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 6000 });
     check((await page.locator(".loading-sky").count()) === 0, `${tag}: the clouds and the loading card are gone once the camera settles`);
+    // docs/design/first-minute: Start lands on the Play page, two taps from a bot game. Back shows the front page and its wordmark.
+    const landed = [await page.getByRole("button", { name: "Play with bots", exact: true }).count(), await page.getByTestId("front-play").count()];
+    check(landed[0] === 1 && landed[1] === 0, `${tag}: Start lands on the Play page, not the front page`, landed);
+    await page.getByRole("button", { name: "Back", exact: true }).click();
     const wordmark = await page.getByTestId("title-card").locator("h1").evaluate((el) => getComputedStyle(el).fontSize);
     check(wordmark === "56px", `${tag}: the title wordmark is 56 px`, wordmark);
     await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(() => window.__emberisle.getState().screen === "play");
     check(true, `${tag}: Play still starts a game after the loading screen`);
     check(errors.length === 0, `${tag}: no browser errors`, errors);
@@ -244,7 +249,7 @@ try {
       await page.getByTestId("title-card").waitFor();
       const moved = await page.getByTestId("loading-card").evaluateAll((els) => els.map((el) => el.style.transform).join(""));
       await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-      ms = Date.now() - t0;
+      ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
       check(ms < 1000 && !moved, "reduced motion: a cross-fade only (the card never moves) and the title is up in under a second", { ms });
     } finally {
       console.log(`     reduced motion trace (ms from navigation; long tasks as ms-from-Start+duration): ${JSON.stringify({ ms: ms ?? Date.now() - t0, ...(await traced()) })}`);
@@ -255,13 +260,13 @@ try {
 
   // #1385: frames that stop for 2.5 s just as the title arrives do not hold the loading card: the fade ends on its own clock.
   {
-    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500 });
+    const { ctx, page, errors } = await open({ width: 390, height: 844 }, { reducedMotion: "reduce", stall: 2500, trace: true });
     await page.waitForFunction(() => document.querySelector('[role="progressbar"]')?.getAttribute("aria-valuenow") === "100", null, { timeout: 60_000 });
     await start(page).click();
     const t0 = Date.now();
     await page.getByTestId("title-card").waitFor();
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-    const ms = Date.now() - t0;
+    const ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
     check(ms < 1000, "reduced motion: with frames stalled 2.5 s as the title arrives, the loading card is still gone within a second of Start", { ms });
     check(errors.length === 0, "reduced motion with stalled frames: no browser errors", errors);
     await ctx.close();
@@ -294,7 +299,7 @@ try {
     const t0 = Date.now();
     await page.getByTestId("title-card").waitFor();
     await page.getByTestId("loading-card").waitFor({ state: "detached", timeout: 2000 });
-    const ms = Date.now() - t0;
+    const ms = await page.evaluate(() => Math.round(window.__trace.gone - window.__trace.start));
     const gap = await page.evaluate(() => Math.round(window.__trace.start - window.__trace.at100));
     check(ms < 1000, `reduced motion, CPU 6x, Start tapped ${gap} ms after 100% (run ${run} of 3): the title is up and the loading card gone within a second`, { ms });
     check(errors.length === 0, `reduced motion, CPU 6x, instant Start (run ${run} of 3): no browser errors`, errors);

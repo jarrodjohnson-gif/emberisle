@@ -1,0 +1,18 @@
+Run42801874762 attempt1, exact PR1496 head5e719ea585379b8b982ca862d5727bc8fd788267, presentation-3 job129781863942. Official decoded job-log excerpt. Same original reconnect cue30000ms wait after merged readiness change. Cause not established.
+
+2026-11-10T11:00:04.2611173Z ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+2026-11-10T11:00:34.2682496Z 390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+2026-11-10T11:00:34.2700666Z Call log:
+2026-11-10T11:00:34.2701973Z   - waiting for locator('[data-testid="resource-flash"]') to be visible
+2026-11-10T11:00:34.2702483Z 
+2026-11-10T11:00:34.2703085Z     at reconnect (/home/runner/work/emberisle/emberisle/scripts/turn-gain-prove.mjs:861:16)
+2026-11-10T11:00:34.2704377Z     at async file:///home/runner/work/emberisle/emberisle/scripts/turn-gain-prove.mjs:894:38 {
+2026-11-10T11:00:34.2706198Z   log: [
+2026-11-10T11:00:34.2706911Z     `  - waiting for locator('[data-testid="resource-flash"]') to be visible`
+2026-11-10T11:00:34.2707604Z   ],
+2026-11-10T11:00:34.2707959Z   name: 'TimeoutError'
+2026-11-10T11:00:34.2708375Z }
+2026-11-10T11:00:34.2785457Z ok   zero console errors []
+2026-11-10T11:00:34.4762636Z turn-gain-prove: 1 failed
+2026-11-10T11:00:34.5149031Z ##[error]Process completed with exit code 1.
+

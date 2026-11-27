@@ -5,15 +5,21 @@
 // #766 second slice: signed in, the player edits the profile's text and colours and changes the PIN. A login change and a
 // PIN change ask for the current PIN; a temporary PIN from a local reset must be changed before anything else. The two
 // forms live in their own chunk (ProfileForms), loaded when one opens; this sheet keeps the state and the requests.
+// #1437: the recovery code's screens live in ProfileRecovery. Create profile, and the change of a temporary PIN, wait for
+// that chunk before they ask the host; the client holds a code just made in page memory until Done, so a chunk that fails
+// to load never loses it, and while it holds one "Save your recovery code" replaces everything else.
 import { useEffect, useRef, useState, useSyncExternalStore, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SeatDot } from "@/components/game/SeatDot";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { useGame } from "@/lib/game/store";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
-import { ProfileForms, profileForms as forms } from "@/components/game/chunks";
+import { ProfileForms, ProfileRecords, ProfileRecovery, profileForms as forms, profileRecords as records, profileRecovery as recovery } from "@/components/game/chunks";
+import { LazyBoundary } from "@/lib/lazy";
 import { ProfileClientError, createProfileClient, profileStorageKey } from "@/lib/net/profiles";
+import { LOGIN } from "@/lib/net/proto";
 import { hostUrl } from "@/lib/net/table";
 import { play } from "@/lib/sound";
 
@@ -35,38 +41,56 @@ export interface FormsUi {
   setShowPin: (show: boolean) => void;
   back: () => void;
 }
+// What the sheet hands the recovery chunk (#1437): which screen, the client, and the view switch.
+export interface RecoveryUi {
+  kind: "link" | "row" | "save" | "code" | "recover";
+  c: Client;
+  go: (to: "signin" | "code" | "recover") => void;
+  keep: boolean;
+  setKeep: (keep: boolean) => void;
+  showPin: boolean;
+  setShowPin: (show: boolean) => void;
+}
 // One client per page: it keeps the session in memory between openings so Host and Join can attach it.
 let client: Client | null = null;
-function profileClient() {
-  return (client ??= createProfileClient(hostUrl(location), { development: true }));
-}
 
-const LOGIN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const PIN = /^\d{4}$/;
-const field = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
+const FIELD = "h-11 w-full rounded-[12px] border border-border bg-surface px-3 text-base text-fg aria-[invalid=true]:border-accent-ink";
+const UNAVAILABLE = "Profiles unavailable on this host.";
+const STATUS_MSG: Record<string, string> = {
+  offline: "The host is offline. You can still play as a guest.",
+  insecure: "Profiles need the HTTPS link. You can still play as a guest.",
+  unsupported: UNAVAILABLE,
+};
+const SUMMARY_BTNS = [
+  ["wins", "Wins"],
+  ["history", "Your games"],
+  ["edit", "Edit profile"],
+  ["pin", "Change PIN"],
+] as const;
 type Text = "displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase";
 export type Errors = Partial<Record<Text | "form", string>>;
 
-function remembered(host: string) {
-  try { return localStorage.getItem(profileStorageKey(host)) !== null; } catch { return false; }
-}
-
 export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener: HTMLElement | null }) {
-  const c = profileClient();
+  const c = (client ??= createProfileClient(hostUrl(location), { development: true }));
   const snap = useSyncExternalStore(c.subscribe, c.getSnapshot);
   const root = useRef<HTMLDivElement>(null);
   useFocusTrap(root, true, '[aria-label="Close"]', opener);
+  const backdrop = useBackdropClose(onClose);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
-  // Signed in, "signin" is the summary; "edit" and "pin" are its two forms.
-  const [view, setView] = useState<"signin" | "create" | "edit" | "pin">("signin");
+  // Signed in, "signin" is the summary; "edit" and "pin" are its two forms, "wins" and "history" its records (#767).
+  const [view, setView] = useState<"signin" | "create" | "edit" | "pin" | "wins" | "history" | "code" | "recover">("signin");
   const [busy, setBusy] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [showPin, setShowPin] = useState(false);
   const [keep, setKeep] = useState(true);
-  const [form, setForm] = useState<Form>(() => ({ displayName: useGame.getState().name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: useGame.getState().color ?? PLAYER_COLORS[0], backupColor: "" }));
-  const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const mustChange = snap.profile?.pinMustChange === true;
+  const [form, setForm] = useState<Form>(() => {
+    const s = useGame.getState();
+    return { displayName: s.name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: s.color ?? PLAYER_COLORS[0], backupColor: "" };
+  });
+  const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const profile = snap.profile;
+  const mustChange = profile?.pinMustChange === true;
 
   useEffect(() => {
     useGame.setState({ profile: c });
@@ -77,18 +101,22 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       play("ui_back");
       onCloseRef.current();
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    addEventListener("keydown", onKey, true);
+    return () => removeEventListener("keydown", onKey, true);
   }, [c]);
 
   // A refused field takes the focus, so its message beside it is in view and read out.
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
 
-  // A temporary PIN from a local reset opens Change PIN; nothing else is offered until it is changed.
-  useEffect(() => { if (mustChange) void open("pin"); }, [mustChange]);
-  // Signed in, fetch the forms quietly, so Edit profile and Change PIN open on the first press without a wait.
-  const signedIn = Boolean(snap.profile);
-  useEffect(() => { if (signedIn) void forms.prefetch(); }, [signedIn]);
+  // Signed in, prefetch forms and records quietly; a temporary PIN opens Change PIN once its recovery chunk is in too.
+  const signedIn = Boolean(profile);
+  useEffect(() => {
+    if (signedIn) {
+      void forms.prefetch();
+      void records.prefetch();
+    }
+    if (mustChange) void open("pin");
+  }, [signedIn, mustChange]);
 
   // Every request confirms the host shown above it, then reports a refusal beside the field it is about.
   const send = async (run: () => Promise<unknown>) => {
@@ -99,9 +127,9 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       await run();
       setForm((f) => ({ ...f, pin: "", pinConfirm: "" }));
     } catch (e) {
-      const code = e instanceof ProfileClientError ? e.code : "unavailable";
-      const message = e instanceof ProfileClientError ? e.message : "Profiles unavailable on this host.";
-      setErrors(code === "loginTaken" ? { login: message } : { form: message });
+      const known = e instanceof ProfileClientError;
+      const message = known ? e.message : UNAVAILABLE;
+      setErrors(known && e.code === "loginTaken" ? { login: message } : { form: message });
     } finally {
       setBusy(false);
     }
@@ -109,17 +137,20 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
+    const create = view === "create";
+    const displayName = form.displayName.trim();
     const login = form.login.trim().toLowerCase();
+    const { pin, pinConfirm } = form;
     const bad: Errors = {};
-    if (view === "create" && !form.displayName.trim()) bad.displayName = "Enter a display name.";
+    if (create && !displayName) bad.displayName = "Enter a display name.";
     if (login.length < 3 || login.length > 24 || !LOGIN.test(login)) bad.login = "Use 3 to 24 lowercase letters, digits and single dashes.";
-    if (!PIN.test(form.pin)) bad.pin = "Enter four digits.";
-    if (view === "create" && form.pinConfirm !== form.pin) bad.pinConfirm = "The PINs don't match.";
+    if (!/^\d{4}$/.test(pin)) bad.pin = "Enter four digits.";
+    if (create && pinConfirm !== pin) bad.pinConfirm = "The PINs don't match.";
     if (Object.keys(bad).length) return setErrors(bad);
     void send(() =>
-      view === "create"
-        ? c.create({ displayName: form.displayName.trim(), login, color: form.color, pin: form.pin, pinConfirm: form.pinConfirm }, keep)
-        : c.login(login, form.pin, keep),
+      create
+        ? recovery.load().then(() => c.create({ displayName, login, color: form.color, pin, pinConfirm }, keep))
+        : c.login(login, pin, keep),
     );
   };
   // Every switch between the summary and its forms drops the errors and every PIN typed so far.
@@ -129,7 +160,14 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
     setView(to);
   };
   // A form opens once its chunk is in. If it can't load, the summary says so and the same button tries the network again.
-  const open = (to: "edit" | "pin") => forms.load().then(() => back(to), () => setErrors({ form: "Couldn't load this form. Try again." }));
+  // While a temporary PIN waits, the recovery chunk must be in as well: the change's reply carries a new code (#1437).
+  const open = (to: "edit" | "pin" | "wins" | "history") => {
+    const isForm = to === "edit" || to === "pin";
+    return Promise.all([(isForm ? forms : records).load(), mustChange && recovery.load()]).then(
+      () => back(to),
+      () => setErrors({ form: `Couldn't load ${isForm ? "this form" : "your records"}. Try again.` }),
+    );
+  };
 
   const guest = (
     <Button variant="ghost" className="w-full" onClick={onClose} back>
@@ -141,62 +179,73 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const actions = (children: ReactNode) => (
     <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>
   );
+  // Every recovery screen sits in its own boundary: a chunk that fails to load leaves the rest of the sheet working, and the
+  // client still holds any new code for the next opening.
+  const rc = (kind: RecoveryUi["kind"]) => <LazyBoundary failed={null}><ProfileRecovery ui={{ kind, c, go: back, keep, setKeep, showPin, setShowPin }} /></LazyBoundary>;
   let body: ReactNode;
-  if (snap.profile && (view === "edit" || view === "pin")) {
-    // Only reached once `open` has loaded the forms chunk, so this never suspends.
-    body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
-  } else if (snap.profile) {
-    body = (
-      <>
-        <p className="flex items-center gap-2 text-base text-fg">
-          <SeatDot color={snap.profile.color} className="size-4" />
-          <span>Signed in as <strong>{snap.profile.displayName}</strong></span>
-        </p>
-        {snap.profile.catchphrase ? <p className="break-words text-sm text-fg">“{snap.profile.catchphrase}”</p> : null}
-        <p className="text-sm text-muted">Login: {snap.profile.login}</p>
-        <p className="text-sm text-muted">{snap.remembered ? "Remembered on this device." : "Not remembered on this device."}</p>
-        <div className="grid grid-cols-2 gap-2">
-          {(["edit", "pin"] as const).map((to) => (
-            <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
-              {to === "edit" ? "Edit profile" : "Change PIN"}
-            </Button>
-          ))}
-        </div>
-        {formError}
-        {actions(
-          <>
-            <Button size="lg" variant="primary" className="w-full" onClick={onClose}>
-              Done
-            </Button>
-            <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout())}>
+  // The code and recover views open from the row and the link, which the recovery chunk draws, so they never suspend.
+  // A held code's save screen comes first.
+  if (profile) {
+    if (snap.code || view === "code") body = rc(snap.code ? "save" : "code");
+    else if (view === "edit" || view === "pin") {
+      // Only reached once `open` has loaded the forms chunk, so this never suspends.
+      body = <ProfileForms ui={{ kind: view, c, form, setForm, errors, setErrors, busy, setBusy, showPin, setShowPin, back }} />;
+    } else if (view === "wins" || view === "history") {
+      // Only reached once `open` has loaded the records chunk, so this never suspends.
+      body = <ProfileRecords c={c} kind={view} back={() => back()} />;
+    } else {
+      body = (
+        <>
+          <p className="flex items-center gap-2 text-base text-fg">
+            <SeatDot color={profile.color} className="size-4" />
+            <span>Signed in as <strong>{profile.displayName}</strong></span>
+          </p>
+          {profile.catchphrase ? <p className="break-words text-sm text-fg">“{profile.catchphrase}”</p> : null}
+          <p className="text-sm text-muted">Login: {profile.login}</p>
+          <p className="text-sm text-muted">{`${snap.remembered ? "R" : "Not r"}emembered on this device.`}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {SUMMARY_BTNS.map(([to, label]) => (
+              <Button key={to} variant="secondary" data-opens={to} onClick={() => void open(to)}>
+                {label}
+              </Button>
+            ))}
+          </div>
+          {rc("row")}
+          {formError}
+          {actions(
+            <Button variant="secondary" className="w-full" disabled={busy} onClick={() => void send(() => c.logout().finally(() => back()))}>
               Sign out
-            </Button>
-          </>,
-        )}
-      </>
-    );
+            </Button>,
+          )}
+        </>
+      );
+    }
   } else if (snap.status !== "available") {
-    const unavailable = snap.status === "unsupported" || snap.status === "offline" || snap.status === "insecure";
     body = (
       <>
         <p role="status" className="text-sm text-fg">
-          {!unavailable ? "Checking this host…" : snap.status === "offline" ? "The host is offline. You can still play as a guest." : snap.status === "insecure" ? "Profiles need the HTTPS link. You can still play as a guest." : "Profiles unavailable on this host."}
+          {STATUS_MSG[snap.status] ?? "Checking this host…"}
         </p>
         {guest}
       </>
     );
+  } else if (view === "recover") {
+    // Signed out, on an available host.
+    body = rc("recover");
   } else {
     const create = view === "create";
+    let hasRemembered = false;
+    if (!create) try { hasRemembered = localStorage.getItem(profileStorageKey(snap.host)) !== null; } catch {}
     const input = (k: "displayName" | "login" | "pin" | "pinConfirm", label: string, extra: object) => (
       <div className="flex flex-col gap-1">
         <label className="flex flex-col gap-1 text-sm font-medium text-fg">
           {label}
           <input
             value={form[k]}
-            onChange={(e) => set(k)(e.target.value)}
+            onChange={(e) => set(k, e.target.value)}
             aria-invalid={errors[k] ? true : undefined}
             aria-describedby={errors[k] ? `profile-${k}-error` : undefined}
-            className={field}
+            className={FIELD}
             {...extra}
           />
         </label>
@@ -204,22 +253,25 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
       </div>
     );
     const pin = { type: showPin ? "text" : "password", inputMode: "numeric", pattern: "[0-9]*", maxLength: 4, autoComplete: create ? "new-password" : "current-password" };
+    const PinIcon = showPin ? EyeOff : Eye;
+    const actionLabel = create ? "Create profile" : "Sign in";
     body = (
       <>
-        {!create && remembered(snap.host) ? (
+        {hasRemembered ? (
           <Button size="lg" variant="primary" className="w-full" disabled={busy} onClick={() => void send(() => c.resume())}>
             Continue with remembered profile
           </Button>
         ) : null}
-        <form noValidate aria-label={create ? "Create profile" : "Sign in"} className="flex flex-col gap-3" onSubmit={submit}>
+        <form noValidate aria-label={actionLabel} className="flex flex-col gap-3" onSubmit={submit}>
           {create ? input("displayName", "Display name", { maxLength: 16, autoComplete: "nickname" }) : null}
           {input("login", "Login", { autoCapitalize: "none", autoCorrect: "off", spellCheck: false, maxLength: 24, autoComplete: "username" })}
           {input("pin", "PIN", pin)}
           {create ? input("pinConfirm", "Confirm PIN", pin) : null}
           <Button variant="ghost" className="self-start px-3" aria-pressed={showPin} onClick={() => setShowPin(!showPin)}>
-            {showPin ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-            {showPin ? "Hide PIN" : "Show PIN"}
+            <PinIcon className="size-4" />
+            {`${showPin ? "Hide" : "Show"} PIN`}
           </Button>
+          {create ? null : rc("link")}
           {create ? (
             <div role="radiogroup" aria-label="Favourite colour" className="flex gap-2">
               {PLAYER_COLORS.map((col, i) => (
@@ -230,7 +282,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
                   aria-checked={form.color === col}
                   aria-label={PLAYER_NAMES[i]}
                   title={PLAYER_NAMES[i]}
-                  onClick={() => set("color")(col)}
+                  onClick={() => set("color", col)}
                   className="grid size-11 place-items-center rounded-control border-2 p-1"
                   style={{ borderColor: form.color === col ? "#1c1915" : "transparent" }}
                 >
@@ -241,17 +293,17 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
           ) : null}
           <label className="flex min-h-11 items-center gap-3 text-sm text-fg">
             <input type="checkbox" checked={keep} onChange={(e) => setKeep(e.target.checked)} className="size-5 accent-[var(--ink)]" />
-            Remember me on this device
+            Remember me
           </label>
           {formError}
           {actions(
-            <Button size="lg" variant={remembered(snap.host) && !create ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
-              {create ? "Create profile" : "Sign in"}
+            <Button size="lg" variant={hasRemembered ? "secondary" : "primary"} type="submit" className="w-full" disabled={busy}>
+              {actionLabel}
             </Button>,
           )}
         </form>
-        <Button variant="secondary" className="w-full" onClick={() => { setErrors({}); setView(create ? "signin" : "create"); }}>
-          {create ? "I have a profile" : "Create profile"}
+        <Button variant="secondary" className="w-full" onClick={() => back(create ? "signin" : "create")}>
+          {create ? "Sign in instead" : "Create profile"}
         </Button>
         {guest}
       </>
@@ -259,7 +311,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   }
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center">
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-white/45 p-safe sm:items-center" {...backdrop}>
       <div
         ref={root}
         role="dialog"

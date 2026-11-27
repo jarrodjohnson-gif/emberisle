@@ -235,3 +235,44 @@ Existing renderer, store, scene bridge, TableMenu, package/CI, budget, and wildc
 A new filename does not bypass an active `scripts/*-prove.mjs` reservation.
 Design acceptance does not release those reservations or authorize conflicting implementation.
 The parent #641 remains unfinished until the final integrated runtime proof passes.
+
+## Source-status note, 2026-11-17 (#1625 adoption)
+
+The [accepted architecture on #641](https://github.com/jarrodjohnson-gif/emberisle/issues/641#issuecomment-6250360289)
+remains this document, from #750/#754. This note adds source facts, not another design.
+At main `f1d2c155616b37370ac37f9de00cf4df74493148`,
+[ClassicBoard already exists](../../src/lib/scene/classic-board.ts#L51).
+Its [quality constants](../../src/lib/scene/classic-board.ts#L16) use 18 rings for full and 12 for lite.
+Current [terrain.ts](../../src/lib/scene/terrain.ts#L12) uses 12 rings.
+The archived terrain's 18-ring constant is a different source.
+These constants do not measure frame cost or establish acceptance.
+The existing Water and View keys are in [src/lib/game/store.ts](../../src/lib/game/store.ts#L162).
+
+#758 is closed. #759's atomic integration and #760's preference/final acceptance remain open at this snapshot.
+Their reservations still apply; this documentation update claims no runtime file or integrated completion.
+Use **Lite** consistently when naming the quality in prose; existing code values remain unchanged.
+
+The duplicate classic-board-option.md proposals are withdrawn.
+[Question 6941234115](https://github.com/jarrodjohnson-gif/emberisle/issues/641#issuecomment-6941234115)
+asks to retain the accepted contract without selecting new automatic appearance, storage, menu or budget rules.
+This update sets no new draw-call, triangle, gzip or fps ceiling.
+It adds no software-GPU automatic Classic selection or profile synchronization.
+Future implementation still needs the existing contract's measured-cost and integrated-acceptance evidence.
+I checked source links and diff whitespace; I ran no browser or performance proof for this note.
+
+## The controller split (#1341, desk answer A, 2026-11-12)
+The renderer's growth allowance (`IslandCanvas`, 663 B) doesn't fit the switching code. Main's allowance stays, and the build-and-swap moves into its own chunk. The contract above (generation, publication, shared state, recovery) doesn't change.
+
+- **What moves**, to `src/lib/scene/appearance-controller.ts`:
+  - the candidate build, the parallel shader compile and the whole one-frame swap, plus disposing a dropped or failed candidate;
+  - giving a look the renderer's current signals before it shows (token pose, visibility, the wayfarer's hex, the glows);
+  - the per-frame visibility hand-off (`seeLand`, installed with the first look);
+  - the shore hand-off after the first look on a board.
+- **What stays** in `isle-renderer.ts`:
+  - the generation (`landGen`), the request and cancel, the stand-in slabs;
+  - the import of each look (`chunk(...)` with its stale-chunk recovery pattern);
+  - the five-retry policy at four-second spacing, the error state and `retryLandLook`;
+  - `landStatus`, `setLandLook`, and the proof accessors.
+- **How it loads** (changed 2026-11-21, after review): `jelly-board.ts` and `classic-board.ts` each export only `create`, the look's own builder. The renderer loads the controller as its own `chunk(...)`, beside the look, and calls its `growWith(create, ...)`. It's not a static import of the looks: the browser keeps a failed module fetch for the life of the page, so a controller that failed once would fail every fresh-query retry of the look's entry. A production run showed this: all five retries of `jelly-board` failed, and Jelly never loaded.
+- **How it fails and recovers:** a failed fetch of the controller or of the look fails the request. Each retries under its own fresh query, and each owns its failure, so the page never reloads. The renderer handles it exactly as before: the matching land stays, `landStatus.error` names the look, it retries automatically up to five times, then `retryLandLook()` recovers. A build or compile failure inside `growWith` disposes its own candidate and rejects into the same path. A newer request or a dispose (the generation) makes `alive()` false, so a late candidate is disposed and never published.
+- **Sizes against main** (`size-prove --base`): `IslandCanvas` +477 B against its 663 B allowance (it was +1,065 B before the split); `jelly-board` +165 B against 200 B; `appearance-controller` 1,370 B gzip, a new chunk; the desk set its 1,500 B ceiling on 2026-11-17.

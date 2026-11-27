@@ -1,6 +1,6 @@
 // #1137: TableRecoveryBoundary logs errors with componentStack, and WebGL creation failure falls back gracefully so the table stays playable.
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -12,9 +12,6 @@ const vite = await createServer({
 await vite.listen();
 
 const browser = await chromium.launch({
-  executablePath:
-    process.env.CHROMIUM_PATH ||
-    (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -56,7 +53,7 @@ try {
     await page.waitForFunction(() => window.__emberisle);
 
     // Start a hotseat game
-    await page.getByRole("button", { name: "Four seats, one table" }).click();
+    await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().screen === "play");
 
     // Trigger render failure
@@ -69,7 +66,7 @@ try {
     await page.getByTestId("table-recovery").waitFor();
     assert.match(
       await page.getByTestId("table-recovery").innerText(),
-      /Your table hit a snag/,
+      /Something went wrong/,
       "table recovery boundary caught render error",
     );
 
@@ -118,7 +115,7 @@ try {
     );
 
     // Start a hotseat game
-    const hotseatBtn = page.getByRole("button", { name: "Four seats, one table" });
+    const hotseatBtn = page.getByRole("button", { name: "Pass and play" });
     await hotseatBtn.waitFor();
     await hotseatBtn.click();
 
@@ -310,14 +307,15 @@ try {
     await page.waitForFunction(() => window.__emberisle);
 
     // Start a hotseat game and wait for play screen
-    const hotseatBtn = page.getByRole("button", { name: "Four seats, one table" });
+    const hotseatBtn = page.getByRole("button", { name: "Pass and play" });
     await hotseatBtn.waitFor();
     await hotseatBtn.click();
     await page.waitForFunction(() => window.__emberisle?.getState().screen === "play" && window.__isle);
 
-    // Assert active IslandCanvas subscriber is registered and not unsubbed
+    // Assert active IslandCanvas subscriber is registered and not unsubbed.
+    // Match sync(), not the substring sync: the seat-gains subscriber mentions synced and loads later.
     const activeSubBefore = await page.evaluate(() => {
-      const sub = window.__subscribers.filter((s) => s.text.includes("sync")).at(-1);
+      const sub = window.__subscribers.filter((s) => s.text.includes("sync()")).at(-1);
       return { found: !!sub, unsubbed: sub?.unsubbed };
     });
     assert.ok(activeSubBefore.found, "found active IslandCanvas store subscriber");
@@ -368,7 +366,7 @@ try {
 
     // Verify unsub guard: active IslandCanvas subscriber was unsubscribed
     const subStatus = await page.evaluate(() => {
-      const islandSub = window.__subscribers.filter((s) => s.text.includes("sync")).at(-1);
+      const islandSub = window.__subscribers.filter((s) => s.text.includes("sync()")).at(-1);
       const callsBefore = window.__waterChoiceCalls;
       const subRunsBefore = islandSub.callCount;
 
@@ -407,7 +405,7 @@ try {
     // Verify sync guard: even if subscriber function is directly invoked while failed,
     // sync() if (failed) return guard must prevent execution of setWaterChoice and dispose
     const guardCheck = await page.evaluate(() => {
-      const islandSub = window.__subscribers.filter((s) => s.text.includes("sync")).at(-1);
+      const islandSub = window.__subscribers.filter((s) => s.text.includes("sync()")).at(-1);
       const callsBefore = window.__waterChoiceCalls;
       const disposeBefore = window.__disposeCount;
 

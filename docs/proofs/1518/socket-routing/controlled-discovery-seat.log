@@ -1,0 +1,14 @@
+controlled socket message { socket: 0, type: 'hello' }
+controlled socket message { socket: 0, type: 'healthPing' }
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+controlled socket message { socket: 1, type: 'list' }
+controlled socket target { sockets: 2, seat: 0, latest: 1 }
+controlled socket message { socket: 2, type: 'hello' }
+ok   390x844 reconnect: the seat was re-welcomed through the redial {"welcomes":2}
+ok   390x844 reconnect: the restored hand holds timber +2 over the last seen 4
+ok   390x844 rejoin onto own roll at seq 22 (no Your turn, no +2 on Wood, the cue from before the drop gone): nothing shown {"turns":0,"lines":1,"up":false}
+ok   390x844 reconnect: the cue from before the drop was cancelled
+ok   390x844 reconnect: a live gain after the rejoin shows "+1" on Wood
+ok   390x844 reconnect: a live turn after the rejoin shows "Your turn"
+ok   zero console errors []
+turn-gain-prove: all passed

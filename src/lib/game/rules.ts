@@ -133,7 +133,7 @@ export function settleError(state: GameState, pid: string, vid: string, setup: b
   const v = vertex(state, vid);
   if (!v) return "Illegal outpost.";
   if (v.building) return "That corner is taken.";
-  if (!distanceOk(state, vid)) return "Too close — leave one corner between buildings.";
+  if (!distanceOk(state, vid)) return "Too close. Leave a corner between buildings.";
   if (!setup && !state.edges.some((e) => e.path === pid && (e.va === vid || e.vb === vid))) return "Outpost must touch your path.";
   return null;
 }
@@ -299,14 +299,9 @@ function names(list: PlayerState[]) {
   return n.length < 3 ? n.join(" and ") : `${n.slice(0, -1).join(", ")}, and ${n.at(-1)}`;
 }
 
-type RollOffState = NonNullable<GameState["rollOff"]> & {
-  tied?: string[];
-  settled?: string[];
-};
-
 // The pre-setup roll-off (docs/design/first-player.md). Never touches state.rng.
 function rollOffRoll(state: GameState, me: PlayerState) {
-  const ro = state.rollOff as RollOffState;
+  const ro = state.rollOff!;
   const die = rollDie();
   ro.rolls[me.id] = die;
   ro.pending.shift();
@@ -374,6 +369,7 @@ function produce(state: GameState, total: number) {
     if (short.has(grant.res)) continue;
     const got = give(state, grant.p, grant.res, grant.n);
     if (got) {
+      tally(state, grant.p).earned[grant.res] += got;
       log(state, `${grant.p.name} gathers ${got} ${RESOURCE_LABEL[grant.res].toLowerCase()} from the ${grant.pip}.`);
       (state.lastProduction ??= []).push({ hex: grant.hex, player: grant.p.id, res: grant.res, n: got, vertex: grant.vertex });
     }
@@ -417,6 +413,14 @@ function grantSecondSettlement(state: GameState, vid: string, pid: string) {
   }
 }
 
+// #1452: the seat's award counts, made on its first count. Only a game counted from its first roll keeps them (it has
+// rollSums, #1453): a game part-way through at deploy keeps none, rather than a partial count that would name a false
+// "Dry spell"; its counts are dropped. Online the host strips them from every view until the win.
+function tally(state: GameState, p: PlayerState) {
+  const fresh = { earned: { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 }, discarded: 0, stole: 0, tableTrades: 0, bankTrades: 0 };
+  return state.rollSums ? (p.tally ??= fresh) : fresh;
+}
+
 function stealOne(state: GameState, fromId: string, toId: string) {
   const from = player(state, fromId);
   const to = player(state, toId);
@@ -427,6 +431,7 @@ function stealOne(state: GameState, fromId: string, toId: string) {
   from.resources[pick] -= 1;
   to.resources[pick] += 1;
   from.goodsLost = (from.goodsLost ?? 0) + 1;
+  tally(state, to).stole += 1;
   // The table hears that a card moved, not which one: only the two hands change (#187).
   log(state, `${to.name} steals a card from ${from.name}.`);
 }
@@ -475,7 +480,7 @@ function validRes(r: unknown): r is Resource {
 // One public event per goods-changing action. Derive amounts from the committed result, never
 // from UI guesses; theft and discard choices deliberately stay private. All seats use this voice.
 export function applyAction(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
-  const result = applyActionInternal(prev, actor, action);
+  const result = prev.variant ? turnRules.paired!(prev, actor, action, applyActionInternal) : applyActionInternal(prev, actor, action);
   if (result.error) return result;
   const next = result.state;
   const me = next.players.find((p) => p.id === actor)!;
@@ -544,6 +549,11 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
   return result;
 }
 
+type Step = (prev: GameState, actor: string, action: Action) => { state: GameState; error?: string };
+// Five and six seat games take their turns from expanded.ts (#1605), which sets `paired` when it loads. The client never
+// loads it yet, so the paired rules stay out of the index chunk.
+export const turnRules: { paired?: (prev: GameState, actor: string, action: Action, base: Step) => ReturnType<Step> } = {};
+
 function applyActionInternal(prev: GameState, actor: string, action: Action): { state: GameState; error?: string } {
   const state = clone(prev);
   state.seq += 1;
@@ -593,9 +603,12 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       const a = rollDie();
       const b = rollDie();
       state.dice = [a, b];
+      const total = a + b;
+      // #1453: counted from a game's first roll, so an older game part-way through gets no partial count.
+      if (!state.rolls) state.rollSums = Array(11).fill(0);
+      if (state.rollSums) state.rollSums[total - 2]! += 1;
       state.rolls = (state.rolls ?? 0) + 1;
       state.lastProduction = [];
-      const total = a + b;
       log(state, `${me.name} rolled ${total}!`);
       if (total === 7) {
         const need: Record<string, number> = {};
@@ -628,6 +641,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
         state.bank[r] += k;
       }
       delete state.discardNeeded[actor];
+      tally(state, me).discarded += need;
       log(state, `${me.name} discards ${need}.`);
       if (Object.keys(state.discardNeeded).length === 0) state.phase = wayfarerMode(state) === "off" ? "main" : "robber";
       return { state };
@@ -790,6 +804,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       me.resources[action.give] -= rate;
       state.bank[action.give] += rate;
       give(state, me, action.want, 1);
+      tally(state, me).bankTrades += 1;
       log(state, `${me.name} trades ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} for ${RESOURCE_LABEL[action.want].toLowerCase()}.`);
       return { state };
     }
@@ -802,6 +817,7 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       for (const r of RESOURCES) {
         if ((action.give[r] ?? 0) > me.resources[r]) return { state: prev, error: "You lack those goods." };
       }
+      if (RESOURCES.every((r) => !action.give[r] && !action.want[r])) return { state: prev, error: "Offer something." };
       state.trade = { from: actor, to: action.to, give: action.give, want: action.want };
       log(state, `${me.name} offers a trade to ${target.name}.`);
       return { state };
@@ -828,6 +844,8 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
         me.resources[r] -= w;
         from.resources[r] += w;
       }
+      tally(state, from).tableTrades += 1;
+      tally(state, me).tableTrades += 1;
       log(state, `${me.name} accepts ${from.name}'s trade.`);
       state.trade = null;
       return { state };
@@ -863,8 +881,4 @@ export function playable(p: PlayerState, k: DevKind) {
 
 export function hiddenCount(p: PlayerState) {
   return (Object.keys(p.hidden) as DevKind[]).reduce((n, k) => n + p.hidden[k], 0);
-}
-
-export function pipColor(n: number) {
-  return n === 6 || n === 8 ? "#c45c3e" : "#1a1a18";
 }

@@ -41,19 +41,23 @@ function Die({ value, big }: { value: number; big?: boolean }) {
 // and the turn moment wait for the centre to be free.
 export const useMomentUp = create<{ up: boolean }>(() => ({ up: false }));
 
-export function Dice({ values: [a, b] }: { values: [number, number] }) {
+export function Dice({ values }: { values: [number, number] }) {
+  const [rawA = 1, rawB = 1] = Array.isArray(values) ? values : [1, 1];
+  const a = Number.isFinite(rawA) ? Math.min(6, Math.max(1, Math.round(rawA))) : 1;
+  const b = Number.isFinite(rawB) ? Math.min(6, Math.max(1, Math.round(rawB))) : 1;
+  const sum = a + b;
   const up = useMomentUp((s) => s.up);
   return (
     <div
       role="img"
       data-testid="dice-row"
-      aria-label={`Rolled ${a} and ${b}, ${a + b}`}
+      aria-label={`Rolled ${a} and ${b}, ${sum}`}
       className={cn("flex items-center gap-2 self-start text-sm text-zinc-600", up && "invisible")}
     >
       {/* Keyed by the roll so a new roll remounts the faces and settles again. */}
       <Die key={`a${a}${b}`} value={a} />
       <Die key={`b${a}${b}`} value={b} />
-      <span className="tabular-nums">{a + b}</span>
+      <span className="tabular-nums">{sum}</span>
     </div>
   );
 }
@@ -85,11 +89,18 @@ export function RollMoment() {
   useLayoutEffect(() => {
     const was = seen.current;
     seen.current = rolls;
+    if (rolls < was) {
+      setRoll(null);
+      setSaid(null);
+      return;
+    }
     if (rolls !== was + 1 || !state?.dice) return;
-    const [a, b] = state.dice;
+    const [rawA = 1, rawB = 1] = state.dice;
+    const a = Number.isFinite(rawA) ? Math.min(6, Math.max(1, Math.round(rawA))) : 1;
+    const b = Number.isFinite(rawB) ? Math.min(6, Math.max(1, Math.round(rawB))) : 1;
     const you = mode !== "hotseat" && !spectator && state.current === localId;
     const who = you ? "You" : (state.players.find((p) => p.id === state.current)?.name ?? "Someone");
-    const next = { n: rolls, dice: state.dice, said: `${who} rolled ${a} and ${b}: ${a + b}.` };
+    const next = { n: rolls, dice: [a, b] as [number, number], said: `${who} rolled ${a} and ${b}: ${a + b}.` };
     setRoll(next);
     setSaid(next);
   }, [rolls, state, mode, localId, spectator]);

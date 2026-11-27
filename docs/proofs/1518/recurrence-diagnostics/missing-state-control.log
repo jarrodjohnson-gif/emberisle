@@ -1,0 +1,15 @@
+ok   390x844 first load, seq 20: nothing shown {"turns":0,"lines":0,"up":false}
+reconnect cue failure context {"welcomes":1,"sockets":1,"now":36016.09999999404,"origin":1794308590050.7,"hidden":false,"seq":20,"synced":1,"resync":false,"screen":"play","localId":"p0","error":null,"timber":1,"hand":"1","cues":[],"own":[],"lines":[]}
+390x844 reconnect: page.waitForSelector: Timeout 30000ms exceeded.
+Call log:
+[2m  - waiting for locator('[data-testid="resource-flash"]') to be visible[22m
+
+    at reconnect (/workspace/work/1518/scripts/.codex-p-1518-negative.mjs:862:18)
+    at async file:///workspace/work/1518/scripts/.codex-p-1518-negative.mjs:924:38 {
+  log: [
+    `  - waiting for locator('[data-testid="resource-flash"]') to be visible`
+  ],
+  name: 'TimeoutError'
+}
+ok   zero console errors []
+turn-gain-prove: 1 failed

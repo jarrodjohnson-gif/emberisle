@@ -12,7 +12,7 @@
   font: 700 20px/1 Arial, Helvetica, sans-serif; border: 1px solid #246d72; background: #246d72; color: #fff;
 }
 .loading-start:active { background: #1c585c; }
-.loading-start:focus-visible { outline: 2px solid #246d72; outline-offset: 2px; }
+.loading-start:focus-visible { outline: 2px solid #263d3c; outline-offset: 2px; }
 .loading-start[aria-disabled="true"] { background: #e9efed; border-color: #c9d4d2; color: #6b7c79; cursor: default; }
 .loading-progress { min-height: 48px; display: grid; gap: 8px; align-content: center; }
 .loading-row { display: flex; align-items: center; gap: 16px; }
@@ -25,7 +25,7 @@
   height: 44px; padding: 0 16px; border-radius: 12px; cursor: pointer; flex: none;
   font: 700 15px/1 Arial, Helvetica, sans-serif; border: 1px solid #246d72; background: #fff; color: #246d72;
 }
-.loading-retry:focus-visible { outline: 2px solid #246d72; outline-offset: 2px; }
+.loading-retry:focus-visible { outline: 2px solid #263d3c; outline-offset: 2px; }
 
 @media (max-width: 767px) and (orientation: portrait) {
   .loading-card { left: 16px; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); width: auto; max-width: none; padding: 16px; }

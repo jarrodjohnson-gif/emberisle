@@ -4,7 +4,6 @@
 // and whose resource a hand actually gained (read from the hand diff, not from the renderer's own rule). The rng is searched with
 // the rules' own applyAction so a roll can be steered into a bank-short roll and a wayfarer-blocked one. Negatives: a state that
 // already has dice, met on first load or after a jump of several seqs, never flashes. Under reduced motion the glow is a step.
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -18,7 +17,6 @@ await vite.listen();
 const errors = [];
 let code = 0;
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 
@@ -40,7 +38,7 @@ async function openTable(reducedMotion) {
     Object.defineProperty(navigator, "vibrate", { value: (ms) => { if (ms === 8) window.__buzz.push(ms); return true; }, configurable: true });
   });
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Four seats, one table" }).focus();
+  await page.getByRole("button", { name: "Pass and play" }).focus();
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => window.__emberisle?.getState().state, null, { timeout: STEP_MS });
   const roll = page.getByRole("button", { name: "Roll", exact: true });

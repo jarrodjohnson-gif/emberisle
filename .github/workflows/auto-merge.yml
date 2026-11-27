@@ -1,8 +1,15 @@
-# Auto-merges docs-only PRs (#923, phase 1). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
-# A PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and the desk
-# has posted <!-- review-desk: clean <40-char head SHA> -->. The merge pins that SHA with --match-head-commit.
+# Auto-merges docs-only PRs (#923, phase 1) and, unless the repo variable AUTO_MERGE_CODE is "off", reviewed code PRs
+# (phase 2, docs/DESK.md). scripts/auto-merge-eligible.mjs decides; the rules are in its header.
+# A docs PR merges only when every changed file is an allowed doc, `checks` is green on the exact head SHA, and a review
+# has posted <!-- review-desk: clean <40-char head SHA> -->. A code PR also needs that review's footer to name a reviewer
+# that differs from the builder, and touches no governance file unless it carries `owner-merge` (the owner's tap on the
+# Desk page for that head; any push removes the label). The merge pins the SHA with --match-head-commit.
+# A merge made with the workflow token fires no push run, so this starts CI on the default branch itself. When GitHub
+# refuses the workflow token because the PR changes a workflow file, it hands the PR to the dispatcher: `merge-by-chat`
+# plus a <!-- merge-by-chat: <SHA> --> comment for the exact head it checked.
 #
 # Kill switch: the repo variable AUTO_MERGE. Unset or anything but "on" means this never runs.
+# AUTO_MERGE_CODE set to exactly "off" stops code PRs only.
 # Rollback: git revert the merge, then set AUTO_MERGE=off.
 #
 # pull_request_target, workflow_run and issue_comment run in the base repo with a write token, so this never checks out
@@ -12,34 +19,67 @@ name: auto-merge
 
 on:
   pull_request_target:
-    types: [synchronize, ready_for_review]
+    # labeled, unlabeled: the owner adding `owner-ok`, or `needs-owner` coming off, re-checks the PR.
+    types: [synchronize, ready_for_review, labeled, unlabeled]
+  # Any conclusion: `decide` reads `checks` itself, so a red advisory job must not stop the re-check.
   workflow_run:
     workflows: [CI]
     types: [completed]
   # The desk's clean marker can land after CI goes green, so it triggers a check too.
   issue_comment:
     types: [created]
+  # Re-check one PR by hand, for example a PR that went green before phase 2 was switched on.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: PR number to check
+        required: true
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  checks: read
-
-concurrency:
-  group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha }}
-  cancel-in-progress: false
+# Each job names the permissions it needs.
+permissions: {}
 
 jobs:
+  # A push ends the owner's yes and the workflow's hand-over: both were for the old head. This runs with the kill switch
+  # on or off, before anything else, and fails loudly. `decide` also pins `owner-merge` and `owner-ok` to a head by itself.
+  # It has no concurrency group, so a queued run for a comment on the same PR can never cancel it.
+  reset:
+    if: github.event_name == 'pull_request_target' && github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      issues: write
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUM: ${{ github.event.pull_request.number }}
+        run: |
+          have=$(gh api "repos/$REPO/issues/$NUM/labels" --paginate --jq '.[].name')
+          for label in owner-merge merge-by-chat owner-ok signal:green; do
+            if grep -qx "$label" <<<"$have"; then gh api -X DELETE "repos/$REPO/issues/$NUM/labels/$label" >/dev/null; fi
+          done
   merge:
+    needs: reset
+    # Only a reset that finished, or one this event never needed, lets the merge run: a timed-out or cancelled reset may
+    # have left the old head's labels on.
     if: >-
-      vars.AUTO_MERGE == 'on' && (
-        github.event_name == 'pull_request_target' ||
-        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      !cancelled() && (needs.reset.result == 'success' || needs.reset.result == 'skipped') && vars.AUTO_MERGE == 'on' && (
+        github.event_name == 'pull_request_target' || github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'workflow_run' &&
           github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.path == '.github/workflows/ci.yml') ||
         (github.event_name == 'issue_comment' && github.event.issue.pull_request &&
           contains(github.event.comment.body, '<!-- review-desk: clean'))
       )
+    concurrency:
+      group: auto-merge-${{ github.event.pull_request.number || github.event.issue.number || github.event.workflow_run.head_sha || inputs.pr }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      checks: read
+      # Starts CI on the default branch after a merge made with the workflow token.
+      actions: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -56,16 +96,45 @@ jobs:
       - id: decide
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr }}
+          # Code PRs merge too, unless the repo variable AUTO_MERGE_CODE is "off".
+          AUTO_MERGE_CODE: ${{ vars.AUTO_MERGE_CODE != 'off' && 'on' || 'off' }}
           RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: node scripts/auto-merge-eligible.mjs
       - if: steps.decide.outputs.merge == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          # The workflow token may not merge a PR that changes a workflow file, and every PR that registers a proof
+          # changes ci.yml. With the optional secret AUTO_MERGE_TOKEN (a token with the workflows permission) this
+          # step merges those too. Without it the merge is refused, and the PR gets `merge-by-chat` for the dispatcher.
+          GH_TOKEN: ${{ secrets.AUTO_MERGE_TOKEN || github.token }}
+          LABEL_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           NUM: ${{ steps.decide.outputs.number }}
           SHA: ${{ steps.decide.outputs.sha }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA"
-          gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+          if out=$(gh pr merge "$NUM" --repo "$REPO" --squash --match-head-commit "$SHA" 2>&1); then
+            GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=auto-merged'
+            # A merge made with the workflow token fires no push event, so main would get no CI run. Start one.
+            if [ "$GH_TOKEN" = "$LABEL_TOKEN" ]; then
+              GH_TOKEN="$LABEL_TOKEN" gh workflow run ci.yml --repo "$REPO" --ref "$DEFAULT_BRANCH"
+            fi
+            exit 0
+          fi
+          # GitHub's words can name the PR's files, so no line of them may start a workflow command.
+          printf '%s\n' "$out" | sed 's/::/: :/g'
+          if ! grep -qE 'refusing to allow a GitHub App to create or update workflow|without .workflows. permission' <<<"$out"; then
+            echo "::warning::auto-merge could not merge PR #$NUM at $SHA, and not for the workflow-permission reason; left as it is"
+            exit 0
+          fi
+          # Hand over only the head that was checked. If a push landed meanwhile, the next run checks the new head.
+          head=$(GH_TOKEN="$LABEL_TOKEN" gh api "repos/$REPO/pulls/$NUM" --jq .head.sha)
+          if [ "$head" != "$SHA" ]; then
+            echo "::warning::PR #$NUM moved from $SHA to its new head before the hand-over; no merge-by-chat"
+            exit 0
+          fi
+          body=$(printf 'Auto-merge checked this PR at %s, but the workflow token may not merge a PR that changes a workflow file. The dispatcher merges it at this head only (docs/DESK.md, "The dispatcher", step 2).\n\n<!-- merge-by-chat: %s -->' "$SHA" "$SHA")
+          GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/comments" -f body="$body" >/dev/null
+          GH_TOKEN="$LABEL_TOKEN" gh api -X POST "repos/$REPO/issues/$NUM/labels" -f 'labels[]=merge-by-chat'
+          echo "::warning::auto-merge could not merge PR #$NUM at $SHA with the workflow token; labelled merge-by-chat"

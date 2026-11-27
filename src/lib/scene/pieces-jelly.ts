@@ -12,7 +12,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { RIM } from "@/lib/scene/palette";
 
 // One glossy jelly material for every piece (shared: disposeGroup leaves it alone).
-export const JELLY_PIECE_MAT = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.35 });
+const JELLY_PIECE_MAT = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.42, metalness: 0, clearcoat: 0.55, clearcoatRoughness: 0.35 });
 JELLY_PIECE_MAT.userData.shared = true;
 
 const WARM = "#ffd27a";

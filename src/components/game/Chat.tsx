@@ -1,7 +1,8 @@
 // The table chat dock and the shared chat box. Design: docs/design/chat.md, and Chat C (#899, docs/design/chat-c/README.md):
 // one chat button opens one panel with two tabs, Chat (the log, the six emoji, the composer) and Sounds & stickers.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as KeyEvent, type ReactNode } from "react";
 import { MessageSquare, Volume2, VolumeX } from "lucide-react";
+import { SeatDot } from "@/components/game/SeatDot";
 import { EmojiRow, Emote, setTab, SoundsTab, useMutedSeats, useTalk, type ChatTab, type ReactLine } from "@/components/game/talk";
 import { useGame, type GameLogLine } from "@/lib/game/store";
 import type { ChatLine } from "@/lib/net/table";
@@ -17,6 +18,9 @@ const INPUT_ID = "chat-input";
 const LINE_PX = 22;
 // The Open chat button sets this before the dock opens, and the dock focuses the input once it has (the two are separate components).
 const focusNext = { current: false };
+// #736 (docs/design/quick-react-tray.md P4A): Escape, Minimize and Close set this as they close the dock, and Open chat takes the
+// focus back once it is drawn again. A backdrop tap or the phone's too-short guard closes it without moving the focus.
+const focusOpen = { current: false };
 
 // Text renders only as React children. The mention is found with split() on the literal "@name", never a regex.
 function Mention({ text, name }: { text: string; name: string }) {
@@ -43,7 +47,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   if (line.sound) {
     return (
       <li data-testid="sound-line" className="flex items-center break-words text-sm leading-snug text-zinc-700">
-        <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+        <SeatDot color={line.color} className="mr-1 size-2" />
         <span className="mr-1 font-medium">{line.name}</span>
         <Volume2 aria-hidden="true" className="mr-0.5 size-3.5 shrink-0" />
         {line.text.replace(/^🔊\s*/, "")}
@@ -52,7 +56,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
   }
   return (
     <li className="break-words text-sm leading-snug text-zinc-900">
-      <span className="mr-1 inline-block size-2 rounded-full align-baseline" style={{ background: line.color }} />
+      <SeatDot color={line.color} className="mr-1 size-2 align-baseline" />
       <span className="mr-1 font-medium text-zinc-700">
         {line.name}
       </span>
@@ -65,7 +69,7 @@ function Line({ line, me }: { line: ChatLine; me: string }) {
 function ReactRow({ line, count }: { line: ReactLine; count: number }) {
   return (
     <li data-testid="react-line" data-emote={line.emote} className="flex items-center text-sm leading-snug text-zinc-700">
-      <span className="mr-1 inline-block size-2 shrink-0 rounded-full" style={{ background: line.color }} />
+      <SeatDot color={line.color} className="mr-1 size-2" />
       <span className="mr-1 font-medium">{line.name}</span>
       <Emote emote={line.emote} className="inline-flex size-5 shrink-0 items-center justify-center text-base leading-none" />
       {count > 1 ? <span className="ml-1 text-caption font-semibold tabular-nums">×{count}</span> : null}
@@ -79,11 +83,21 @@ const TABS: [ChatTab, string, typeof MessageSquare][] = [
 ];
 
 // The panel's two tabs (at most two, README), then the dock's own actions (Mute, Minimize) at the right.
+// #736 (P4A): the tabs pattern. Only the selected tab is in the Tab order, and Left and Right pick and focus the other tab.
+// Each tab is at least 44 px wide (P2A), so "Chat" is too in the 300 px desktop panel.
 function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?: string; dense?: boolean; narrow?: boolean }) {
   const tab = useTalk((s) => s.tab);
+  const onKey = (e: KeyEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const i = TABS.findIndex(([id]) => id === tab);
+    const next = TABS[(i + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length][0];
+    setTab(next);
+    document.getElementById(`chat-tab-${next}`)?.focus();
+  };
   return (
     <div data-testid={testid} className="flex shrink-0 items-center gap-1">
-      <div role="tablist" aria-label="Chat panel" className="flex min-w-0 flex-1 gap-1">
+      <div role="tablist" aria-label="Chat panel" className="flex min-w-0 flex-1 gap-1" onKeyDown={onKey}>
         {TABS.map(([id, label, Icon]) => (
           <button
             key={id}
@@ -92,10 +106,11 @@ function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?
             id={`chat-tab-${id}`}
             aria-selected={tab === id}
             aria-controls="chat-tabpanel"
+            tabIndex={tab === id ? 0 : -1}
             onClick={() => setTab(id)}
             className={cn(
               dense ? "h-8" : "h-11",
-              "flex min-w-0 cursor-pointer items-center gap-1 rounded-control bg-glass px-1.5 text-sm text-zinc-700 hover:text-zinc-900",
+              "flex min-w-11 cursor-pointer items-center gap-1 rounded-control bg-glass px-1.5 text-sm text-zinc-700 hover:text-zinc-900",
               id === "chat" && "shrink-0",
               tab === id && "font-semibold text-zinc-900 underline underline-offset-4",
             )}
@@ -201,8 +216,18 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
     else rowsShown.push(row);
   }
 
+  // #736 (P4A): Escape anywhere in the panel closes the panel (the dock's `onEscape`) and does nothing else: an armed build stays
+  // armed (escape-disarm.ts stands aside for this panel), and no layer behind it hears the key. In the lobby, which has no
+  // dock to close, Escape only leaves the input, as before.
+  const onKey = (e: KeyEvent<HTMLDivElement>) => {
+    if (e.key !== "Escape") return;
+    e.stopPropagation();
+    if (onEscape) onEscape();
+    else if (e.target instanceof HTMLInputElement) e.target.blur();
+  };
+
   return (
-    <div className={cn("flex min-h-0 flex-col gap-2", className)}>
+    <div data-chat-panel="" className={cn("flex min-h-0 flex-col gap-2", className)} onKeyDown={onKey}>
       {spectator ? (
         <div data-testid={headerTestId} className="flex shrink-0 items-center justify-between">
           <h2 className="text-sm font-medium">Table chat</h2>
@@ -238,7 +263,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
           {spectator ? (
             // Read-only (docs/design/spectator.md): the log stays; the emoji and input are this one line.
             <p data-testid="chat-readonly" className="shrink-0 text-xs text-zinc-700">
-              Watching — chat is read-only
+              Watching. Chat is read-only.
             </p>
           ) : (
             <>
@@ -251,12 +276,9 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
                   placeholder="Say something…"
                   onChange={(e) => setDraft(e.target.value)}
                   onKeyDown={(e) => {
-                    e.stopPropagation();
+                    // Typing reaches nothing else (keys 1-6, Enter). Escape goes on to the panel's own handler above.
+                    if (e.key !== "Escape") e.stopPropagation();
                     if (e.key === "Enter") send();
-                    if (e.key === "Escape") {
-                      e.currentTarget.blur();
-                      onEscape?.();
-                    }
                   }}
                   className="h-11 min-w-0 flex-1 rounded-control bg-glass px-2 text-sm text-zinc-900 placeholder:text-zinc-700"
                 />
@@ -276,6 +298,7 @@ export function ChatBox({ rows, minRows = 0, game, dense, narrow, onEscape, acti
   );
 }
 
+// #736 (P2A): 44 px wide in the desktop panel too, not 40.
 function MuteMenu({ above = false }: { above?: boolean }) {
   const seats = useGame((s) => s.seats);
   const seatId = useGame((s) => s.seatId);
@@ -297,7 +320,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
         aria-controls="chat-mute-panel"
         title="Mute players"
         onClick={() => setOpen((value) => !value)}
-        className={cn("flex h-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900", above ? "w-11" : "w-10")}
+        className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-control bg-glass text-zinc-700 hover:text-zinc-900"
       >
         {/* Icon only, so the two tabs fit beside it; its name and title say what it does. */}
         <VolumeX className="size-4" />
@@ -338,7 +361,7 @@ function MuteMenu({ above = false }: { above?: boolean }) {
             }}
             className="h-11 shrink-0 cursor-pointer rounded-control bg-glass px-3 text-left text-sm text-zinc-700 hover:text-zinc-900"
           >
-            Sound settings
+            Sound
           </button>
         </div>
       ) : null}
@@ -354,24 +377,16 @@ function useUnmutedUnread() {
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
   const { muted } = useMutedSeats(code);
-  const [unreadBySeat, setUnreadBySeat] = useState<Map<string, number>>(() => new Map());
-  const previousChat = useRef(chat);
-  const unreadBySeatRef = useRef(new Map<string, number>());
-  useEffect(() => {
-    if (open || unreadTotal === 0) {
-      unreadBySeatRef.current.clear();
-    } else {
-      const previousIds = new Set(previousChat.current.map((line) => line.id));
-      for (const line of chat) {
-        if (!previousIds.has(line.id) && line.seat !== seatId) {
-          unreadBySeatRef.current.set(line.seat, (unreadBySeatRef.current.get(line.seat) ?? 0) + 1);
-        }
-      }
-    }
-    previousChat.current = chat;
-    setUnreadBySeat(new Map(unreadBySeatRef.current));
-  }, [chat, open, seatId, unreadTotal]);
-  return [...unreadBySeat].reduce((count, [seat, messages]) => count + (muted.has(seat) ? 0 : messages), 0);
+  if (open || unreadTotal <= 0) return 0;
+  let seen = 0;
+  let unmuted = 0;
+  for (let i = chat.length - 1; i >= 0 && seen < unreadTotal; i--) {
+    const line = chat[i]!;
+    if (line.seat === seatId) continue;
+    seen++;
+    if (!muted.has(line.seat)) unmuted++;
+  }
+  return unmuted;
 }
 
 // The two table buttons, in the top row beside the Table menu (Hud's header). They sit in that row's flow, so they keep the same
@@ -381,9 +396,16 @@ export function ChatControls() {
   const open = useGame((s) => s.chatOpen);
   const unread = useUnmutedUnread();
   const setOpen = useGame((s) => s.setChatOpen);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (open || !focusOpen.current) return;
+    focusOpen.current = false;
+    button.current?.focus();
+  }, [open]);
   if (mode !== "online") return null;
   const openButton = (
     <button
+      ref={button}
       type="button"
       aria-label={unread ? `Open chat, ${unread} unread` : "Open chat"}
       onClick={() => {
@@ -481,9 +503,12 @@ export function ChatDock() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Enter" || useGame.getState().mode !== "online") return;
+      const s = useGame.getState();
+      // A pending placement owns Enter (PlaceChip confirms it); the chat waits.
+      if (e.key !== "Enter" || s.mode !== "online" || s.pendingPlace || s.howTo || s.costs || s.tradeOpen || s.menuFor) return;
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
       const t = e.target as HTMLElement | null;
-      if (t?.closest("button, a, [role=button], [role=radio], input, select, textarea")) return;
+      if (t?.closest("button, a, summary, [role=button], [role=radio], [role=tab], [role=menuitem], input, select, textarea, [contenteditable]")) return;
       e.preventDefault();
       focusNext.current = true;
       useGame.getState().setChatOpen(true);
@@ -494,6 +519,8 @@ export function ChatDock() {
   }, []);
 
   useEffect(() => {
+    // A close that Open chat never answered (it was not drawn) must not pull the focus on a later backdrop close.
+    if (open) focusOpen.current = false;
     if (open && focusNext.current) {
       focusNext.current = false;
       document.getElementById(INPUT_ID)?.focus();
@@ -502,12 +529,16 @@ export function ChatDock() {
 
   if (mode !== "online") return null;
 
+  const close = () => {
+    focusOpen.current = true;
+    setOpen(false);
+  };
   const minimize = (
     <button
       type="button"
-      aria-label="Minimize chat"
-      onClick={() => setOpen(false)}
-      className={cn("flex h-11 min-w-10 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
+      aria-label="Close chat"
+      onClick={close}
+      className={cn("flex h-11 min-w-11 cursor-pointer items-center justify-center gap-1 rounded-control bg-glass text-zinc-700 hover:text-zinc-900", phone && open && "px-3 text-sm")}
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-minus size-4" aria-hidden="true"><path d="M5 12h14" /></svg>
       {phone && open ? <span>Close</span> : null}
@@ -531,7 +562,7 @@ export function ChatDock() {
             className="flex-1"
             rows={4}
             game
-            onEscape={() => setOpen(false)}
+            onEscape={close}
             headerTestId="chat-sheet-header"
             actions={
               <div className="flex shrink-0 items-center gap-1">
@@ -561,7 +592,7 @@ export function ChatDock() {
           rows={6}
           game
           narrow
-          onEscape={() => setOpen(false)}
+          onEscape={close}
           actions={
             <div className="flex shrink-0 items-center gap-1">
               <MuteMenu />

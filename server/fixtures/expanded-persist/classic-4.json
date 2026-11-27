@@ -1,0 +1,1647 @@
+{
+ "code": "ZCNJ",
+ "visibility": "private",
+ "host": "s0",
+ "next": 4,
+ "botDeclined": {},
+ "recoveryPids": [],
+ "chat": [
+  {
+   "id": 0,
+   "seat": "s0",
+   "player": "p0",
+   "name": "Ash",
+   "color": "#e23d2e",
+   "text": "two bots at this table",
+   "at": 1794622832261
+  }
+ ],
+ "chatSeq": 1,
+ "game": {
+  "seed": 333464568,
+  "rng": 1116021269,
+  "seq": 60,
+  "hexes": [
+   {
+    "id": "-2,0",
+    "q": -2,
+    "r": 0,
+    "terrain": "clay",
+    "pip": 10,
+    "blocked": false
+   },
+   {
+    "id": "-2,1",
+    "q": -2,
+    "r": 1,
+    "terrain": "grain",
+    "pip": 9,
+    "blocked": false
+   },
+   {
+    "id": "-2,2",
+    "q": -2,
+    "r": 2,
+    "terrain": "wool",
+    "pip": 12,
+    "blocked": false
+   },
+   {
+    "id": "-1,-1",
+    "q": -1,
+    "r": -1,
+    "terrain": "grain",
+    "pip": 8,
+    "blocked": false
+   },
+   {
+    "id": "-1,0",
+    "q": -1,
+    "r": 0,
+    "terrain": "clay",
+    "pip": 5,
+    "blocked": false
+   },
+   {
+    "id": "-1,1",
+    "q": -1,
+    "r": 1,
+    "terrain": "ore",
+    "pip": 6,
+    "blocked": true
+   },
+   {
+    "id": "-1,2",
+    "q": -1,
+    "r": 2,
+    "terrain": "timber",
+    "pip": 11,
+    "blocked": false
+   },
+   {
+    "id": "0,-2",
+    "q": 0,
+    "r": -2,
+    "terrain": "waste",
+    "pip": null,
+    "blocked": false
+   },
+   {
+    "id": "0,-1",
+    "q": 0,
+    "r": -1,
+    "terrain": "grain",
+    "pip": 4,
+    "blocked": false
+   },
+   {
+    "id": "0,0",
+    "q": 0,
+    "r": 0,
+    "terrain": "timber",
+    "pip": 11,
+    "blocked": false
+   },
+   {
+    "id": "0,1",
+    "q": 0,
+    "r": 1,
+    "terrain": "wool",
+    "pip": 3,
+    "blocked": false
+   },
+   {
+    "id": "0,2",
+    "q": 0,
+    "r": 2,
+    "terrain": "wool",
+    "pip": 4,
+    "blocked": false
+   },
+   {
+    "id": "1,-2",
+    "q": 1,
+    "r": -2,
+    "terrain": "timber",
+    "pip": 3,
+    "blocked": false
+   },
+   {
+    "id": "1,-1",
+    "q": 1,
+    "r": -1,
+    "terrain": "clay",
+    "pip": 9,
+    "blocked": false
+   },
+   {
+    "id": "1,0",
+    "q": 1,
+    "r": 0,
+    "terrain": "wool",
+    "pip": 10,
+    "blocked": false
+   },
+   {
+    "id": "1,1",
+    "q": 1,
+    "r": 1,
+    "terrain": "ore",
+    "pip": 8,
+    "blocked": false
+   },
+   {
+    "id": "2,-2",
+    "q": 2,
+    "r": -2,
+    "terrain": "ore",
+    "pip": 6,
+    "blocked": false
+   },
+   {
+    "id": "2,-1",
+    "q": 2,
+    "r": -1,
+    "terrain": "grain",
+    "pip": 2,
+    "blocked": false
+   },
+   {
+    "id": "2,0",
+    "q": 2,
+    "r": 0,
+    "terrain": "timber",
+    "pip": 5,
+    "blocked": false
+   }
+  ],
+  "vertices": [
+   {
+    "id": "-2.91,-0.56",
+    "x": -2.9098453567157136,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "-2,0",
+     "-1,-1",
+     "-1,0"
+    ],
+    "building": {
+     "playerId": "p3",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-2.91,0.56",
+    "x": -2.9098453567157136,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-2,0",
+     "-2,1",
+     "-1,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-3.88,1.12",
+    "x": -3.879793808954285,
+    "z": 1.12,
+    "hexes": [
+     "-2,0",
+     "-2,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-4.85,0.56",
+    "x": -4.849742261192857,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-2,0"
+    ],
+    "building": null,
+    "harbor": "ore"
+   },
+   {
+    "id": "-4.85,-0.56",
+    "x": -4.849742261192857,
+    "z": -0.5600000000000002,
+    "hexes": [
+     "-2,0"
+    ],
+    "building": null,
+    "harbor": "ore"
+   },
+   {
+    "id": "-3.88,-1.12",
+    "x": -3.879793808954285,
+    "z": -1.12,
+    "hexes": [
+     "-2,0",
+     "-1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,1.12",
+    "x": -1.9398969044771421,
+    "z": 1.12,
+    "hexes": [
+     "-2,1",
+     "-1,0",
+     "-1,1"
+    ],
+    "building": {
+     "playerId": "p2",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-1.94,2.24",
+    "x": -1.9398969044771421,
+    "z": 2.24,
+    "hexes": [
+     "-2,1",
+     "-2,2",
+     "-1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,2.8",
+    "x": -2.9098453567157136,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-2,1",
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-3.88,2.24",
+    "x": -3.879793808954285,
+    "z": 2.24,
+    "hexes": [
+     "-2,1"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-0.97,2.8",
+    "x": -0.9699484522385712,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-2,2",
+     "-1,1",
+     "-1,2"
+    ],
+    "building": {
+     "playerId": "p2",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-0.97,3.92",
+    "x": -0.9699484522385712,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-2,2",
+     "-1,2"
+    ],
+    "building": null,
+    "harbor": "timber"
+   },
+   {
+    "id": "-1.94,4.48",
+    "x": -1.9398969044771426,
+    "z": 4.48,
+    "hexes": [
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,3.92",
+    "x": -2.909845356715714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-2.24",
+    "x": -1.9398969044771421,
+    "z": -2.24,
+    "hexes": [
+     "-1,-1",
+     "0,-2",
+     "0,-1"
+    ],
+    "building": {
+     "playerId": "p1",
+     "kind": "stronghold"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-1.12",
+    "x": -1.9398969044771421,
+    "z": -1.12,
+    "hexes": [
+     "-1,-1",
+     "-1,0",
+     "0,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-3.88,-2.24",
+    "x": -3.879793808954285,
+    "z": -2.24,
+    "hexes": [
+     "-1,-1"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-2.91,-2.8",
+    "x": -2.9098453567157136,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "-1,-1",
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-0.97,-0.56",
+    "x": -0.9699484522385712,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "-1,0",
+     "0,-1",
+     "0,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-0.97,0.56",
+    "x": -0.9699484522385712,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-1,0",
+     "-1,1",
+     "0,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,1.12",
+    "x": 1.1102230246251565e-16,
+    "z": 1.12,
+    "hexes": [
+     "-1,1",
+     "0,0",
+     "0,1"
+    ],
+    "building": {
+     "playerId": "p3",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "0,2.24",
+    "x": 1.1102230246251565e-16,
+    "z": 2.24,
+    "hexes": [
+     "-1,1",
+     "-1,2",
+     "0,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,2.8",
+    "x": 0.9699484522385714,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-1,2",
+     "0,1",
+     "0,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,3.92",
+    "x": 0.9699484522385714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-1,2",
+     "0,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,4.48",
+    "x": 6.858022075225179e-17,
+    "z": 4.48,
+    "hexes": [
+     "-1,2"
+    ],
+    "building": null,
+    "harbor": "timber"
+   },
+   {
+    "id": "-0.97,-3.92",
+    "x": -0.9699484522385712,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "0,-2",
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": "grain"
+   },
+   {
+    "id": "-0.97,-2.8",
+    "x": -0.9699484522385712,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "0,-2",
+     "0,-1",
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,-3.92",
+    "x": -2.9098453567157136,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-4.48",
+    "x": -1.9398969044771428,
+    "z": -4.48,
+    "hexes": [
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,-2.24",
+    "x": 1.1102230246251565e-16,
+    "z": -2.24,
+    "hexes": [
+     "0,-1",
+     "1,-2",
+     "1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,-1.12",
+    "x": 1.1102230246251565e-16,
+    "z": -1.12,
+    "hexes": [
+     "0,-1",
+     "0,0",
+     "1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,-0.56",
+    "x": 0.9699484522385714,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "0,0",
+     "1,-1",
+     "1,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,0.56",
+    "x": 0.9699484522385714,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "0,0",
+     "0,1",
+     "1,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,1.12",
+    "x": 1.9398969044771426,
+    "z": 1.12,
+    "hexes": [
+     "0,1",
+     "1,0",
+     "1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,2.24",
+    "x": 1.9398969044771426,
+    "z": 2.24,
+    "hexes": [
+     "0,1",
+     "0,2",
+     "1,1"
+    ],
+    "building": {
+     "playerId": "p0",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "2.91,2.8",
+    "x": 2.909845356715714,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "0,2",
+     "1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,3.92",
+    "x": 2.909845356715714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "0,2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "1.94,4.48",
+    "x": 1.9398969044771426,
+    "z": 4.48,
+    "hexes": [
+     "0,2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "0.97,-3.92",
+    "x": 0.9699484522385714,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "1,-2",
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,-2.8",
+    "x": 0.9699484522385714,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "1,-2",
+     "1,-1",
+     "2,-2"
+    ],
+    "building": {
+     "playerId": "p0",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "0,-4.48",
+    "x": -2.0574066225675535e-16,
+    "z": -4.48,
+    "hexes": [
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": "grain"
+   },
+   {
+    "id": "1.94,-2.24",
+    "x": 1.9398969044771426,
+    "z": -2.24,
+    "hexes": [
+     "1,-1",
+     "2,-2",
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,-1.12",
+    "x": 1.9398969044771426,
+    "z": -1.12,
+    "hexes": [
+     "1,-1",
+     "1,0",
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,-0.56",
+    "x": 2.909845356715714,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "1,0",
+     "2,-1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,0.56",
+    "x": 2.909845356715714,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "1,0",
+     "1,1",
+     "2,0"
+    ],
+    "building": {
+     "playerId": "p1",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "3.88,1.12",
+    "x": 3.879793808954285,
+    "z": 1.12,
+    "hexes": [
+     "1,1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": "wool"
+   },
+   {
+    "id": "3.88,2.24",
+    "x": 3.879793808954285,
+    "z": 2.24,
+    "hexes": [
+     "1,1"
+    ],
+    "building": null,
+    "harbor": "wool"
+   },
+   {
+    "id": "2.91,-3.92",
+    "x": 2.909845356715714,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": "clay"
+   },
+   {
+    "id": "2.91,-2.8",
+    "x": 2.909845356715714,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "2,-2",
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,-4.48",
+    "x": 1.9398969044771424,
+    "z": -4.48,
+    "hexes": [
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": "clay"
+   },
+   {
+    "id": "3.88,-2.24",
+    "x": 3.879793808954285,
+    "z": -2.24,
+    "hexes": [
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "3.88,-1.12",
+    "x": 3.879793808954285,
+    "z": -1.12,
+    "hexes": [
+     "2,-1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "4.85,-0.56",
+    "x": 4.849742261192857,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "4.85,0.56",
+    "x": 4.849742261192857,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   }
+  ],
+  "edges": [
+   {
+    "id": "-2.91,-0.56|-2.91,0.56",
+    "va": "-2.91,-0.56",
+    "vb": "-2.91,0.56",
+    "path": "p3"
+   },
+   {
+    "id": "-2.91,0.56|-3.88,1.12",
+    "va": "-2.91,0.56",
+    "vb": "-3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "-3.88,1.12|-4.85,0.56",
+    "va": "-3.88,1.12",
+    "vb": "-4.85,0.56",
+    "path": null
+   },
+   {
+    "id": "-4.85,-0.56|-4.85,0.56",
+    "va": "-4.85,0.56",
+    "vb": "-4.85,-0.56",
+    "path": null
+   },
+   {
+    "id": "-3.88,-1.12|-4.85,-0.56",
+    "va": "-4.85,-0.56",
+    "vb": "-3.88,-1.12",
+    "path": null
+   },
+   {
+    "id": "-2.91,-0.56|-3.88,-1.12",
+    "va": "-3.88,-1.12",
+    "vb": "-2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "-1.94,1.12|-1.94,2.24",
+    "va": "-1.94,1.12",
+    "vb": "-1.94,2.24",
+    "path": "p2"
+   },
+   {
+    "id": "-1.94,2.24|-2.91,2.8",
+    "va": "-1.94,2.24",
+    "vb": "-2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "-2.91,2.8|-3.88,2.24",
+    "va": "-2.91,2.8",
+    "vb": "-3.88,2.24",
+    "path": null
+   },
+   {
+    "id": "-3.88,1.12|-3.88,2.24",
+    "va": "-3.88,2.24",
+    "vb": "-3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "-1.94,1.12|-2.91,0.56",
+    "va": "-2.91,0.56",
+    "vb": "-1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,2.8|-0.97,3.92",
+    "va": "-0.97,2.8",
+    "vb": "-0.97,3.92",
+    "path": "p2"
+   },
+   {
+    "id": "-0.97,3.92|-1.94,4.48",
+    "va": "-0.97,3.92",
+    "vb": "-1.94,4.48",
+    "path": null
+   },
+   {
+    "id": "-1.94,4.48|-2.91,3.92",
+    "va": "-1.94,4.48",
+    "vb": "-2.91,3.92",
+    "path": null
+   },
+   {
+    "id": "-2.91,2.8|-2.91,3.92",
+    "va": "-2.91,3.92",
+    "vb": "-2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,2.8|-1.94,2.24",
+    "va": "-1.94,2.24",
+    "vb": "-0.97,2.8",
+    "path": "p2"
+   },
+   {
+    "id": "-1.94,-1.12|-1.94,-2.24",
+    "va": "-1.94,-2.24",
+    "vb": "-1.94,-1.12",
+    "path": "p1"
+   },
+   {
+    "id": "-1.94,-1.12|-2.91,-0.56",
+    "va": "-1.94,-1.12",
+    "vb": "-2.91,-0.56",
+    "path": "p3"
+   },
+   {
+    "id": "-3.88,-1.12|-3.88,-2.24",
+    "va": "-3.88,-1.12",
+    "vb": "-3.88,-2.24",
+    "path": null
+   },
+   {
+    "id": "-2.91,-2.8|-3.88,-2.24",
+    "va": "-3.88,-2.24",
+    "vb": "-2.91,-2.8",
+    "path": null
+   },
+   {
+    "id": "-1.94,-2.24|-2.91,-2.8",
+    "va": "-2.91,-2.8",
+    "vb": "-1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|-0.97,0.56",
+    "va": "-0.97,-0.56",
+    "vb": "-0.97,0.56",
+    "path": null
+   },
+   {
+    "id": "-0.97,0.56|-1.94,1.12",
+    "va": "-0.97,0.56",
+    "vb": "-1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|-1.94,-1.12",
+    "va": "-1.94,-1.12",
+    "vb": "-0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "0,1.12|0,2.24",
+    "va": "0,1.12",
+    "vb": "0,2.24",
+    "path": "p3"
+   },
+   {
+    "id": "-0.97,2.8|0,2.24",
+    "va": "0,2.24",
+    "vb": "-0.97,2.8",
+    "path": "p3"
+   },
+   {
+    "id": "-0.97,0.56|0,1.12",
+    "va": "-0.97,0.56",
+    "vb": "0,1.12",
+    "path": null
+   },
+   {
+    "id": "0.97,2.8|0.97,3.92",
+    "va": "0.97,2.8",
+    "vb": "0.97,3.92",
+    "path": null
+   },
+   {
+    "id": "0,4.48|0.97,3.92",
+    "va": "0.97,3.92",
+    "vb": "0,4.48",
+    "path": null
+   },
+   {
+    "id": "-0.97,3.92|0,4.48",
+    "va": "0,4.48",
+    "vb": "-0.97,3.92",
+    "path": null
+   },
+   {
+    "id": "0,2.24|0.97,2.8",
+    "va": "0,2.24",
+    "vb": "0.97,2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,-2.8|-0.97,-3.92",
+    "va": "-0.97,-3.92",
+    "vb": "-0.97,-2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,-2.8|-1.94,-2.24",
+    "va": "-0.97,-2.8",
+    "vb": "-1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "-2.91,-2.8|-2.91,-3.92",
+    "va": "-2.91,-2.8",
+    "vb": "-2.91,-3.92",
+    "path": null
+   },
+   {
+    "id": "-1.94,-4.48|-2.91,-3.92",
+    "va": "-2.91,-3.92",
+    "vb": "-1.94,-4.48",
+    "path": null
+   },
+   {
+    "id": "-0.97,-3.92|-1.94,-4.48",
+    "va": "-1.94,-4.48",
+    "vb": "-0.97,-3.92",
+    "path": null
+   },
+   {
+    "id": "0,-1.12|0,-2.24",
+    "va": "0,-2.24",
+    "vb": "0,-1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|0,-1.12",
+    "va": "0,-1.12",
+    "vb": "-0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "-0.97,-2.8|0,-2.24",
+    "va": "-0.97,-2.8",
+    "vb": "0,-2.24",
+    "path": null
+   },
+   {
+    "id": "0.97,-0.56|0.97,0.56",
+    "va": "0.97,-0.56",
+    "vb": "0.97,0.56",
+    "path": null
+   },
+   {
+    "id": "0,1.12|0.97,0.56",
+    "va": "0.97,0.56",
+    "vb": "0,1.12",
+    "path": null
+   },
+   {
+    "id": "0,-1.12|0.97,-0.56",
+    "va": "0,-1.12",
+    "vb": "0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "1.94,1.12|1.94,2.24",
+    "va": "1.94,1.12",
+    "vb": "1.94,2.24",
+    "path": "p0"
+   },
+   {
+    "id": "0.97,2.8|1.94,2.24",
+    "va": "1.94,2.24",
+    "vb": "0.97,2.8",
+    "path": null
+   },
+   {
+    "id": "0.97,0.56|1.94,1.12",
+    "va": "0.97,0.56",
+    "vb": "1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,2.8|2.91,3.92",
+    "va": "2.91,2.8",
+    "vb": "2.91,3.92",
+    "path": null
+   },
+   {
+    "id": "1.94,4.48|2.91,3.92",
+    "va": "2.91,3.92",
+    "vb": "1.94,4.48",
+    "path": null
+   },
+   {
+    "id": "0.97,3.92|1.94,4.48",
+    "va": "1.94,4.48",
+    "vb": "0.97,3.92",
+    "path": null
+   },
+   {
+    "id": "1.94,2.24|2.91,2.8",
+    "va": "1.94,2.24",
+    "vb": "2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "0.97,-2.8|0.97,-3.92",
+    "va": "0.97,-3.92",
+    "vb": "0.97,-2.8",
+    "path": "p0"
+   },
+   {
+    "id": "0,-2.24|0.97,-2.8",
+    "va": "0.97,-2.8",
+    "vb": "0,-2.24",
+    "path": null
+   },
+   {
+    "id": "-0.97,-3.92|0,-4.48",
+    "va": "-0.97,-3.92",
+    "vb": "0,-4.48",
+    "path": null
+   },
+   {
+    "id": "0,-4.48|0.97,-3.92",
+    "va": "0,-4.48",
+    "vb": "0.97,-3.92",
+    "path": "p0"
+   },
+   {
+    "id": "1.94,-1.12|1.94,-2.24",
+    "va": "1.94,-2.24",
+    "vb": "1.94,-1.12",
+    "path": null
+   },
+   {
+    "id": "0.97,-0.56|1.94,-1.12",
+    "va": "1.94,-1.12",
+    "vb": "0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "0.97,-2.8|1.94,-2.24",
+    "va": "0.97,-2.8",
+    "vb": "1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "2.91,-0.56|2.91,0.56",
+    "va": "2.91,-0.56",
+    "vb": "2.91,0.56",
+    "path": "p1"
+   },
+   {
+    "id": "1.94,1.12|2.91,0.56",
+    "va": "2.91,0.56",
+    "vb": "1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "1.94,-1.12|2.91,-0.56",
+    "va": "1.94,-1.12",
+    "vb": "2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "3.88,1.12|3.88,2.24",
+    "va": "3.88,1.12",
+    "vb": "3.88,2.24",
+    "path": null
+   },
+   {
+    "id": "2.91,2.8|3.88,2.24",
+    "va": "3.88,2.24",
+    "vb": "2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "2.91,0.56|3.88,1.12",
+    "va": "2.91,0.56",
+    "vb": "3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,-2.8|2.91,-3.92",
+    "va": "2.91,-3.92",
+    "vb": "2.91,-2.8",
+    "path": null
+   },
+   {
+    "id": "1.94,-2.24|2.91,-2.8",
+    "va": "2.91,-2.8",
+    "vb": "1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "0.97,-3.92|1.94,-4.48",
+    "va": "0.97,-3.92",
+    "vb": "1.94,-4.48",
+    "path": null
+   },
+   {
+    "id": "1.94,-4.48|2.91,-3.92",
+    "va": "1.94,-4.48",
+    "vb": "2.91,-3.92",
+    "path": null
+   },
+   {
+    "id": "3.88,-1.12|3.88,-2.24",
+    "va": "3.88,-2.24",
+    "vb": "3.88,-1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,-0.56|3.88,-1.12",
+    "va": "3.88,-1.12",
+    "vb": "2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "2.91,-2.8|3.88,-2.24",
+    "va": "2.91,-2.8",
+    "vb": "3.88,-2.24",
+    "path": null
+   },
+   {
+    "id": "4.85,-0.56|4.85,0.56",
+    "va": "4.85,-0.56",
+    "vb": "4.85,0.56",
+    "path": null
+   },
+   {
+    "id": "3.88,1.12|4.85,0.56",
+    "va": "4.85,0.56",
+    "vb": "3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "3.88,-1.12|4.85,-0.56",
+    "va": "3.88,-1.12",
+    "vb": "4.85,-0.56",
+    "path": null
+   }
+  ],
+  "robberHex": "-1,1",
+  "wayfarerMode": "on",
+  "players": [
+   {
+    "id": "p2",
+    "name": "Bot",
+    "color": "#f3ecd9",
+    "kind": "bot",
+    "resources": {
+     "timber": 0,
+     "clay": 0,
+     "wool": 1,
+     "grain": 2,
+     "ore": 0
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 12,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4,
+    "goodsLost": 2
+   },
+   {
+    "id": "p3",
+    "name": "Bot 2",
+    "color": "#8a4fd3",
+    "kind": "bot",
+    "resources": {
+     "timber": 0,
+     "clay": 0,
+     "wool": 3,
+     "grain": 1,
+     "ore": 0
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 1,
+    "pathsLeft": 11,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4
+   },
+   {
+    "id": "p1",
+    "name": "Reed",
+    "color": "#2d6ee8",
+    "kind": "human",
+    "resources": {
+     "timber": 0,
+     "clay": 0,
+     "wool": 1,
+     "grain": 2,
+     "ore": 1
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 13,
+    "outpostsLeft": 4,
+    "strongholdsLeft": 3,
+    "goodsLost": 2
+   },
+   {
+    "id": "p0",
+    "name": "Ash",
+    "color": "#e23d2e",
+    "kind": "human",
+    "resources": {
+     "timber": 1,
+     "clay": 1,
+     "wool": 2,
+     "grain": 0,
+     "ore": 4
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 12,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4
+   }
+  ],
+  "current": "p1",
+  "phase": "main",
+  "turn": 4,
+  "dice": [
+   1,
+   2
+  ],
+  "rollOff": {
+   "rolls": {
+    "p0": 2,
+    "p1": 3,
+    "p2": 6,
+    "p3": 4
+   },
+   "pending": []
+  },
+  "setupIndex": 8,
+  "lastSetupVertex": null,
+  "longestRoad": null,
+  "largestArmy": null,
+  "winner": null,
+  "victoryTarget": 10,
+  "bank": {
+   "timber": 18,
+   "clay": 18,
+   "wool": 12,
+   "grain": 14,
+   "ore": 14
+  },
+  "deck": [
+   "knight",
+   "knight",
+   "vp",
+   "plenty",
+   "knight",
+   "road",
+   "knight",
+   "monopoly",
+   "knight",
+   "vp",
+   "road",
+   "vp",
+   "knight",
+   "knight",
+   "knight",
+   "monopoly",
+   "knight",
+   "vp",
+   "knight",
+   "knight",
+   "knight",
+   "plenty",
+   "vp",
+   "knight"
+  ],
+  "trade": null,
+  "log": [
+   "The isle is dealt. Roll for first place.",
+   "Ash rolls a 2.",
+   "Reed rolls a 3.",
+   "Bot rolled for Bot: roll-off die 6.",
+   "Bot rolled for Bot 2: roll-off die 4.",
+   "Bot places first, then Bot 2, Reed, and Ash.",
+   "Bot built an outpost for Bot.",
+   "Bot built a path for Bot.",
+   "Bot built an outpost for Bot 2.",
+   "Bot built a path for Bot 2.",
+   "Reed raises an outpost.",
+   "Reed lays a path.",
+   "Ash raises an outpost.",
+   "Ash lays a path.",
+   "Ash gains 2 sheep, 1 stone — starting outpost.",
+   "Ash lays a path.",
+   "Reed gains 2 wheat — starting outpost.",
+   "Reed lays a path.",
+   "Bot 2 gains 1 wood, 1 sheep, 1 stone — starting outpost.",
+   "Bot built a path for Bot 2.",
+   "Bot gains 1 wood, 1 sheep, 1 stone — starting outpost.",
+   "Bot built a path for Bot.",
+   "The isle is settled. Roll to begin.",
+   "Bot rolled 10!",
+   "Bot 2 gains 1 brick; Reed gains 1 sheep — Bot's roll.",
+   "Bot passed for Bot; Bot 2's turn.",
+   "Bot 2 rolled 9!",
+   "Bot gains 1 wheat; Ash gains 1 brick — Bot 2's roll.",
+   "Bot 2 spends 1 wood, 1 brick — path.",
+   "Bot passed for Bot 2; Reed's turn.",
+   "Reed rolled 7!",
+   "Nobody gains goods — Reed's roll.",
+   "Reed moves the wayfarer — Reed gains 1 good; Bot loses 1 good; Bot is a joint public leader.",
+   "Ash's turn.",
+   "Ash rolled 8!",
+   "Bot 2 gains 1 wheat; Reed gains 1 wheat, 1 stone; Ash gains 1 stone — Ash's roll.",
+   "Bot's turn.",
+   "Bot rolled 3!",
+   "Bot 2 gains 1 sheep; Ash gains 1 wood, 1 sheep — Bot's roll.",
+   "Bot passed for Bot; Bot 2's turn.",
+   "Bot 2 rolled 9!",
+   "Bot gains 1 wheat; Ash gains 1 brick — Bot 2's roll.",
+   "Bot 2 spends 1 sheep, 1 wheat, 1 stone — buys a fortune.",
+   "Bot passed for Bot 2; Reed's turn.",
+   "Reed rolled 5!",
+   "Bot gains 1 brick; Bot 2 gains 1 brick; Reed gains 1 wood — Reed's roll.",
+   "Reed spends 3 wheat, 2 stone — stronghold.",
+   "Ash's turn.",
+   "Ash rolled 6!",
+   "Ash gains 1 stone — Ash's roll.",
+   "Ash spends 1 wood, 1 brick — path.",
+   "Bot's turn.",
+   "Bot rolled 6!",
+   "Ash gains 1 stone — Bot's roll.",
+   "Bot spends 1 wood, 1 brick — path.",
+   "Bot passed for Bot; Bot 2's turn.",
+   "Bot 2 rolled 7!",
+   "Nobody gains goods — Bot 2's roll.",
+   "Ash discards 4 goods.",
+   "Bot 2 moves the wayfarer — Bot 2 gains 1 good; Reed loses 1 good; Reed is the public leader.",
+   "Bot 2 plays Wayfarer — Bot 2 gains 1 good; Reed loses 1 good; Reed is the public leader.",
+   "Bot 2 spends 1 wood, 1 brick — path.",
+   "Bot passed for Bot 2; Reed's turn.",
+   "Reed rolled 7!",
+   "Nobody gains goods — Reed's roll.",
+   "Reed moves the wayfarer — Reed gains 1 good; Bot loses 1 good.",
+   "Ash's turn.",
+   "Ash rolled 6!",
+   "Ash gains 1 stone — Ash's roll.",
+   "Bot's turn.",
+   "Bot rolled 8!",
+   "Bot 2 gains 1 wheat; Reed gains 2 wheat, 1 stone; Ash gains 1 stone — Bot's roll.",
+   "Bot passed for Bot; Bot 2's turn.",
+   "Bot 2 rolled 12!",
+   "Bot gains 1 sheep — Bot 2's roll.",
+   "Bot passed for Bot 2; Reed's turn.",
+   "Reed rolled 3!",
+   "Bot 2 gains 1 sheep; Ash gains 1 wood, 1 sheep — Reed's roll."
+  ],
+  "discardNeeded": {},
+  "playedCard": false,
+  "rolls": 15,
+  "lastProduction": [
+   {
+    "hex": "0,1",
+    "player": "p3",
+    "res": "wool",
+    "n": 1,
+    "vertex": "0,1.12"
+   },
+   {
+    "hex": "0,1",
+    "player": "p0",
+    "res": "wool",
+    "n": 1,
+    "vertex": "1.94,2.24"
+   },
+   {
+    "hex": "1,-2",
+    "player": "p0",
+    "res": "timber",
+    "n": 1,
+    "vertex": "0.97,-2.8"
+   }
+  ],
+  "hostId": "p0"
+ },
+ "victoryTarget": 10,
+ "wayfarerMode": "on",
+ "seats": [
+  {
+   "id": "s0",
+   "name": "Ash",
+   "color": "#e23d2e",
+   "ready": true,
+   "pid": "p0",
+   "secret": "5bc55b9df13c366f0edd974f3f0862f6",
+   "turnDeadline": null,
+   "turnStartedAt": null,
+   "extension": {
+    "key": "4:p1:play",
+    "token": "228f5bd2-a161-4901-ad99-25dac9d9458c",
+    "used": false,
+    "extra": 0
+   }
+  },
+  {
+   "id": "s1",
+   "name": "Reed",
+   "color": "#2d6ee8",
+   "ready": true,
+   "pid": "p1",
+   "secret": "fb9ba12d5fefd3a7d04092a59132b4bf",
+   "turnDeadline": 1794622892211,
+   "turnStartedAt": 1794622832165,
+   "extension": {
+    "key": "4:p1:play",
+    "token": "ec4505a6-5001-4920-a7c0-aec3a5faa367",
+    "used": false,
+    "extra": 0
+   }
+  },
+  {
+   "id": "s2",
+   "name": "Bot",
+   "color": "#f3ecd9",
+   "ready": true,
+   "pid": "p2",
+   "secret": "f9d60ca18eac61e0b67ec0a47078690a",
+   "bot": true,
+   "turnDeadline": null,
+   "turnStartedAt": null,
+   "extension": {
+    "key": "4:p1:play",
+    "token": "02cb30cd-841f-452a-bec8-3350927a8faa",
+    "used": false,
+    "extra": 0
+   }
+  },
+  {
+   "id": "s3",
+   "name": "Bot 2",
+   "color": "#8a4fd3",
+   "ready": true,
+   "pid": "p3",
+   "secret": "36a664b2d0e29cd97ccd977068d62221",
+   "bot": true,
+   "turnDeadline": null,
+   "turnStartedAt": null,
+   "extension": {
+    "key": "4:p1:play",
+    "token": "3c5bd170-e968-471c-aab0-f0647ccef6f8",
+    "used": false,
+    "extra": 0
+   }
+  }
+ ],
+ "roster": {
+  "v": 1,
+  "gameId": "5ee6d019-aed8-4db0-a017-468eac7b4645",
+  "startedAt": 1794622830778,
+  "policy": 1,
+  "eligible": true,
+  "players": [
+   {
+    "pid": "p0",
+    "seat": "s0",
+    "profileId": null,
+    "name": "Ash",
+    "color": "#e23d2e",
+    "kind": "human"
+   },
+   {
+    "pid": "p1",
+    "seat": "s1",
+    "profileId": null,
+    "name": "Reed",
+    "color": "#2d6ee8",
+    "kind": "human"
+   },
+   {
+    "pid": "p2",
+    "seat": "s2",
+    "profileId": null,
+    "name": "Bot",
+    "color": "#f3ecd9",
+    "kind": "bot"
+   },
+   {
+    "pid": "p3",
+    "seat": "s3",
+    "profileId": null,
+    "name": "Bot 2",
+    "color": "#8a4fd3",
+    "kind": "bot"
+   }
+  ]
+ },
+ "outcome": null,
+ "assisted": [],
+ "shape": 2,
+ "savedAt": 1794622832284
+}

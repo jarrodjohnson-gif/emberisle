@@ -76,12 +76,11 @@ export function TurnMoment() {
     el.style.transform = transform;
     el.dataset.leaving = "true";
     void el.offsetWidth;
-    requestAnimationFrame(() => {
-      if (!el.isConnected) return;
-      el.style.opacity = "0";
-      el.style.transform = "scale(0.97)";
-      exitTimer.current = setTimeout(() => setUp(null), 160);
-    });
+    // The forced layout committed the frozen pose. Do not gate dismissal on another frame:
+    // a busy compositor can defer RAF while input and timers are still responsive.
+    el.style.opacity = "0";
+    el.style.transform = "scale(0.97)";
+    exitTimer.current = setTimeout(() => setUp(null), 160);
   };
   useEffect(() => {
     if (!up) return;

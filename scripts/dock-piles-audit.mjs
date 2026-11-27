@@ -1,6 +1,5 @@
 // Audit dock piles visibility across multiple seeds and token modes (Issue #1158)
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from 'vite';
 
@@ -14,9 +13,6 @@ await vite.listen();
 let browser;
 try {
   browser = await chromium.launch({
-    executablePath:
-      process.env.CHROMIUM_PATH ||
-      (existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined),
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   });
 

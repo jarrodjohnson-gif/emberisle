@@ -133,7 +133,7 @@ const port = await boot({ RENAME_MS: "0" });
   assert.ok(!withBot.seats.slice(0, 2).some((s) => s.color === bot.color), "the bot took a free colour");
   await settle();
   assert.equal(roomFile(code).seats[2].bot, true);
-  assert.equal(roomFile(code).shape, 2, "the room shape is unchanged: a bot is one more optional seat field");
+  assert.equal(roomFile(code).shape, 3, "the room shape is unchanged by a bot: a bot is one more optional seat field");
 
   // Remove it, add again, fill the table: a fifth seat is refused.
   ember.send({ type: "removeBot", id: bot.id });

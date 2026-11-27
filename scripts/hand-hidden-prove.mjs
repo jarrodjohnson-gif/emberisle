@@ -11,7 +11,7 @@
 //  - zero console errors.
 // Run: npm run hand-hidden-prove
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -27,7 +27,6 @@ const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, stric
 await vite.listen();
 const rules = await vite.ssrLoadModule("/src/lib/game/rules.ts");
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 let code = 0;

@@ -1,6 +1,6 @@
 // #175: open the table in a touch-emulated phone at 390x844 and 844x390, place an outpost with tap-then-confirm,
 // and save screenshots to test-results/mobile/. Fails on a console error or a wrong flow.
-import { existsSync, mkdirSync } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -10,7 +10,6 @@ mkdirSync(OUT, { recursive: true });
 const vite = await createServer({ server: { host: "127.0.0.1", port: PORT, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 const errors = [];
@@ -31,7 +30,7 @@ try {
     page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("button", { name: "Play with bots", exact: true }).click();
     await page.waitForFunction(myCorner, null, { polling: 100 });
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${OUT}/03-setup-${w}x${h}.png` });
@@ -54,7 +53,7 @@ try {
       await page.getByTestId("landscape-hint-dismiss").tap();
       if (await hint.isVisible()) fail("landscape hint should dismiss");
       await page.reload();
-      await page.getByRole("button", { name: "Play", exact: true }).click();
+      await page.getByRole("button", { name: "Play with bots", exact: true }).click();
       await page.waitForFunction(myCorner, null, { polling: 100 });
       await page.waitForTimeout(1500);
       if (await hint.isVisible()) fail("landscape hint came back after a reload in the same session");

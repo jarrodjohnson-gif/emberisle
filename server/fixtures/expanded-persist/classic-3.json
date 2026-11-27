@@ -1,0 +1,1550 @@
+{
+ "code": "4C2W",
+ "visibility": "private",
+ "host": "s0",
+ "next": 3,
+ "botDeclined": {},
+ "recoveryPids": [],
+ "chat": [
+  {
+   "id": 0,
+   "seat": "s1",
+   "player": "p1",
+   "name": "Tide",
+   "color": "#2d6ee8",
+   "text": "saved before shape 3",
+   "at": 1794622830572
+  }
+ ],
+ "chatSeq": 1,
+ "game": {
+  "seed": 805541937,
+  "rng": 2922701192,
+  "seq": 39,
+  "hexes": [
+   {
+    "id": "-2,0",
+    "q": -2,
+    "r": 0,
+    "terrain": "wool",
+    "pip": 6,
+    "blocked": false
+   },
+   {
+    "id": "-2,1",
+    "q": -2,
+    "r": 1,
+    "terrain": "timber",
+    "pip": 3,
+    "blocked": false
+   },
+   {
+    "id": "-2,2",
+    "q": -2,
+    "r": 2,
+    "terrain": "wool",
+    "pip": 8,
+    "blocked": false
+   },
+   {
+    "id": "-1,-1",
+    "q": -1,
+    "r": -1,
+    "terrain": "timber",
+    "pip": 2,
+    "blocked": false
+   },
+   {
+    "id": "-1,0",
+    "q": -1,
+    "r": 0,
+    "terrain": "grain",
+    "pip": 9,
+    "blocked": false
+   },
+   {
+    "id": "-1,1",
+    "q": -1,
+    "r": 1,
+    "terrain": "grain",
+    "pip": 4,
+    "blocked": false
+   },
+   {
+    "id": "-1,2",
+    "q": -1,
+    "r": 2,
+    "terrain": "clay",
+    "pip": 10,
+    "blocked": false
+   },
+   {
+    "id": "0,-2",
+    "q": 0,
+    "r": -2,
+    "terrain": "clay",
+    "pip": 5,
+    "blocked": false
+   },
+   {
+    "id": "0,-1",
+    "q": 0,
+    "r": -1,
+    "terrain": "waste",
+    "pip": null,
+    "blocked": true
+   },
+   {
+    "id": "0,0",
+    "q": 0,
+    "r": 0,
+    "terrain": "grain",
+    "pip": 11,
+    "blocked": false
+   },
+   {
+    "id": "0,1",
+    "q": 0,
+    "r": 1,
+    "terrain": "timber",
+    "pip": 5,
+    "blocked": false
+   },
+   {
+    "id": "0,2",
+    "q": 0,
+    "r": 2,
+    "terrain": "timber",
+    "pip": 9,
+    "blocked": false
+   },
+   {
+    "id": "1,-2",
+    "q": 1,
+    "r": -2,
+    "terrain": "wool",
+    "pip": 10,
+    "blocked": false
+   },
+   {
+    "id": "1,-1",
+    "q": 1,
+    "r": -1,
+    "terrain": "ore",
+    "pip": 3,
+    "blocked": false
+   },
+   {
+    "id": "1,0",
+    "q": 1,
+    "r": 0,
+    "terrain": "ore",
+    "pip": 6,
+    "blocked": false
+   },
+   {
+    "id": "1,1",
+    "q": 1,
+    "r": 1,
+    "terrain": "grain",
+    "pip": 12,
+    "blocked": false
+   },
+   {
+    "id": "2,-2",
+    "q": 2,
+    "r": -2,
+    "terrain": "ore",
+    "pip": 8,
+    "blocked": false
+   },
+   {
+    "id": "2,-1",
+    "q": 2,
+    "r": -1,
+    "terrain": "wool",
+    "pip": 4,
+    "blocked": false
+   },
+   {
+    "id": "2,0",
+    "q": 2,
+    "r": 0,
+    "terrain": "clay",
+    "pip": 11,
+    "blocked": false
+   }
+  ],
+  "vertices": [
+   {
+    "id": "-2.91,-0.56",
+    "x": -2.9098453567157136,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "-2,0",
+     "-1,-1",
+     "-1,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,0.56",
+    "x": -2.9098453567157136,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-2,0",
+     "-2,1",
+     "-1,0"
+    ],
+    "building": {
+     "playerId": "p2",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-3.88,1.12",
+    "x": -3.879793808954285,
+    "z": 1.12,
+    "hexes": [
+     "-2,0",
+     "-2,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-4.85,0.56",
+    "x": -4.849742261192857,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-2,0"
+    ],
+    "building": null,
+    "harbor": "ore"
+   },
+   {
+    "id": "-4.85,-0.56",
+    "x": -4.849742261192857,
+    "z": -0.5600000000000002,
+    "hexes": [
+     "-2,0"
+    ],
+    "building": null,
+    "harbor": "ore"
+   },
+   {
+    "id": "-3.88,-1.12",
+    "x": -3.879793808954285,
+    "z": -1.12,
+    "hexes": [
+     "-2,0",
+     "-1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,1.12",
+    "x": -1.9398969044771421,
+    "z": 1.12,
+    "hexes": [
+     "-2,1",
+     "-1,0",
+     "-1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,2.24",
+    "x": -1.9398969044771421,
+    "z": 2.24,
+    "hexes": [
+     "-2,1",
+     "-2,2",
+     "-1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,2.8",
+    "x": -2.9098453567157136,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-2,1",
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-3.88,2.24",
+    "x": -3.879793808954285,
+    "z": 2.24,
+    "hexes": [
+     "-2,1"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-0.97,2.8",
+    "x": -0.9699484522385712,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-2,2",
+     "-1,1",
+     "-1,2"
+    ],
+    "building": {
+     "playerId": "p1",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "-0.97,3.92",
+    "x": -0.9699484522385712,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-2,2",
+     "-1,2"
+    ],
+    "building": null,
+    "harbor": "clay"
+   },
+   {
+    "id": "-1.94,4.48",
+    "x": -1.9398969044771426,
+    "z": 4.48,
+    "hexes": [
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,3.92",
+    "x": -2.909845356715714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-2,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-2.24",
+    "x": -1.9398969044771421,
+    "z": -2.24,
+    "hexes": [
+     "-1,-1",
+     "0,-2",
+     "0,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-1.12",
+    "x": -1.9398969044771421,
+    "z": -1.12,
+    "hexes": [
+     "-1,-1",
+     "-1,0",
+     "0,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-3.88,-2.24",
+    "x": -3.879793808954285,
+    "z": -2.24,
+    "hexes": [
+     "-1,-1"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-2.91,-2.8",
+    "x": -2.9098453567157136,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "-1,-1",
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-0.97,-0.56",
+    "x": -0.9699484522385712,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "-1,0",
+     "0,-1",
+     "0,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-0.97,0.56",
+    "x": -0.9699484522385712,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "-1,0",
+     "-1,1",
+     "0,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,1.12",
+    "x": 1.1102230246251565e-16,
+    "z": 1.12,
+    "hexes": [
+     "-1,1",
+     "0,0",
+     "0,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,2.24",
+    "x": 1.1102230246251565e-16,
+    "z": 2.24,
+    "hexes": [
+     "-1,1",
+     "-1,2",
+     "0,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,2.8",
+    "x": 0.9699484522385714,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "-1,2",
+     "0,1",
+     "0,2"
+    ],
+    "building": {
+     "playerId": "p1",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "0.97,3.92",
+    "x": 0.9699484522385714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "-1,2",
+     "0,2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,4.48",
+    "x": 6.858022075225179e-17,
+    "z": 4.48,
+    "hexes": [
+     "-1,2"
+    ],
+    "building": null,
+    "harbor": "clay"
+   },
+   {
+    "id": "-0.97,-3.92",
+    "x": -0.9699484522385712,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "0,-2",
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "-0.97,-2.8",
+    "x": -0.9699484522385712,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "0,-2",
+     "0,-1",
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-2.91,-3.92",
+    "x": -2.9098453567157136,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "-1.94,-4.48",
+    "x": -1.9398969044771428,
+    "z": -4.48,
+    "hexes": [
+     "0,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,-2.24",
+    "x": 1.1102230246251565e-16,
+    "z": -2.24,
+    "hexes": [
+     "0,-1",
+     "1,-2",
+     "1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0,-1.12",
+    "x": 1.1102230246251565e-16,
+    "z": -1.12,
+    "hexes": [
+     "0,-1",
+     "0,0",
+     "1,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,-0.56",
+    "x": 0.9699484522385714,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "0,0",
+     "1,-1",
+     "1,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,0.56",
+    "x": 0.9699484522385714,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "0,0",
+     "0,1",
+     "1,0"
+    ],
+    "building": {
+     "playerId": "p0",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "1.94,1.12",
+    "x": 1.9398969044771426,
+    "z": 1.12,
+    "hexes": [
+     "0,1",
+     "1,0",
+     "1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,2.24",
+    "x": 1.9398969044771426,
+    "z": 2.24,
+    "hexes": [
+     "0,1",
+     "0,2",
+     "1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,2.8",
+    "x": 2.909845356715714,
+    "z": 2.8000000000000003,
+    "hexes": [
+     "0,2",
+     "1,1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,3.92",
+    "x": 2.909845356715714,
+    "z": 3.9200000000000004,
+    "hexes": [
+     "0,2"
+    ],
+    "building": null,
+    "harbor": "timber"
+   },
+   {
+    "id": "1.94,4.48",
+    "x": 1.9398969044771426,
+    "z": 4.48,
+    "hexes": [
+     "0,2"
+    ],
+    "building": null,
+    "harbor": "timber"
+   },
+   {
+    "id": "0.97,-3.92",
+    "x": 0.9699484522385714,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "1,-2",
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "0.97,-2.8",
+    "x": 0.9699484522385714,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "1,-2",
+     "1,-1",
+     "2,-2"
+    ],
+    "building": {
+     "playerId": "p0",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "0,-4.48",
+    "x": -2.0574066225675535e-16,
+    "z": -4.48,
+    "hexes": [
+     "1,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "1.94,-2.24",
+    "x": 1.9398969044771426,
+    "z": -2.24,
+    "hexes": [
+     "1,-1",
+     "2,-2",
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,-1.12",
+    "x": 1.9398969044771426,
+    "z": -1.12,
+    "hexes": [
+     "1,-1",
+     "1,0",
+     "2,-1"
+    ],
+    "building": {
+     "playerId": "p2",
+     "kind": "outpost"
+    },
+    "harbor": null
+   },
+   {
+    "id": "2.91,-0.56",
+    "x": 2.909845356715714,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "1,0",
+     "2,-1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "2.91,0.56",
+    "x": 2.909845356715714,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "1,0",
+     "1,1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "3.88,1.12",
+    "x": 3.879793808954285,
+    "z": 1.12,
+    "hexes": [
+     "1,1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": "wool"
+   },
+   {
+    "id": "3.88,2.24",
+    "x": 3.879793808954285,
+    "z": 2.24,
+    "hexes": [
+     "1,1"
+    ],
+    "building": null,
+    "harbor": "wool"
+   },
+   {
+    "id": "2.91,-3.92",
+    "x": 2.909845356715714,
+    "z": -3.9200000000000004,
+    "hexes": [
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "2.91,-2.8",
+    "x": 2.909845356715714,
+    "z": -2.8000000000000003,
+    "hexes": [
+     "2,-2",
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "1.94,-4.48",
+    "x": 1.9398969044771424,
+    "z": -4.48,
+    "hexes": [
+     "2,-2"
+    ],
+    "building": null,
+    "harbor": "any"
+   },
+   {
+    "id": "3.88,-2.24",
+    "x": 3.879793808954285,
+    "z": -2.24,
+    "hexes": [
+     "2,-1"
+    ],
+    "building": null,
+    "harbor": "grain"
+   },
+   {
+    "id": "3.88,-1.12",
+    "x": 3.879793808954285,
+    "z": -1.12,
+    "hexes": [
+     "2,-1",
+     "2,0"
+    ],
+    "building": null,
+    "harbor": "grain"
+   },
+   {
+    "id": "4.85,-0.56",
+    "x": 4.849742261192857,
+    "z": -0.5599999999999999,
+    "hexes": [
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   },
+   {
+    "id": "4.85,0.56",
+    "x": 4.849742261192857,
+    "z": 0.5599999999999999,
+    "hexes": [
+     "2,0"
+    ],
+    "building": null,
+    "harbor": null
+   }
+  ],
+  "edges": [
+   {
+    "id": "-2.91,-0.56|-2.91,0.56",
+    "va": "-2.91,-0.56",
+    "vb": "-2.91,0.56",
+    "path": "p2"
+   },
+   {
+    "id": "-2.91,0.56|-3.88,1.12",
+    "va": "-2.91,0.56",
+    "vb": "-3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "-3.88,1.12|-4.85,0.56",
+    "va": "-3.88,1.12",
+    "vb": "-4.85,0.56",
+    "path": null
+   },
+   {
+    "id": "-4.85,-0.56|-4.85,0.56",
+    "va": "-4.85,0.56",
+    "vb": "-4.85,-0.56",
+    "path": null
+   },
+   {
+    "id": "-3.88,-1.12|-4.85,-0.56",
+    "va": "-4.85,-0.56",
+    "vb": "-3.88,-1.12",
+    "path": null
+   },
+   {
+    "id": "-2.91,-0.56|-3.88,-1.12",
+    "va": "-3.88,-1.12",
+    "vb": "-2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "-1.94,1.12|-1.94,2.24",
+    "va": "-1.94,1.12",
+    "vb": "-1.94,2.24",
+    "path": null
+   },
+   {
+    "id": "-1.94,2.24|-2.91,2.8",
+    "va": "-1.94,2.24",
+    "vb": "-2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "-2.91,2.8|-3.88,2.24",
+    "va": "-2.91,2.8",
+    "vb": "-3.88,2.24",
+    "path": null
+   },
+   {
+    "id": "-3.88,1.12|-3.88,2.24",
+    "va": "-3.88,2.24",
+    "vb": "-3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "-1.94,1.12|-2.91,0.56",
+    "va": "-2.91,0.56",
+    "vb": "-1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,2.8|-0.97,3.92",
+    "va": "-0.97,2.8",
+    "vb": "-0.97,3.92",
+    "path": "p1"
+   },
+   {
+    "id": "-0.97,3.92|-1.94,4.48",
+    "va": "-0.97,3.92",
+    "vb": "-1.94,4.48",
+    "path": null
+   },
+   {
+    "id": "-1.94,4.48|-2.91,3.92",
+    "va": "-1.94,4.48",
+    "vb": "-2.91,3.92",
+    "path": null
+   },
+   {
+    "id": "-2.91,2.8|-2.91,3.92",
+    "va": "-2.91,3.92",
+    "vb": "-2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,2.8|-1.94,2.24",
+    "va": "-1.94,2.24",
+    "vb": "-0.97,2.8",
+    "path": null
+   },
+   {
+    "id": "-1.94,-1.12|-1.94,-2.24",
+    "va": "-1.94,-2.24",
+    "vb": "-1.94,-1.12",
+    "path": null
+   },
+   {
+    "id": "-1.94,-1.12|-2.91,-0.56",
+    "va": "-1.94,-1.12",
+    "vb": "-2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "-3.88,-1.12|-3.88,-2.24",
+    "va": "-3.88,-1.12",
+    "vb": "-3.88,-2.24",
+    "path": null
+   },
+   {
+    "id": "-2.91,-2.8|-3.88,-2.24",
+    "va": "-3.88,-2.24",
+    "vb": "-2.91,-2.8",
+    "path": null
+   },
+   {
+    "id": "-1.94,-2.24|-2.91,-2.8",
+    "va": "-2.91,-2.8",
+    "vb": "-1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|-0.97,0.56",
+    "va": "-0.97,-0.56",
+    "vb": "-0.97,0.56",
+    "path": null
+   },
+   {
+    "id": "-0.97,0.56|-1.94,1.12",
+    "va": "-0.97,0.56",
+    "vb": "-1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|-1.94,-1.12",
+    "va": "-1.94,-1.12",
+    "vb": "-0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "0,1.12|0,2.24",
+    "va": "0,1.12",
+    "vb": "0,2.24",
+    "path": null
+   },
+   {
+    "id": "-0.97,2.8|0,2.24",
+    "va": "0,2.24",
+    "vb": "-0.97,2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,0.56|0,1.12",
+    "va": "-0.97,0.56",
+    "vb": "0,1.12",
+    "path": null
+   },
+   {
+    "id": "0.97,2.8|0.97,3.92",
+    "va": "0.97,2.8",
+    "vb": "0.97,3.92",
+    "path": "p1"
+   },
+   {
+    "id": "0,4.48|0.97,3.92",
+    "va": "0.97,3.92",
+    "vb": "0,4.48",
+    "path": "p1"
+   },
+   {
+    "id": "-0.97,3.92|0,4.48",
+    "va": "0,4.48",
+    "vb": "-0.97,3.92",
+    "path": "p1"
+   },
+   {
+    "id": "0,2.24|0.97,2.8",
+    "va": "0,2.24",
+    "vb": "0.97,2.8",
+    "path": "p1"
+   },
+   {
+    "id": "-0.97,-2.8|-0.97,-3.92",
+    "va": "-0.97,-3.92",
+    "vb": "-0.97,-2.8",
+    "path": null
+   },
+   {
+    "id": "-0.97,-2.8|-1.94,-2.24",
+    "va": "-0.97,-2.8",
+    "vb": "-1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "-2.91,-2.8|-2.91,-3.92",
+    "va": "-2.91,-2.8",
+    "vb": "-2.91,-3.92",
+    "path": null
+   },
+   {
+    "id": "-1.94,-4.48|-2.91,-3.92",
+    "va": "-2.91,-3.92",
+    "vb": "-1.94,-4.48",
+    "path": null
+   },
+   {
+    "id": "-0.97,-3.92|-1.94,-4.48",
+    "va": "-1.94,-4.48",
+    "vb": "-0.97,-3.92",
+    "path": null
+   },
+   {
+    "id": "0,-1.12|0,-2.24",
+    "va": "0,-2.24",
+    "vb": "0,-1.12",
+    "path": null
+   },
+   {
+    "id": "-0.97,-0.56|0,-1.12",
+    "va": "0,-1.12",
+    "vb": "-0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "-0.97,-2.8|0,-2.24",
+    "va": "-0.97,-2.8",
+    "vb": "0,-2.24",
+    "path": null
+   },
+   {
+    "id": "0.97,-0.56|0.97,0.56",
+    "va": "0.97,-0.56",
+    "vb": "0.97,0.56",
+    "path": "p0"
+   },
+   {
+    "id": "0,1.12|0.97,0.56",
+    "va": "0.97,0.56",
+    "vb": "0,1.12",
+    "path": null
+   },
+   {
+    "id": "0,-1.12|0.97,-0.56",
+    "va": "0,-1.12",
+    "vb": "0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "1.94,1.12|1.94,2.24",
+    "va": "1.94,1.12",
+    "vb": "1.94,2.24",
+    "path": null
+   },
+   {
+    "id": "0.97,2.8|1.94,2.24",
+    "va": "1.94,2.24",
+    "vb": "0.97,2.8",
+    "path": null
+   },
+   {
+    "id": "0.97,0.56|1.94,1.12",
+    "va": "0.97,0.56",
+    "vb": "1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,2.8|2.91,3.92",
+    "va": "2.91,2.8",
+    "vb": "2.91,3.92",
+    "path": null
+   },
+   {
+    "id": "1.94,4.48|2.91,3.92",
+    "va": "2.91,3.92",
+    "vb": "1.94,4.48",
+    "path": null
+   },
+   {
+    "id": "0.97,3.92|1.94,4.48",
+    "va": "1.94,4.48",
+    "vb": "0.97,3.92",
+    "path": null
+   },
+   {
+    "id": "1.94,2.24|2.91,2.8",
+    "va": "1.94,2.24",
+    "vb": "2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "0.97,-2.8|0.97,-3.92",
+    "va": "0.97,-3.92",
+    "vb": "0.97,-2.8",
+    "path": "p0"
+   },
+   {
+    "id": "0,-2.24|0.97,-2.8",
+    "va": "0.97,-2.8",
+    "vb": "0,-2.24",
+    "path": null
+   },
+   {
+    "id": "-0.97,-3.92|0,-4.48",
+    "va": "-0.97,-3.92",
+    "vb": "0,-4.48",
+    "path": null
+   },
+   {
+    "id": "0,-4.48|0.97,-3.92",
+    "va": "0,-4.48",
+    "vb": "0.97,-3.92",
+    "path": null
+   },
+   {
+    "id": "1.94,-1.12|1.94,-2.24",
+    "va": "1.94,-2.24",
+    "vb": "1.94,-1.12",
+    "path": "p2"
+   },
+   {
+    "id": "0.97,-0.56|1.94,-1.12",
+    "va": "1.94,-1.12",
+    "vb": "0.97,-0.56",
+    "path": null
+   },
+   {
+    "id": "0.97,-2.8|1.94,-2.24",
+    "va": "0.97,-2.8",
+    "vb": "1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "2.91,-0.56|2.91,0.56",
+    "va": "2.91,-0.56",
+    "vb": "2.91,0.56",
+    "path": null
+   },
+   {
+    "id": "1.94,1.12|2.91,0.56",
+    "va": "2.91,0.56",
+    "vb": "1.94,1.12",
+    "path": null
+   },
+   {
+    "id": "1.94,-1.12|2.91,-0.56",
+    "va": "1.94,-1.12",
+    "vb": "2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "3.88,1.12|3.88,2.24",
+    "va": "3.88,1.12",
+    "vb": "3.88,2.24",
+    "path": null
+   },
+   {
+    "id": "2.91,2.8|3.88,2.24",
+    "va": "3.88,2.24",
+    "vb": "2.91,2.8",
+    "path": null
+   },
+   {
+    "id": "2.91,0.56|3.88,1.12",
+    "va": "2.91,0.56",
+    "vb": "3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,-2.8|2.91,-3.92",
+    "va": "2.91,-3.92",
+    "vb": "2.91,-2.8",
+    "path": null
+   },
+   {
+    "id": "1.94,-2.24|2.91,-2.8",
+    "va": "2.91,-2.8",
+    "vb": "1.94,-2.24",
+    "path": null
+   },
+   {
+    "id": "0.97,-3.92|1.94,-4.48",
+    "va": "0.97,-3.92",
+    "vb": "1.94,-4.48",
+    "path": null
+   },
+   {
+    "id": "1.94,-4.48|2.91,-3.92",
+    "va": "1.94,-4.48",
+    "vb": "2.91,-3.92",
+    "path": null
+   },
+   {
+    "id": "3.88,-1.12|3.88,-2.24",
+    "va": "3.88,-2.24",
+    "vb": "3.88,-1.12",
+    "path": null
+   },
+   {
+    "id": "2.91,-0.56|3.88,-1.12",
+    "va": "3.88,-1.12",
+    "vb": "2.91,-0.56",
+    "path": null
+   },
+   {
+    "id": "2.91,-2.8|3.88,-2.24",
+    "va": "2.91,-2.8",
+    "vb": "3.88,-2.24",
+    "path": null
+   },
+   {
+    "id": "4.85,-0.56|4.85,0.56",
+    "va": "4.85,-0.56",
+    "vb": "4.85,0.56",
+    "path": null
+   },
+   {
+    "id": "3.88,1.12|4.85,0.56",
+    "va": "4.85,0.56",
+    "vb": "3.88,1.12",
+    "path": null
+   },
+   {
+    "id": "3.88,-1.12|4.85,-0.56",
+    "va": "3.88,-1.12",
+    "vb": "4.85,-0.56",
+    "path": null
+   }
+  ],
+  "robberHex": "0,-1",
+  "wayfarerMode": "on",
+  "players": [
+   {
+    "id": "p2",
+    "name": "Pine",
+    "color": "#f3ecd9",
+    "kind": "human",
+    "resources": {
+     "timber": 0,
+     "clay": 0,
+     "wool": 1,
+     "grain": 2,
+     "ore": 4
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 13,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4
+   },
+   {
+    "id": "p0",
+    "name": "Ember",
+    "color": "#e23d2e",
+    "kind": "human",
+    "resources": {
+     "timber": 1,
+     "clay": 0,
+     "wool": 4,
+     "grain": 0,
+     "ore": 5
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 13,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4
+   },
+   {
+    "id": "p1",
+    "name": "Tide",
+    "color": "#2d6ee8",
+    "kind": "human",
+    "resources": {
+     "timber": 1,
+     "clay": 0,
+     "wool": 1,
+     "grain": 3,
+     "ore": 0
+    },
+    "hidden": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "boughtThisTurn": {
+     "knight": 0,
+     "road": 0,
+     "plenty": 0,
+     "monopoly": 0,
+     "vp": 0
+    },
+    "knightsPlayed": 0,
+    "pathsLeft": 10,
+    "outpostsLeft": 3,
+    "strongholdsLeft": 4
+   }
+  ],
+  "current": "p2",
+  "phase": "main",
+  "turn": 4,
+  "dice": [
+   4,
+   5
+  ],
+  "rollOff": {
+   "rolls": {
+    "p0": 4,
+    "p1": 2,
+    "p2": 6
+   },
+   "pending": []
+  },
+  "setupIndex": 6,
+  "lastSetupVertex": null,
+  "longestRoad": "p1",
+  "largestArmy": null,
+  "winner": null,
+  "victoryTarget": 10,
+  "bank": {
+   "timber": 17,
+   "clay": 19,
+   "wool": 13,
+   "grain": 14,
+   "ore": 10
+  },
+  "deck": [
+   "plenty",
+   "knight",
+   "knight",
+   "vp",
+   "knight",
+   "knight",
+   "knight",
+   "knight",
+   "vp",
+   "vp",
+   "knight",
+   "knight",
+   "plenty",
+   "monopoly",
+   "road",
+   "knight",
+   "monopoly",
+   "knight",
+   "vp",
+   "knight",
+   "road",
+   "knight",
+   "knight",
+   "knight",
+   "vp"
+  ],
+  "trade": null,
+  "log": [
+   "The isle is dealt. Roll for first place.",
+   "Ember rolls a 4.",
+   "Tide rolls a 2.",
+   "Pine rolls a 6.",
+   "Pine places first, then Ember and Tide.",
+   "Pine raises an outpost.",
+   "Pine lays a path.",
+   "Ember raises an outpost.",
+   "Ember lays a path.",
+   "Tide raises an outpost.",
+   "Tide lays a path.",
+   "Tide gains 2 wood, 1 brick — starting outpost.",
+   "Tide lays a path.",
+   "Ember gains 1 sheep, 2 stone — starting outpost.",
+   "Ember lays a path.",
+   "Pine gains 1 sheep, 2 stone — starting outpost.",
+   "Pine lays a path.",
+   "The isle is settled. Roll to begin.",
+   "Pine rolled 10!",
+   "Ember gains 1 sheep; Tide gains 2 brick — Pine's roll.",
+   "Ember's turn.",
+   "Ember rolled 6!",
+   "Pine gains 1 sheep, 1 stone; Ember gains 1 stone — Ember's roll.",
+   "Tide's turn.",
+   "Tide rolled 4!",
+   "Pine gains 1 sheep; Tide gains 1 wheat — Tide's roll.",
+   "Tide spends 1 wood, 1 brick — path.",
+   "Tide spends 1 wood, 1 brick — path.",
+   "Pine's turn.",
+   "Pine rolled 5!",
+   "Ember gains 1 wood; Tide gains 1 wood — Pine's roll.",
+   "Ember's turn.",
+   "Ember rolled 10!",
+   "Ember gains 1 sheep; Tide gains 2 brick — Ember's roll.",
+   "Tide's turn.",
+   "Tide rolled 6!",
+   "Pine gains 1 sheep, 1 stone; Ember gains 1 stone — Tide's roll.",
+   "Tide holds the longest path.",
+   "Tide spends 1 wood, 1 brick — path.",
+   "Pine's turn.",
+   "Pine rolled 4!",
+   "Pine gains 1 sheep; Tide gains 1 wheat — Pine's roll.",
+   "Pine traded 4 sheep to the bank for 1 wheat.",
+   "Ember's turn.",
+   "Ember rolled 8!",
+   "Ember gains 1 stone; Tide gains 1 sheep — Ember's roll.",
+   "Tide's turn.",
+   "Tide rolled 10!",
+   "Ember gains 1 sheep; Tide gains 2 brick — Tide's roll.",
+   "Tide traded 4 brick to the bank for 1 wheat.",
+   "Pine's turn.",
+   "Pine rolled 9!",
+   "Pine gains 1 wheat; Tide gains 1 wood — Pine's roll."
+  ],
+  "discardNeeded": {},
+  "playedCard": false,
+  "rolls": 10,
+  "lastProduction": [
+   {
+    "hex": "-1,0",
+    "player": "p2",
+    "res": "grain",
+    "n": 1,
+    "vertex": "-2.91,0.56"
+   },
+   {
+    "hex": "0,2",
+    "player": "p1",
+    "res": "timber",
+    "n": 1,
+    "vertex": "0.97,2.8"
+   }
+  ],
+  "hostId": "p0"
+ },
+ "victoryTarget": 10,
+ "wayfarerMode": "on",
+ "seats": [
+  {
+   "id": "s0",
+   "name": "Ember",
+   "color": "#e23d2e",
+   "ready": true,
+   "pid": "p0",
+   "secret": "1d99eab59e9efee832c136a706405f64",
+   "turnDeadline": null,
+   "turnStartedAt": null,
+   "extension": {
+    "key": "4:p2:play",
+    "token": "2a39f5df-b03f-4c8d-a43a-cd6eaa81dea1",
+    "used": false,
+    "extra": 0
+   }
+  },
+  {
+   "id": "s1",
+   "name": "Tide",
+   "color": "#2d6ee8",
+   "ready": true,
+   "pid": "p1",
+   "secret": "69930d2a1b065321f4da070c7bf7ff77",
+   "turnDeadline": null,
+   "turnStartedAt": null,
+   "extension": {
+    "key": "4:p2:play",
+    "token": "76fce964-f716-4208-a56f-921ef5d062e0",
+    "used": false,
+    "extra": 0
+   }
+  },
+  {
+   "id": "s2",
+   "name": "Pine",
+   "color": "#f3ecd9",
+   "ready": true,
+   "pid": "p2",
+   "secret": "8200d93b450db3bb8096d45a92903d44",
+   "turnDeadline": 1794622890522,
+   "turnStartedAt": 1794622830471,
+   "extension": {
+    "key": "4:p2:play",
+    "token": "85a37967-dfc3-4f3a-bedc-3d5a9cdadb58",
+    "used": false,
+    "extra": 0
+   }
+  }
+ ],
+ "roster": {
+  "v": 1,
+  "gameId": "b3e199d6-ba19-4baa-b9e2-190422fe28ba",
+  "startedAt": 1794622828518,
+  "policy": 1,
+  "eligible": true,
+  "players": [
+   {
+    "pid": "p0",
+    "seat": "s0",
+    "profileId": null,
+    "name": "Ember",
+    "color": "#e23d2e",
+    "kind": "human"
+   },
+   {
+    "pid": "p1",
+    "seat": "s1",
+    "profileId": null,
+    "name": "Tide",
+    "color": "#2d6ee8",
+    "kind": "human"
+   },
+   {
+    "pid": "p2",
+    "seat": "s2",
+    "profileId": null,
+    "name": "Pine",
+    "color": "#f3ecd9",
+    "kind": "human"
+   }
+  ]
+ },
+ "outcome": null,
+ "assisted": [],
+ "shape": 2,
+ "savedAt": 1794622830593
+}

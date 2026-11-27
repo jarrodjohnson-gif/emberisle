@@ -1,6 +1,5 @@
 // #634: replay the offending ore seed, then sweep deterministic layouts against check 7's numeral samples.
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -8,14 +7,13 @@ const port = Number(process.env.VITE_PORT) || 8099;
 const vite = await createServer({ server: { host: "127.0.0.1", port, strictPort: true }, logLevel: "error" });
 await vite.listen();
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
   const page = await browser.newPage({ viewport: { width: 960, height: 680 } });
   await page.addInitScript(() => localStorage.setItem("emberisle-jelly", "full"));
   await page.goto(`http://127.0.0.1:${port}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
   await page.waitForFunction(() => window.__emberisle.getState().screen === "play" && window.__isle?.lastState === window.__emberisle.getState().state && window.__isle.landReady && window.__isle.fit && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: 120_000 });
   await page.waitForFunction((r) => window.__isle?.renders > r + 2, await page.evaluate(() => window.__isle.renders));
   const results = await page.evaluate(async () => {

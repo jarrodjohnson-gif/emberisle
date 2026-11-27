@@ -1,5 +1,4 @@
 // #237: the wayfarer stands beside the token (#633: on the waste, its centre), hops (not slides), and the target hexes wear a band. Checks from docs/design/wayfarer.md.
-import { existsSync } from "node:fs";
 import { chromium } from "./proof-browser.mjs";
 import { createServer } from "vite";
 
@@ -23,7 +22,6 @@ const contrast = (a, b) => (Math.max(lum(a), lum(b)) + 0.05) / (Math.min(lum(a),
 check("contrast #2b2420 on #f4ead6 >= 10", contrast(0x2b2420, 0xf4ead6) >= 10, contrast(0x2b2420, 0xf4ead6).toFixed(2));
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
   args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
 });
 try {
@@ -31,7 +29,7 @@ try {
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(`http://127.0.0.1:${PORT}/`);
-  await page.getByRole("button", { name: "Play", exact: true }).click();
+  await page.getByRole("button", { name: "Play with bots", exact: true }).click();
 
   const setup = await page.evaluate(async () => {
     const g = window.__emberisle;

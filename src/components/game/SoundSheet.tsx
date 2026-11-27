@@ -1,5 +1,5 @@
 // #669: the Sound panel, option A of docs/design/sound-sheet-1276. TableMenu shows it in its own place: All sound, one volume and
-// mute for each kind of sound, the Sea sounds switch (#1163) and the players this device has muted. Every level is a slider in
+// mute for each kind of sound, the Sea sounds switch and volume (#1163) and the players this device has muted. Every level is a slider in
 // 10% steps with a 44 px touch area; letting go of one plays a short clip of its kind so the level can be heard.
 // A lazy chunk: it loads when the Table menu opens, long before Sound is pressed.
 import { useEffect, useRef, type CSSProperties } from "react";
@@ -8,20 +8,23 @@ import { SeatDot } from "@/components/game/SeatDot";
 import { useGame } from "@/lib/game/store";
 import { useMutedSeats } from "@/lib/use-muted-seats";
 import { isMusicOn, play, setMusicOn, setMuted, useMuted, useMusicOn, type SoundName } from "@/lib/sound";
-import { useSeaSounds, setSeaSounds } from "@/lib/sea-setting";
+import { useSeaSounds, useSeaVolume, setSeaSounds, setSeaVolume } from "@/lib/sea-setting";
 import { SOUND_CATEGORIES, getSoundMix, setCategoryMuted, setCategoryVolume, setMasterVolume, useSoundMix, type SoundCategory } from "@/lib/sound-settings";
 
 type Id = "master" | SoundCategory;
-const ROWS: { id: Id; name: string; sample: SoundName }[] = [
-  { id: "master", name: "All sound", sample: "ui_click" },
-  { id: "game", name: "Game sounds", sample: "ui_click" },
-  { id: "touch", name: "Board touch", sample: "tap_forest" },
-  { id: "memes", name: "Soundboard and memes", sample: "board_bong" },
-  { id: "music", name: "Music and ambience", sample: "game_start" },
+const ROWS: [Id, string, SoundName][] = [
+  ["master", "All sound", "ui_click"],
+  ["game", "Game sounds", "ui_click"],
+  ["touch", "Board touch", "tap_forest"],
+  ["memes", "Soundboard and memes", "board_bong"],
+  ["music", "Music and ambience", "game_start"],
 ];
 
 const ARROWS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
-const Speaker = ({ off }: { off: boolean }) => (off ? <VolumeX className="size-5" aria-hidden="true" /> : <Volume2 className="size-5" aria-hidden="true" />);
+const Speaker = ({ off }: { off: boolean }) => {
+  const Icon = off ? VolumeX : Volume2;
+  return <Icon className="size-5" aria-hidden="true" />;
+};
 
 function Row({ id, name, sample, level, off, onLevel, onMute }: { id: Id; name: string; sample: SoundName; level: number; off: boolean; onLevel: (v: number) => void; onMute: () => void }) {
   const pct = Math.round(level * 100);
@@ -65,6 +68,9 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   const muted = useMuted();
   const music = useMusicOn();
   const sea = useSeaSounds();
+  const seaLevel = useSeaVolume();
+  const seaPct = Math.round(seaLevel * 100);
+  const seaOff = !sea;
   const seats = useGame((s) => s.seats);
   const seatId = useGame((s) => s.seatId);
   const code = useGame((s) => s.code);
@@ -78,21 +84,23 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
   }, []);
   const targets = mode === "online" ? seats.filter((seat) => seat.id !== seatId && seat.name) : [];
 
-  const row = (r: (typeof ROWS)[number]) => {
-    if (r.id === "master") return <Row key={r.id} {...r} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => { setMuted(!muted); if (muted) play("ui_click"); }} />;
-    const c = mix[r.id];
+  const row = ([id, name, sample]: (typeof ROWS)[number]) => {
+    if (id === "master") return <Row key={id} id={id} name={name} sample={sample} level={mix.master} off={muted} onLevel={setMasterVolume} onMute={() => { setMuted(!muted); if (muted) play("ui_click"); }} />;
+    const c = mix[id];
     // Music is also off when the old Music switch was saved off; pressing mute then brings it back.
-    const off = c.muted || (r.id === "music" && !music);
+    const off = c.muted || (id === "music" && !music);
     return (
       <Row
-        key={r.id}
-        {...r}
+        key={id}
+        id={id}
+        name={name}
+        sample={sample}
         level={c.volume}
         off={off}
-        onLevel={(v) => setCategoryVolume(r.id as SoundCategory, v)}
+        onLevel={(v) => setCategoryVolume(id as SoundCategory, v)}
         onMute={() => {
-          if (r.id === "music" && !music) setMusicOn(true);
-          setCategoryMuted(r.id as SoundCategory, !off);
+          if (id === "music" && !music) setMusicOn(true);
+          setCategoryMuted(id as SoundCategory, !off);
         }}
       />
     );
@@ -113,11 +121,25 @@ export function SoundSheet({ onBack, onClose }: { onBack: () => void; onClose: (
         <section className="ss-card ss-mix">{ROWS.slice(0, 4).map(row)}</section>
         <section className="ss-card ss-music">
           {row(ROWS[4]!)}
-          <div className="ss-row ss-sub">
+          <div className="ss-row ss-sub" data-testid="sound-row-sea">
             <span className="ss-label">Sea sounds</span>
             <button type="button" role="switch" className="ss-switch" data-testid="sound-sea" aria-checked={sea} aria-label="Sea sounds" onClick={() => setSeaSounds(!sea)}>
               <span />
             </button>
+            <input
+              type="range"
+              className="ss-range"
+              data-testid="sound-slider-sea"
+              min={0}
+              max={100}
+              step={10}
+              value={seaPct}
+              aria-label="Sea sounds volume"
+              style={{ "--v": `${seaPct}%` } as CSSProperties}
+              data-off={seaOff ? "" : undefined}
+              onChange={(e) => setSeaVolume(Number(e.currentTarget.value) / 100)}
+            />
+            <span className="ss-val">{seaOff ? "Off" : `${seaPct}%`}</span>
           </div>
         </section>
         {targets.length ? (

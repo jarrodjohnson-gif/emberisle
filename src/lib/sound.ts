@@ -2,6 +2,7 @@
 // named as in server/cue.mjs. Nothing plays before the first pointer or key gesture (browsers refuse autoplay), and a
 // missing or blocked file is silent, never a thrown error or a console error.
 import { useSyncExternalStore } from "react";
+import { getSeaSounds, getSeaVolume, subscribeSeaSounds } from "./sea-setting";
 import { categoryGain, subscribeSoundMix, type SoundCategory } from "./sound-settings";
 import type { ExtraSoundName } from "./sound-extra";
 import type { Bag } from "./net/table";
@@ -109,6 +110,7 @@ if (typeof window !== "undefined") {
   const unlock = () => {
     unlocked = true;
     syncMusic();
+    syncAmbience();
   };
   window.addEventListener("pointerdown", unlock, { once: true, capture: true, passive: true });
   window.addEventListener("keydown", unlock, { once: true, capture: true, passive: true });
@@ -123,6 +125,7 @@ export function setMuted(v: boolean) {
   if (v) cancelForeground();
   syncVolumes();
   syncMusic();
+  syncAmbience();
   try {
     if (v) localStorage.setItem(MUTED_KEY, "1");
     else localStorage.removeItem(MUTED_KEY);
@@ -168,6 +171,7 @@ function pump() {
 }
 
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
+const pendingExtra = new Set<SoundName>();
 // `token` marks a foreground request: it starts only while it still owns the channel, and its end or refusal is reported.
 function start(name: SoundName, volume: number, category: SoundCategory, token?: number) {
   const gain = volume * categoryGain(category);
@@ -176,10 +180,19 @@ function start(name: SoundName, volume: number, category: SoundCategory, token?:
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
     if (extraFiles) return void finish(token);
-    void import("./sound-extra").then(({ EXTRA_FILES }) => {
-      extraFiles = EXTRA_FILES;
-      if (token === undefined || owner?.token === token) start(name, volume, category, token);
-    }, () => finish(token));
+    pendingExtra.add(name);
+    void import("./sound-extra").then(
+      ({ EXTRA_FILES }) => {
+        extraFiles = EXTRA_FILES;
+        // A cancelled or replaced foreground request starts nothing, and leaves the wait for a newer request of the same clip.
+        if ((token === undefined || owner?.token === token) && pendingExtra.delete(name)) start(name, volume, category, token);
+        else finish(token);
+      },
+      () => {
+        pendingExtra.delete(name);
+        finish(token);
+      },
+    );
     return;
   }
   try {
@@ -312,7 +325,8 @@ export function playLater(name: SoundName, volume: number, ms: number) {
 
 // Stop a clip that is playing (the end music, when its screen is left or the sound is muted).
 export function stop(name: SoundName) {
-  // A clip still waiting (its delay, or its place in the pacing queue) is cancelled too, so muting or leaving never lets it start late.
+  // A clip still waiting (its delay, lazy load, or place in the pacing queue) is cancelled too.
+  pendingExtra.delete(name);
   const wait = later.get(name);
   if (wait) clearTimeout(wait);
   later.delete(name);
@@ -360,6 +374,7 @@ export function useMusicOn() {
 
 export function setMusicOn(v: boolean) {
   bgOn = v;
+  if (!v) stop("end_music");
   try {
     if (v) localStorage.removeItem(MUSIC_KEY);
     else localStorage.setItem(MUSIC_KEY, "0");
@@ -367,7 +382,9 @@ export function setMusicOn(v: boolean) {
     // storage can be blocked; the toggle still holds for this page
   }
   if (!v) dropSilenced();
+  syncVolumes();
   syncMusic();
+  syncAmbience();
   for (const l of listeners) l();
 }
 
@@ -422,7 +439,7 @@ function syncMusic() {
 function syncVolumes() {
   for (const clip of clips.values()) {
     const [volume, category] = gains.get(clip)!;
-    clip.volume = muted ? 0 : volume * categoryGain(category);
+    clip.volume = muted || (category === "music" && !bgOn) ? 0 : volume * categoryGain(category);
   }
 }
 // A silenced category ends its long clip for good (and a waiting end music), so turning it back up never resumes a tail.
@@ -433,7 +450,19 @@ function dropSilenced() {
     endTimer = undefined;
   }
 }
-subscribeSoundMix(() => { dropSilenced(); syncVolumes(); syncMusic(); });
+subscribeSoundMix(() => { dropSilenced(); syncVolumes(); syncMusic(); syncAmbience(); });
+
+// #662: the sea-and-wind ambience at AMB_VOLUME under the Music and ambience level and the Sea sounds volume (#1163),
+// after the first gesture, while the Sea sounds switch is on, unless muted or Music is off. ambience.ts pauses it on a
+// hidden tab; it and its file load on its first start.
+export const AMB_VOLUME = 0.12;
+let amb: Promise<typeof import("./ambience")> | undefined;
+const ambienceLevel = () => (unlocked && !muted && bgOn && getSeaSounds() ? AMB_VOLUME * categoryGain("music") * getSeaVolume() : 0);
+subscribeSeaSounds(syncAmbience);
+function syncAmbience() {
+  if (!ambienceLevel() && !amb) return;
+  (amb ??= import("./ambience")).then((m) => m.sync(ambienceLevel()), () => { amb = undefined; });
+}
 
 // #667: a tap on a hex that places nothing plays that terrain's clip, at most once per TOUCH_GAP_MS. Only a sheep
 // hex (Pasture, "wool") baas. The renderer calls this for a plain tap only: never for a drag, a pinch or an armed placement.

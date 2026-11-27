@@ -612,7 +612,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     ok(`${what} says "${want}" and changes nothing`, r.error === want && JSON.stringify(r.state) === before && JSON.stringify(g) === before, r.error ?? "allowed");
   };
   const main = build();
-  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("an outpost next to a building", main, { type: "buildOutpost", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("an outpost on a built corner", main, { type: "buildOutpost", vertexId: vA }, "That corner is taken.");
   refuses("an outpost that touches no path of yours", main, { type: "buildOutpost", vertexId: vX }, "Outpost must touch your path.");
   refuses("a stronghold on another seat's outpost", main, { type: "buildStronghold", vertexId: vB }, "Upgrade one of your own outposts.");
@@ -622,7 +622,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   refuses("a disconnected path", main, { type: "buildPath", edgeId: island.id }, "Path must connect to you.");
   const setupOutpost = build();
   setupOutpost.phase = "setupSettle";
-  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close — leave one corner between buildings.");
+  refuses("a setup outpost next to a building", setupOutpost, { type: "setupSettle", vertexId: vN }, "Too close. Leave a corner between buildings.");
   refuses("a setup outpost on a built corner", setupOutpost, { type: "setupSettle", vertexId: vA }, "That corner is taken.");
   for (const phase of ["main", "setupSettle"]) {
     const opponent = build();
@@ -630,7 +630,7 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
     opponent.phase = phase;
     refuses(`${phase}: an outpost next to an opponent`, opponent,
       { type: phase === "main" ? "buildOutpost" : "setupSettle", vertexId: vN },
-      "Too close — leave one corner between buildings.");
+      "Too close. Leave a corner between buildings.");
     ok(`${phase}: legal spots exclude an opponent's adjacent corner`,
       !legalSettle(opponent, "p0", phase === "setupSettle").includes(vN));
   }
@@ -731,6 +731,64 @@ ok("a path cannot continue past an opponent's building (check 8 above)", true);
   giveCards(g.players[2], { wool: 9 });
   const s = rollTo(g, 7);
   ok("more than 7 cards discards half, rounded down", s.phase === "discard" && JSON.stringify(s.discardNeeded) === JSON.stringify({ p0: 4, p2: 4 }), s.discardNeeded);
+}
+// #1839: who the wayfarer may rob. A neighbour with an empty hand is never a target.
+{
+  const setup = () => {
+    const g = fresh();
+    g.phase = "robber";
+    const target = g.hexes.find((h) => h.terrain !== "waste" && h.id !== g.robberHex);
+    const corners = g.vertices.filter((v) => v.hexes.includes(target.id));
+    return { g, target, corners };
+  };
+  const total = (g) => g.players.map(hand).join();
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], {});
+    ok("an empty-handed building owner is not a steal target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+    const named = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: "p1" });
+    ok("naming an empty-handed neighbour is refused", named.error === "Cannot steal from them.", named.error);
+    const none = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "with no victim the wayfarer still moves and no hand changes",
+      !none.error && none.state.robberHex === target.id && none.state.phase !== "robber" && total(none.state) === total(g),
+      none.error ?? none.state.phase,
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p2", kind: "outpost" };
+    giveCards(g.players[1], {});
+    giveCards(g.players[2], { ore: 2 });
+    const auto = applyAction(g, "p0", { type: "moveRobber", hexId: target.id, stealFrom: null });
+    ok(
+      "only the neighbour with cards is listed, and a null steal takes from them",
+      stealTargets(g, target.id, "p0").join() === "p2" && !auto.error && hand(auto.state.players[0]) === 1 && hand(auto.state.players[2]) === 1 && hand(auto.state.players[1]) === 0,
+      auto.error ?? auto.state.players.map(hand),
+    );
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    corners[1].building = { playerId: "p1", kind: "stronghold" };
+    giveCards(g.players[1], { ore: 2 });
+    ok("one opponent with two buildings on the hex is listed once", stealTargets(g, target.id, "p0").join() === "p1", stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p0", kind: "outpost" };
+    giveCards(g.players[0], { ore: 2 });
+    ok("the roller's own building never makes the roller a target", stealTargets(g, target.id, "p0").length === 0, stealTargets(g, target.id, "p0"));
+  }
+  {
+    const { g, target, corners } = setup();
+    corners[0].building = { playerId: "p1", kind: "outpost" };
+    giveCards(g.players[1], { ore: 2 });
+    g.wayfarerMode = "off";
+    ok("wayfarer Off: no steal targets whatever the hands hold", stealTargets(g, target.id, "p0").length === 0);
+  }
 }
 {
   const g = fresh();

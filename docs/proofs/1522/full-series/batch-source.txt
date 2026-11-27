@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+export PATH=/workspace/work/runtime/node_modules/node/bin:$PATH
+cd /workspace/work/1494 || exit 2
+series_dir=/workspace/work/resume-nov9/1522-full-series
+mkdir -p "$series_dir"
+expected=c263f426178f6d7745aff1225dee4d59d285997b
+printf '%s\n' "$expected" > "$series_dir/source-head"
+git rev-parse HEAD:server/needs-prove.mjs > "$series_dir/proof-blob"
+node --version > "$series_dir/node-version"
+cat /sys/fs/cgroup/cpu.max > "$series_dir/cpu-max"
+node --input-type=module -e 'setInterval(()=>{const until=performance.now()+100;while(performance.now()<until){}},200)' &
+load_pid=$!
+trap 'kill "$load_pid" 2>/dev/null || true' EXIT
+for run in $(seq 1 20); do
+ if [ "$(git rev-parse HEAD)" != "$expected" ] || ! git diff --quiet HEAD --; then printf 'source changed; stop before run\n'; exit 2; fi
+ date -u +%FT%TZ > "$series_dir/$run.started"
+ npm run server-needs-prove > "$series_dir/$run.log" 2>&1
+ needs_result=$?
+ printf '%s\n' "$needs_result" > "$series_dir/$run.exit"
+ printf 'needs run %s exit %s\n' "$run" "$needs_result"
+ if [ "$needs_result" -ne 0 ]; then tail -20 "$series_dir/$run.log"; exit "$needs_result"; fi
+ if ! tail -1 "$series_dir/$run.log" | rg -q '^needs server prove ok$'; then printf 'missing terminal result\n'; exit 2; fi
+done

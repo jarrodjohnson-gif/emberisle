@@ -69,7 +69,7 @@ Every issue says its size in the body:
 | Node | **Issue**, filed under the milestone of its stage |
 | Child node | **Sub-issue** of the parent issue (GitHub allows 8 levels and 100 children per issue) |
 | Step (1-4) | Its own issue. Title starts with the step verb. Label `research`, `design`, `implementation`, or `test`. |
-| Decision | Issue titled `Decide: ...`. Anything waiting on it says `Depends on: #N`. |
+| Decision | An issue with `needs-owner` and one `Question:` comment (AGENTS.md rule 14). Anything waiting on it says `Depends on: #N`. |
 | Bug | Issue with the label `bug`, as a sub-issue of the step that found it |
 | Status | The Project **Status** field (section 6) |
 
@@ -120,7 +120,7 @@ on its own line when an AI cannot finish it. Those issues still get Research don
 | Claimed | An agent has posted `/claim`. The label bot sets `status:claimed`. |
 | In Progress | Someone is on it. |
 | Paused | Stopped on purpose, with the claim kept. The label bot sets `status:paused`. |
-| In Review | Reviewed by a different model and merged by the desk. Waiting for Jarrod to accept. |
+| In Review | The PR is open, green, and clean in a review by a different model. Auto-merge decides the merge ([`docs/flow/merging.md`](flow/merging.md)). |
 | Done | Accepted. The issue is closed. |
 | Canceled | Will not do. Close the issue as "not planned". Never delete it. |
 
@@ -144,9 +144,8 @@ do not adopt someone else's In Progress claim or treat a pause alone as Todo eli
    even before the issue shows any `claimed:` comment — means another agent is already on it. The issue's
    own label can lag behind real work in flight, so this check comes first and the PR search is the one
    that actually catches a concurrent session; skip to the next candidate issue if you find one.
-2. Check active claims and open PR file changes across every lane, including In Review. A claim remains
-   active until that agent pauses or its PR merges or closes. Historical same-agent `paused:` comments
-   also release claims; new pauses must include `/paused`. Never take files reserved by another
+2. Check active claims and open PR file changes across every lane, including In Review. When a claim
+   lasts and when it expires is in [`LANES.md`](LANES.md#picking-an-issue), step 2. Never take files reserved by another
    active claim; sharing a lane is allowed.
 3. Immediately before posting a claim, re-read the issue and every comment fresh. Recheck after any
    user wait, thinking break or check-in; an old issue-list result is not enough. If the issue is no
@@ -192,9 +191,9 @@ and `Bug:` issues:
 
 | Kind | Who decides | Then |
 |---|---|---|
-| Real bug (reproducible, and the game is wrong) | The orchestrator confirms it | Spec it and label `helper-ok`. Any builder may fix it. |
-| Minor UX: wording, spacing, hints, a missing cue, consistency with what's already decided | The orchestrator | Spec it and label `helper-ok`. |
-| Major UX: new screens or flows, layout changes, anything that changes how a turn feels | **Jarrod** | Ask him in one short message, then spec his answer. |
+| Real bug (reproducible, and the game is wrong) | The planner confirms it | Spec it and label `helper-ok`. Any builder may fix it. |
+| Minor UX: wording, spacing, hints, a missing cue, consistency with what's already decided | The planner, and a Fable look check on the PR | Spec it and label `helper-ok`. |
+| Major UX: new screens or flows, layout changes, anything that changes how a turn feels | **Jarrod** | Add `needs-owner` and post one `Question:` ([`docs/flow/builder.md`](flow/builder.md), "When you need Jarrod"). Then spec his answer. |
 | Major design: new features, rules, scoring, art style, pieces, sound identity | **Jarrod** | Same: ask him first. |
 
 Not a bug, or a no? Close it with a one-line reason.
@@ -216,7 +215,12 @@ Not a bug, or a no? Close it with a one-line reason.
   or other shared board code needs the board-look and scene proofs. A text or HUD-only change needs
   neither. Run the full presentation suites locally only when a reviewer asks, or when the change touches
   the renderer or shared board code. After the first push, let CI run the rest. Record your usage before
-  and after each issue in the PR if you can see it, so the desk can compare builders.
+  and after each issue in the PR if you can see it, so Jarrod can compare builders.
+- **Prove a bug fix fails first.** Run your new test against the base commit before you fix the bug. Paste its failing output in the PR body, with the base SHA. Then paste it passing on your head.
+  - Don't push a red commit to show this. A red commit turns CI red, and AGENTS.md rule 5 then makes you fix it or explain it.
+  - A feature shows its proof or screenshot instead. Docs-only changes are exempt.
+  - Pasted output is not the whole check: reviewers still revert the fix and confirm the test fails (`docs/REVIEWING.md`).
+- **Stay inside your claim.** Change only the files on your claim's `files:` line. A player-visible change the issue didn't ask for goes in its own issue as a `Question:`, never into this PR.
 - **Pick the model to fit the work.** Use the issue's `model:` label if it has one, and skip the issue if you cannot run that model. Otherwise use a
   smaller model for mechanical or search subagents, and the strongest one for UI, visual or tricky
   multi-file work.
@@ -235,22 +239,18 @@ only when it grows by more than its allowance (index 400 B gzip; others 0.33%, a
 If your change must grow a chunk past its allowance, say why in the PR body, with the measured numbers. The reviewer must OK it
 before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <built base checkout>` runs the growth check.
 
-**Two roles: Builder and Reviewer.**
+**Roles.** Each role has one short file in [`docs/flow/`](flow/), and [`docs/DESK.md`](DESK.md) maps them.
 
-| Role | Who | Does |
-|---|---|---|
-| Builder | the session doing the work | Steps 1-4, pushes, opens the PR, and fixes CI until it is green. **Never merges its own PR.** |
-| Reviewer | the **orchestrator**: the one session Jarrod names to review and merge | Reviews every open PR with a different model than its builder: reads the diff against the issue's completion test, checks CI and the framework rules (no to-do lists in files, issue comments present). Its review subagents follow [REVIEWING.md](REVIEWING.md). If CI is green and nothing is wrong, it **merges**. If something is wrong, it comments exactly what, and the PR stays open for its Builder. **No other session merges.** |
-| Jarrod | the owner | Accepts results: moves In Review to Done. No code reading needed. |
+- **Builder:** the chat doing the work. Steps 1-4, pushes, opens the PR, fixes CI, and has a reviewer subagent on a different model review it ([`builder.md`](flow/builder.md)). **It never merges.**
+- **Reviewer:** that subagent. It follows [REVIEWING.md](REVIEWING.md) and posts its review on the PR.
+- **Merge:** the auto-merge workflow decides every merge ([`merging.md`](flow/merging.md)). No chat decides one.
+- **Jarrod:** the owner. He answers on the Desk page ([`clerk.md`](flow/clerk.md)). No code reading needed.
 
 A new Builder chat therefore starts: take the next eligible issue with no file conflict
 ([LANES.md](LANES.md)).
 
-**End of a chat, or a finished task:** give Jarrod one line to paste into a new chat:
-`Work on Emberisle.` (AGENTS.md covers the rest.)
-
-**Ask Jarrod before:** deleting, overwriting, or bulk-moving files; pushing to `main`; and anything
-outward-facing (posting outside this repo, sharing links, or spending money).
+**Ask Jarrod before** deleting, overwriting, or bulk-moving files, pushing to `main`, and anything
+outward-facing (posting outside this repo, sharing links, or spending money). Ask with `needs-owner` and a `Question:`, never in a chat.
 
 ## 8. Ideas vs issues
 
@@ -268,8 +268,8 @@ If bugs live in an outside log, do not copy each one. Make one pointer issue per
 
 Churn costs more than most rule fixes are worth. So:
 
-- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/REVIEWING.md`, `docs/HELPERS.md`) change only through an open issue titled `Decide: <the change>`. The desk batches the decisions and applies them **at most once a week**. Jarrod's dated words in that issue are the authority.
-- **These don't need a `Decide:` issue:** fixing a typo, a wrong number or a broken link; recording an owner decision in `docs/DECISIONS.md`; updating `#916`.
+- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/flow/`, `docs/REVIEWING.md`, `docs/HELPERS.md`, `docs/OWNER.md`) change only through an issue for that change. Every such PR merges only on Jarrod's tap on the Desk page ([`docs/flow/merging.md`](flow/merging.md)).
+- **These need no issue of their own:** fixing a typo, a wrong number or a broken link; recording an owner decision in `docs/DECISIONS.md`.
 - **GitHub settings** (the `main` ruleset, variables, secrets) change only on Jarrod's own say-so, and each change gets a row in `docs/DECISIONS.md`.
 - **CI suite names are fixed.** The four `browser-b` names, the three `browser-a` parts, `server`, `build` and `checks` live in three places: the `main` ruleset, the job names in `.github/workflows/ci.yml`, and `AGGREGATE_JOBS` in `scripts/flake-rerun.mjs`. Don't rename or add a suite without changing all three in one go and logging it.
 

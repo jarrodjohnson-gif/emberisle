@@ -4,34 +4,24 @@
 // leaving the game open, and Start closing it. Pictures at 1280x720, 390x844 and 844x390: docs/proofs/1263/.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
 const out = process.env.LOBBY_PROOF_OUT || "docs/proofs/1263";
 mkdirSync(out, { recursive: true });
 
-const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1263-rooms-"));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: `${rooms}/results` },
-});
-const hostPort = await new Promise((resolve, reject) => {
-  host.on("error", reject);
-  host.stdout.on("data", (d) => {
-    const m = String(d).match(/listening (\d+)/);
-    if (m) resolve(Number(m[1]));
-  });
-  host.on("exit", (code) => reject(new Error(`host exited ${code}`)));
-});
-const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
-await vite.listen();
-const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
-const browser = await chromium.launch({
-  executablePath: process.env.CHROMIUM_PATH || (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined),
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+let rooms;
+let host;
+let vite;
+let url;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 });
 const problems = [];
 
@@ -126,6 +116,18 @@ async function geometry(page, label) {
 }
 
 try {
+  rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1263-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, PROFILES_DIR: path.join(rooms, "profiles"), RESULTS_DIR: `${rooms}/results` },
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch({
+    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  });
   const ember = await client({ width: 1280, height: 720 }, false, "Ember");
   const code = await ember.evaluate(() => window.__emberisle.getState().code);
   const tide = await client({ width: 390, height: 844 }, true, "Tide", code);
@@ -134,7 +136,7 @@ try {
   await ember.waitForFunction(() => window.__emberisle.getState().seats.length === 3);
 
   // The shelf: a table-mate is there, so the tile says so; the picker lists people only, never the bot.
-  await ember.getByRole("button", { name: "Play games" }).click();
+  await ember.getByRole("tab", { name: "Play games" }).click();
   await tile(ember).waitFor();
   assert.equal(await line(ember).textContent(), "With a table-mate");
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
@@ -149,12 +151,12 @@ try {
   console.log("ok  1280x720: the tile names a table-mate, the picker lists Tide only, and the invite waits");
 
   // Tide's tab carries the badge; no popup opens. Tide takes the invite and both boards open.
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).waitFor();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).waitFor();
   assert.equal(await tide.locator(".lb").textContent(), "1");
   assert.equal(await tide.getByTestId("ttt").count(), 0, "an invite never opens a board by itself");
   await contrast(tide, "badge 390");
   await tide.screenshot({ path: `${out}/390x844-badge.png` });
-  await tide.getByRole("button", { name: "Play games, 1 invite" }).click();
+  await tide.getByRole("tab", { name: "Play games, 1 invite" }).click();
   assert.equal(await line(tide).textContent(), "Ember wants to play");
   await contrast(tide, "invited 390");
   await tide.screenshot({ path: `${out}/390x844-invited.png` });
@@ -193,20 +195,20 @@ try {
   await tide.setViewportSize({ width: 390, height: 844 });
   console.log("ok  844x390: picture saved");
 
-  // Play again: Tide goes first. Close keeps the game; Quit ends it for both.
+  // Play again: Tide goes first. Hide keeps the game; Quit ends it for both.
   await tide.getByRole("button", { name: "Play again" }).click();
   for (const page of [ember, tide]) await page.waitForFunction(() => window.__emberisle.getState().ttt?.game?.status === "playing");
   assert.equal(await turn(tide).textContent(), "Your turn");
   await cell(tide, 4).click();
   await ember.waitForFunction(() => window.__emberisle.getState().ttt?.game?.board[4] === "o");
-  await ember.getByRole("button", { name: "Close", exact: true }).click();
+  await ember.getByRole("button", { name: "Hide", exact: true }).click();
   assert.equal(await line(ember).textContent(), "You and Tide");
   await tile(ember).getByRole("button", { name: "Open" }).click();
-  assert.equal(await cell(ember, 4).textContent(), "O", "Close kept the game");
+  assert.equal(await cell(ember, 4).textContent(), "O", "Hide kept the game");
   await tide.getByRole("button", { name: "Quit game" }).click();
   await ember.getByTestId("ttt").waitFor({ state: "detached" });
   assert.equal(await line(ember).textContent(), "Tide closed the game.");
-  console.log("ok  Play again with Tide first, Close keeps the game, Quit closes it for both");
+  console.log("ok  Play again with Tide first, Hide keeps the game, Quit closes it for both");
 
   // A decline.
   await tile(ember).getByRole("button", { name: "Play", exact: true }).click();
@@ -239,7 +241,13 @@ try {
   if (problems.length) console.error(problems.join("\n"));
   throw error;
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 }
