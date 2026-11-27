@@ -156,11 +156,13 @@ const GAP_MS = 150;
 const MAX_QUEUE = 8;
 const UI: ReadonlySet<SoundName> = new Set<SoundName>(["ui_click", "ui_back", "ui_error"]);
 const asked = new Map<SoundName, number>();
-const queue: [SoundName, number, SoundCategory][] = [];
+const queue: [SoundName, number, SoundCategory, number?][] = [];
 let pacing = false;
 
 function pump() {
-  const next = queue.shift();
+  let next = queue.shift();
+  // A foreground request cancelled or cut off while it waited here starts nothing and takes no slot.
+  while (next && next[3] !== undefined && owner?.token !== next[3]) next = queue.shift();
   if (!next) {
     pacing = false;
     return;
@@ -251,11 +253,24 @@ function cutOff() {
   }
 }
 
+// A foreground request goes through play()'s burst filter and pacing queue like any clip, carrying its token. It is checked
+// against that gate first, so a request the gate would drop never cuts the playing clip off.
+let handoff: number | undefined;
+function takeHandoff() {
+  const token = handoff;
+  handoff = undefined;
+  return token;
+}
+const admitted = (name: SoundName) => (UI.has(name) || Date.now() - (asked.get(name) ?? -GAP_MS) >= GAP_MS) && queue.length < MAX_QUEUE;
+
 export function playForeground(name: SoundName, role: Foreground, volume = 1, category = soundCategory(name)) {
-  if (typeof Audio === "undefined" || !audible(category) || (playing() && RANK[owner!.role] > RANK[role])) return;
+  if (typeof Audio === "undefined" || !audible(category) || !admitted(name) || (playing() && RANK[owner!.role] > RANK[role])) return;
   cutOff();
   owner = { role, token: ++tokens, category };
-  start(name, volume, category, owner.token);
+  handoff = owner.token;
+  play(name, volume, category);
+  // play() refused it after all: the request is over, and nothing waits on it.
+  finish(takeHandoff());
 }
 
 // End music, `ms` after the outcome starts, or when the outcome clip ends if that is later.
@@ -287,7 +302,7 @@ export function play(name: SoundName, volume = 1, category = soundCategory(name)
   const now = Date.now();
   if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
-  queue.push([name, volume, category]);
+  queue.push([name, volume, category, takeHandoff()]);
   if (!pacing) pump();
 }
 
@@ -330,7 +345,7 @@ export function stop(name: SoundName) {
   const wait = later.get(name);
   if (wait) clearTimeout(wait);
   later.delete(name);
-  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) queue.splice(i, 1);
+  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) finish(queue.splice(i, 1)[0]![3]);
   for (const [key, clip] of clips) if (key === name || key.startsWith(`${name}:`)) {
     clip.pause();
     clip.currentTime = 0;

@@ -4,6 +4,7 @@
 // - Mute, a silenced category and Music off end the clip of that kind only, and turning it back on resumes nothing.
 // - End music waits for its outcome (at least 1.5 s, longer while the outcome clip still plays); cancelling while it waits,
 //   or while it is delayed, starts nothing.
+// - Foreground clips go through play()'s burst filter and pacing queue; one cancelled or cut off while queued starts nothing.
 // - Refused and late-refused plays, stale ended events and a game-end chunk that resolves after a cancel start nothing.
 // - The real callers: hear() (outcome, start, match point, rematch), startAi, goTitle (Leave), and the results panel's
 //   Look around and Escape (hide), repeated.
@@ -59,9 +60,9 @@ const checks = {
         const { S } = window.__t;
         const name = (r) => FG[r].replace(".mp3", "");
         S.playForeground(name(a), a);
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 200));
         S.playForeground(name(b), b);
-        await new Promise((r) => setTimeout(r, 20));
+        await new Promise((r) => setTimeout(r, 200));
         const live = window.__audios.filter((x) => Object.values(FG).includes(x.src) && !x.paused).map((x) => x.src);
         const started = window.__plays.map((p) => p.file);
         window.__end(FG[b]);
@@ -86,7 +87,7 @@ const checks = {
       S.playForeground("game_lose", "outcome");
       window.__staleEnd("sb_airhorn.mp3");
       S.playForeground("match_point", "match");
-      await new Promise((r) => setTimeout(r, 20));
+      await new Promise((r) => setTimeout(r, 200));
       return window.__plays.map((p) => p.file);
     });
     assert.deepEqual(blocked, ["sb_airhorn.mp3", "game_lose.mp3"], "a cut-off clip's late ended event does not let a lower clip in");
@@ -98,7 +99,7 @@ const checks = {
     const got = await page.evaluate(async () => {
       const { S, M } = window.__t;
       const playing = (f) => window.__audios.some((x) => x.src === f && !x.paused);
-      const wait = () => new Promise((r) => setTimeout(r, 20));
+      const wait = () => new Promise((r) => setTimeout(r, 200));
       const out = {};
       S.playForeground("sb_airhorn", "board");
       M.setCategoryMuted("music", true);
@@ -150,41 +151,45 @@ const checks = {
       const out = {};
       S.playForeground("game_lose", "outcome");
       S.playEndMusic(50);
-      await wait(150);
+      await wait(300);
       out.behind = files();
       window.__end("game_lose.mp3");
-      await wait(20);
+      await wait(200);
       out.after = files();
       S.cancelForeground();
       window.__plays = [];
+      await wait(400);
       S.playForeground("game_lose", "outcome");
       S.playEndMusic(50);
       S.cancelForeground();
-      await wait(150);
+      await wait(300);
       out.delayed = files();
       window.__plays = [];
+      await wait(400);
       S.playForeground("game_lose", "outcome");
       S.playEndMusic(50);
-      await wait(150);
+      await wait(300);
       S.cancelForeground();
       window.__end("game_lose.mp3");
       window.__staleEnd("game_lose.mp3");
-      await wait(20);
+      await wait(200);
       out.waiting = files();
       window.__plays = [];
+      await wait(400);
       S.playForeground("game_lose", "outcome");
       S.playEndMusic(50);
       M.setCategoryMuted("music", true);
-      await wait(150);
+      await wait(300);
       M.setCategoryMuted("music", false);
-      await wait(100);
+      await wait(200);
       out.muted = files();
       window.__plays = [];
+      await wait(400);
       S.playForeground("sb_airhorn", "board");
       S.playEndMusic(50);
-      await wait(150);
+      await wait(300);
       window.__end("sb_airhorn.mp3");
-      await wait(20);
+      await wait(200);
       out.boardBlocks = files();
       return out;
     });
@@ -207,10 +212,11 @@ const checks = {
       window.__mode = { "game_lose.mp3": "reject" };
       S.playForeground("game_lose", "outcome");
       S.playEndMusic(50);
-      await wait(150);
+      await wait(300);
       out.refused = window.__plays.map((p) => p.file);
       S.cancelForeground();
       window.__plays = [];
+      await wait(400);
       // A refusal that comes after a cancel, with end music already waiting behind it, starts nothing.
       window.__mode = { "game_lose.mp3": "late" };
       S.playForeground("game_lose", "outcome");
@@ -241,7 +247,7 @@ const checks = {
       S.playEndMusic(30);
       await wait(80);
       window.__staleEnd("sb_airhorn.mp3");
-      await wait(50);
+      await wait(250);
       const files = window.__plays.map((p) => p.file);
       const live = window.__audios.filter((a) => !a.paused && a.src !== "old_tower_inn_loop.mp3").map((a) => a.src);
       return { files, live };
@@ -249,6 +255,34 @@ const checks = {
     assert.deepEqual(got.files, ["sb_airhorn.mp3", "game_lose.mp3"], "a stale ended event does not run the waiting end music");
     assert.deepEqual(got.live, ["game_lose.mp3"], "the outcome keeps the channel");
     ok("stale ended: a cut-off clip's late ended event neither ends the outcome nor starts the end music");
+  },
+
+  async queued(page, clean) {
+    await clean();
+    // Foreground clips share play()'s pacing queue: one cancelled or cut off while it waits there starts nothing.
+    const got = await page.evaluate(async () => {
+      const { S } = window.__t;
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const files = () => window.__plays.map((p) => p.file);
+      const out = {};
+      S.playForeground("sb_airhorn", "board");
+      S.playForeground("game_lose", "outcome");
+      out.waiting = files();
+      S.cancelForeground();
+      await wait(400);
+      out.cancelled = files();
+      window.__plays = [];
+      S.playForeground("sb_airhorn", "board");
+      S.playForeground("match_point", "match");
+      S.playForeground("game_start", "start");
+      await wait(400);
+      out.replaced = files();
+      return out;
+    });
+    assert.deepEqual(got.waiting, ["sb_airhorn.mp3"], "a request right after another waits its turn in the pacing queue");
+    assert.deepEqual(got.cancelled, ["sb_airhorn.mp3"], "a clip cancelled while it waits in the queue never starts");
+    assert.deepEqual(got.replaced, ["sb_airhorn.mp3", "game_start.mp3"], "a waiting clip cut off by a higher one never starts");
+    ok("queued: a foreground clip cancelled or cut off while it waits in the pacing queue starts nothing");
   },
 
   async lateChunk(page, clean) {
@@ -279,10 +313,11 @@ const checks = {
       await wait(1700);
       out.loserWaiting = files();
       window.__end("game_lose.mp3");
-      await wait(20);
+      await wait(200);
       out.loser = files();
       // Rematch while the sting still plays: the new game's state cancels it and its waiting end music, and the start sting plays.
       window.__plays = [];
+      await wait(400);
       store.hear({ ...g, phase: "main" }, over, "p0", "online");
       await wait(50);
       store.hear(over, { ...game(), phase: "rollOff" }, "p0", "online");
@@ -313,7 +348,7 @@ const checks = {
       window.__plays = [];
       S.playForeground("end_music", "end");
       useGame.getState().startAi();
-      await wait(50);
+      await wait(300);
       out.practice = files();
       out.practiceLive = window.__audios.filter((a) => ["end_music.mp3", "game_start.mp3"].includes(a.src) && !a.paused).map((a) => a.src);
       return out;
@@ -341,7 +376,7 @@ const checks = {
         window.__plays = [];
         store.hear({ ...g, phase: "main" }, over, "p0", "ai");
         useGame.setState({ state: over });
-        await new Promise((r) => setTimeout(r, 50));
+        await new Promise((r) => setTimeout(r, 300));
       });
       await page.getByTestId("win-look").waitFor();
     };
@@ -381,6 +416,7 @@ const MUTANTS = [
   { check: "refusals", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined) return;", why: "no owner check on refusal" },
   { check: "silence", file: "/src/lib/sound.ts", from: "subscribeSoundMix(() => { dropSilenced(); ", to: "subscribeSoundMix(() => { ", why: "no cancel on a silenced kind" },
   { check: "endWait", file: "/src/lib/sound.ts", from: "  scope++;\n  clearTimeout(endTimer);", to: "  scope++;", why: "no cancel of the delayed end music" },
+  { check: "queued", file: "/src/lib/sound.ts", from: "  while (next && next[3] !== undefined && owner?.token !== next[3]) next = queue.shift();\n", to: "", why: "no token check on a queued start" },
   { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope() && m?.gameEnd(", to: "m?.gameEnd(", why: "no scope check on the game-end chunk" },
   { check: "hide", file: "/src/components/game/WinScreen.tsx", from: "      cancelForeground();\n", to: "\n", why: "no cancel on hide" },
   { check: "callers", file: "/src/lib/game/store.ts", from: "  if (before?.phase === \"over\" && after.phase !== \"over\") cancelForeground();\n", to: "", why: "no cancel on a rematch" },
@@ -413,7 +449,7 @@ async function run(names, mutant) {
     });
     const clean = () => page.evaluate(async () => {
       window.__t.S.cancelForeground();
-      await new Promise((r) => setTimeout(r, 30));
+      await new Promise((r) => setTimeout(r, 400));
       window.__plays = [];
       window.__mode = {};
       window.__late = [];
