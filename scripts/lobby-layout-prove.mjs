@@ -220,7 +220,9 @@ async function centred(page, label) {
     return {
       labels, seats,
       emoji: { left: emoji[0].left - row.left, right: row.right - emoji.at(-1).right, gaps: emoji.slice(1).map((r, i) => r.left - emoji[i].right), centres: emoji.map(r => (r.top + r.bottom) / 2), rowLeft: row.left - chat.left, rowRight: chat.right - row.right },
-      codeDy: (ct.t + ct.b) / 2 - (header.top + header.bottom) / 2,
+      // #1750, owner answer A: Numbers may wrap to a second header row. The code's row runs from the header's top to the
+      // lowest bottom of the header items on the code's line; with one row that is the whole header, as before.
+      codeDy: (() => { const btn = box(code.closest("button")); const row = Math.max(...[...card.querySelector(".lobby-header").children].map(box).filter(b => b.height && b.top < btn.bottom).map(b => b.bottom)); return (ct.t + ct.b) / 2 - (header.top + row) / 2; })(),
       headerDiagnostic: { code: code.textContent, font: getComputedStyle(code).font, header: header.toJSON(), codeBox: box(code).toJSON(), buttons: [...card.querySelectorAll('.lobby-header button')].map(el => ({ text: el.textContent, font: getComputedStyle(el).font, box: box(el).toJSON() })) },
       foot, inputDy: (input.top + input.bottom) / 2 - (send.top + send.bottom) / 2,
     };

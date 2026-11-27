@@ -10,6 +10,13 @@ This page answers both with one measured layout. It ends with two cards for Jarr
 
 [Mock layer](mock.css) · [Capture utility](capture.mjs) · [Capture log](capture.log) · [Pictures](pictures/)
 
+## Answers so far
+
+- **Card 1, where "Wayfarer on" goes:** Jarrod chose A, beside the room code (Desk page, 2026-11-22 02:44 UTC).
+- **Card 2, what happens when larger text can't fit:** Jarrod answered D with the note "Ask fable". A Fable 5.2 subagent read this page on 2026-11-27 and chose A as written: the bar stays, everything above it scrolls, and rows reflow first. Rules 1 to 5 are unchanged.
+- **Built in PR #1750:** rules 1 to 5 and card 2 A, on the Table tab. Built evidence: [`docs/proofs/1235`](../../proofs/1235/README.md).
+- **Open:** this page predates the Numbers control (#1156, PR #1866), which now sits right of the room code. The page never measured card 1 A beside it. Fable judged that code, "Wayfarer on" and Numbers don't fit on one row on any phone, so the placement went back to Jarrod on PR #1750.
+
 ## The short version
 
 1. **Text grows. Nothing is cut off.** No "Wayfar…", no "Sounds & sti…".
