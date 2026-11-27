@@ -84,6 +84,11 @@ function makeVite(rejectTradeSound) {
               export function playLater(name) { globalThis.__soundSpy.play(name, 1); }
               export function playTradePlease() {}
               export function stop(name) { globalThis.__soundSpy.stop(name); }
+              // #1044: the one foreground owner. Cancelling it cuts off the outcome sting and the end music, as stop() did.
+              export function playForeground(name, _role, vol) { globalThis.__soundSpy.play(name, vol ?? 1); }
+              export function cancelForeground() { globalThis.__soundSpy.stop("end_music"); globalThis.__soundSpy.stop("isaac_win"); }
+              export function playEndMusic() { globalThis.__soundSpy.play("end_music", 1); }
+              export function foregroundScope() { return 0; }
               export function resetTradePlease() {}
               export function yourTurn() {}
             `;
