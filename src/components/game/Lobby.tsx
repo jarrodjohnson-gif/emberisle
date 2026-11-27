@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ConnectionStatus } from "@/components/game/ConnectionStatus";
+import { NumbersSwitch } from "@/components/game/NumbersSwitch";
 import { chunk, LazyBoundary } from "@/lib/lazy";
 import { ChatBox, SeatBubbles } from "@/components/game/Chat";
 import type { Seat } from "@/lib/net/table";
@@ -12,7 +13,7 @@ const HowTo = rules.pick(m => m.HowTo);
 const Card = chunk(() => import("@/components/game/OtherProfileCard")).pick(m => m.OtherProfileCard);
 void lobby.prefetch();
 export function Lobby() {
-  return <LobbyView ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} SeatName={SeatName} prefetchRules={rules.prefetch} fitCode={fitLobbyCode} />;
+  return <LobbyView Numbers={NumbersSwitch} ConnectionStatus={ConnectionStatus} ChatBox={ChatBox} SeatBubbles={SeatBubbles} HowTo={HowTo} SeatName={SeatName} prefetchRules={rules.prefetch} fitCode={fitLobbyCode} />;
 }
 
 // Fits host-issued code text; the view owns observation and cleanup.
@@ -32,8 +33,11 @@ function fitLobbyCode(el: HTMLElement, code: string) {
 // belongs to one seat and one profile: when either changes under it, it is gone.
 function SeatName({ seat }: { seat?: Seat }) {
   const [open, setOpen] = useState<{ el: HTMLElement; key: string }>();
+  const key = seat && !seat.bot ? `${seat.id}:${seat.profile?.profileId ?? ""}` : "";
+  useEffect(() => {
+    if (open && open.key !== key) setOpen(undefined);
+  }, [open, key]);
   if (!seat || seat.bot) return <span className="truncate">{seat ? seat.name : "Empty"}</span>;
-  const key = seat.id + seat.profile?.profileId;
   return (
     <>
       <button type="button" data-testid={`lobby-player-${seat.id}`} onClick={e => setOpen({ el: e.currentTarget, key })}>{seat.name}</button>

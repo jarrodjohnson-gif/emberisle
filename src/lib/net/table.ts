@@ -1,6 +1,6 @@
 // The browser (or a Node proof) talking to server/host.mjs. Design: docs/design/online-client.md.
-import type { Action, GameState, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
-import { PROTO } from "@/lib/net/proto";
+import type { Action, GameState, NumberTokens, Resource, VictoryTarget, WayfarerMode } from "@/lib/game/types";
+import { PROTO, TABLE_CAPS as CAPS, TABLE_EVENTS as ALLOWED_EVENTS } from "@/lib/net/proto";
 import type { ProfileAttachment } from "@/lib/net/profiles";
 
 export interface Seat {
@@ -110,10 +110,10 @@ export interface TableEvents {
   // `holdMs`/`lobbyHoldMs`: how long the host holds this seat after a drop, in a game and in the lobby (G7).
   // `variant` is set only at an expanded table (#1611), five or six seats on the expanded island.
   // `serverNow` is the host's clock as it answered the hello.
-  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded" }): void;
+  welcome(msg: { proto?: number; serverSha?: string; serverNow?: number; code: string; you?: string; host?: boolean; chat?: ChatLine[]; secret?: string; spectator?: true; holdMs?: number; lobbyHoldMs?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; variant?: "expanded" }): void;
   // `watching`: how many spectators the table has (#347). `choose`: the host is choosing how to rematch an expanded game
   // with fewer than five at the table, from these choices (#1611; only the host may pick).
-  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; variant?: "expanded"; choose?: Rematch[] }): void;
+  seats(msg: { code: string; seats: Seat[] | PeekSeat[]; watching?: number; victoryTarget?: VictoryTarget; wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; variant?: "expanded"; choose?: Rematch[] }): void;
   // `you` is null on a watcher's state. `turnDeadline` is the host's clock (epoch ms) for the seat `turnPlayer`;
   // `serverNow` is the host's clock as it sent this.
   state(msg: { you: string | null; game: GameState; legal: Legal; actionStamp?: ActionStamp; turnDeadline?: number | null; turnPlayer?: string | null; serverNow?: number; result?: unknown }): void;
@@ -122,7 +122,9 @@ export interface TableEvents {
   react(r: Reaction): void;
   log(text: string): void;
   error(message: string, request?: "need"): void;
-  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null }): void;
+  tradeOffer(msg: { tradeId: string; from: string; give: Bag; want: Bag; seconds: number | null; counter?: true }): void;
+  tradeCounter(msg: { tradeId: string; counterId: string; by: string; name: string; give: Bag; want: Bag }): void;
+  tradeCounterClosed(msg: { tradeId: string; counterId: string; why: "no" | "back" | "gone" }): void;
   tradeDeclined(msg: { tradeId: string; by: string; name: string }): void;
   tradeClosed(msg: { tradeId: string; taker?: string }): void;
   // The socket dropped and the client is dialing again (attempt 1, 2, ...); `closed` follows only if it gives up.
@@ -165,7 +167,7 @@ export interface OpenTableEntry {
 export type Rematch = "bots" | "classic";
 
 export interface TableClient {
-  open(me: Me, options?: { wayfarerMode?: WayfarerMode; visibility?: "open" | "private"; variant?: "expanded" }): void;
+  open(me: Me, options?: { wayfarerMode?: WayfarerMode; numberTokens?: NumberTokens; visibility?: "open" | "private"; variant?: "expanded" }): void;
   join(code: string, me: Me): void;
   // Watch a started table, read-only: hello {code, watch:true} (docs/design/spectator.md). No seat, no secret, so no redial.
   watch(code: string): void;
@@ -192,6 +194,9 @@ export interface TableClient {
   act(action: Action): boolean;
   // Ask-the-table trades are host-run (not rules Actions): offer `give` for `want` to every other seat, and answer one.
   ask(give: Bag, want: Bag): void;
+  tradeCounter(tradeId: string, give: Bag, want: Bag): void;
+  tradeCounterAnswer(tradeId: string, counterId: string, yes: boolean): void;
+  tradeCounterCancel(tradeId: string, counterId: string): void;
   answer(tradeId: string, yes: boolean): void;
   need(kinds: Resource[]): void;
   cancel(tradeId: string): void;
@@ -205,7 +210,8 @@ export interface TableClient {
   // Lobby tic-tac-toe: one of the five ttt messages, e.g. ttt("tttMove", { id, cell }).
   // #1350: it also sends the card read, ttt("tableProfileCard", { id, profileId }); the host answers with the same `id`.
   // The table chunk sits at its size ceiling, so the read shares this sender and adds no second one.
-  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard", fields: Record<string, unknown>): void;
+  // #1156: and the host's number tokens, ttt("setNumberTokens", { value }), which keeps the table chunk inside its ceiling.
+  ttt(type: "tttInvite" | "tttAnswer" | "tttMove" | "tttAgain" | "tttClose" | "tableProfileCard" | "setNumberTokens", fields: Record<string, unknown>): void;
   // The browser says the network or the tab is back: if a backoff timer is pending, dial now. Otherwise nothing.
   wake(): void;
   // Leave on purpose: the host frees a lobby seat at once. `leave: false` only closes, and the seat is held as a drop.
@@ -281,11 +287,6 @@ const LAST_CALL_MS = 1000;
 // Both action IDs and health challenges use 128 random bits, including on plain-HTTP LAN joins.
 const randomNonce = () => crypto.getRandomValues(new Uint8Array(16)).reduce((hex, b) => hex + b.toString(16).padStart(2, "0"), "");
 
-// Every hello says this page can show the expanded island; a host refuses a page without it at an expanded table (#1611).
-const CAPS = ["expanded"];
-
-const ALLOWED_EVENTS = ["seats", "rolled", "chat", "react", "tradeOffer", "tradeDeclined", "tradeClosed", "ttt", "profileError", "tableProfileCard"];
-
 // `giveUpMs` is only for proofs that cannot wait 10 minutes: it stands in for both holds until a welcome says otherwise.
 export function connectTable(url: string, on: Partial<TableEvents>, Socket?: SocketCtor, giveUpMs?: number): TableClient {
   const Ctor = Socket ?? (globalThis.WebSocket as unknown as SocketCtor);
@@ -297,7 +298,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   let attempt = 0;
   let lostAt = 0;
   // The host's hold on a dropped seat, from the welcome; which one applies is whether a game has started.
-  let hold = { game: giveUpMs ?? GIVE_UP_MS, lobby: giveUpMs ?? LOBBY_GIVE_UP_MS };
+  let hold: [number, number] = [giveUpMs ?? LOBBY_GIVE_UP_MS, giveUpMs ?? GIVE_UP_MS]; // lobby, game
   let inGame = false;
   // True while a hello {code, secret} is out; an error then means the seat is gone for good.
   let rejoining = false;
@@ -320,8 +321,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
   const health = (status: ConnectionHealth["status"], rtt: number | null = null) => on.health?.({ status, rtt });
   const stopHealth = () => {
     clearTimeout(healthTimer);
-    healthTimer = undefined;
-    probe = undefined;
+    healthTimer = probe = undefined;
   };
   const probeHealth = () => {
     // A repeated welcome must not cancel the timeout of a challenge already in flight.
@@ -384,7 +384,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
     if (closedByUs) return;
     if (attempt === 0) lostAt = Date.now();
     // Redial until the last call before the host's hold ends; by then the seat is as good as gone.
-    const left = lostAt + (inGame ? hold.game : hold.lobby) - LAST_CALL_MS - Date.now();
+    const left = lostAt + hold[+inGame] - LAST_CALL_MS - Date.now();
     if (!seat || left <= 0) {
       giveUp(taken);
       return;
@@ -432,7 +432,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         stamp = null;
         const m = msg as Parameters<TableEvents["welcome"]>[0];
         if (typeof m.secret === "string") seat = { code: m.code, secret: m.secret };
-        if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = { game: m.holdMs, lobby: m.lobbyHoldMs };
+        if (typeof m.holdMs === "number" && typeof m.lobbyHoldMs === "number") hold = [m.lobbyHoldMs, m.holdMs];
         awaitingState = rejoining && inGame;
         probe ??= null;
         if (!awaitingState) health("Reachable");
@@ -480,7 +480,7 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
         break;
       }
       default:
-        if (ALLOWED_EVENTS.includes(msg.type ?? "")) (on as Record<string, ((m: unknown) => void) | undefined>)[msg.type!]?.(msg);
+        if (ALLOWED_EVENTS.includes(msg.type as string)) (on as Record<string, ((m: unknown) => void) | undefined>)[msg.type!]?.(msg);
     }
   };
 
@@ -520,6 +520,9 @@ export function connectTable(url: string, on: Partial<TableEvents>, Socket?: Soc
       return i ? act(i) : false;
     },
     ask: (give, want) => act({ type: "tradeAsk", give, want }),
+    tradeCounter: (tradeId, give, want) => act({ type: "tradeCounter", tradeId, give, want }),
+    tradeCounterAnswer: (tradeId, counterId, yes) => act({ type: "tradeCounterAnswer", tradeId, counterId, yes }),
+    tradeCounterCancel: (tradeId, counterId) => act({ type: "tradeCounterCancel", tradeId, counterId }),
     answer: (tradeId, yes) => act({ type: "tradeAnswer", tradeId, yes }),
     need: (kinds) => send({ type: "need", kinds }),
     cancel: (tradeId) => act({ type: "tradeCancel", tradeId }),

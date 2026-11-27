@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useBackdropClose } from "@/lib/backdrop-close";
 import { useFocusTrap } from "@/lib/focus-trap";
 import { harborRate } from "@/lib/game/rules";
 import { useGame } from "@/lib/game/store";
@@ -51,6 +52,7 @@ export function TradePanel() {
     });
   }, [me?.resources]);
 
+  const backdrop = useBackdropClose(() => setTradeOpen(false));
   // #378: a modal dialog. Focus lands on Close (the first focusable), Tab cycles inside, and focus goes back to the opener on close.
   useFocusTrap(panel, shown, '[aria-label="Close"]', opener);
 
@@ -108,7 +110,7 @@ export function TradePanel() {
   };
 
   return (
-    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" onClick={() => setTradeOpen(false)}>
+    <div className="absolute inset-0 z-30 flex items-end justify-center bg-black/15" {...backdrop}>
       <section
         ref={panel}
         role="dialog"
@@ -116,7 +118,6 @@ export function TradePanel() {
         aria-labelledby="trade-title"
         data-testid="trade-panel"
         className="trade-composer"
-        onClick={(e) => e.stopPropagation()}
       >
         <header className="trade-composer-header">
           <h2 id="trade-title" className="trade-title">Trade</h2>

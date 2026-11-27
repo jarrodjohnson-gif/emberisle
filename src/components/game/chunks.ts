@@ -46,6 +46,7 @@ export const FortuneTray = sheets.pick((m) => m.FortuneTray);
 export const HowTo = sheets.pick((m) => m.HowTo);
 // #1609: the Seats choice in the title's Game options rides with the sheets the title fetches on idle.
 export const SeatChoice = sheets.pick((m) => m.SeatChoice);
+export const NumberChoice = sheets.pick((m) => m.NumberChoice);
 export const TradePanel = sheets.pick((m) => m.TradePanel);
 export const WinScreen = sheets.pick((m) => m.WinScreen);
 // #1539: the Build list opens from the tray's Build button; fetched on idle with the sheets.
@@ -57,6 +58,10 @@ export const PlayerMenu = playerMenu.pick((m) => m.PlayerMenu);
 // #748: the win screen's compact list on touch and narrow screens; the win screen fetches it on phones as the table starts.
 export const winList = chunk(() => import("@/components/game/WinList"));
 export const WinList = winList.pick((m) => m.WinList);
+// #1452 and #1453: the results screen's awards and dice strip; the win screen fetches it as the table starts.
+export const resultsStory = chunk(() => import("@/components/game/ResultsStory"));
+export const Award = resultsStory.pick((m) => m.Award);
+export const DiceStrip = resultsStory.pick((m) => m.DiceStrip);
 // #1411: a guest's I'll play again and the win screen's count; the win screen fetches it as an online table starts.
 export const playAgain = chunk(() => import("@/components/game/PlayAgain"));
 export const WantAgain = playAgain.pick((m) => m.WantAgain);

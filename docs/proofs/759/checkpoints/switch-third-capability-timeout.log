@@ -1,0 +1,28 @@
+
+> classic-switch-prove
+> node scripts/classic-switch-prove.mjs
+
+ok Jelly-only startup never requests Classic
+classic-switch: ok initial status distinguishes request, display, quality and readiness
+classic-switch: ok same-board loading keeps old Jelly and separate request
+classic-switch: ok Classic publishes atomically and preserves shared scene identities
+classic-switch: ok Classic never masquerades as Jelly proof access
+classic-switch: ok same-board switch preserves camera, pending selection and state
+classic-switch: ok Classic diagnostics report actual lite geometry
+classic-switch: ok old Jelly is disposed after replacement attaches
+classic-switch: ok switch back restores real Jelly diagnostics
+classic-switch: ok rapid choices reject and dispose stale construction
+classic-switch: native parallel compile extension false
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.evaluate: Error: timed out: held real shader compile
+    at until (eval at evaluate (:311:30), <anonymous>:15:56)
+    at async eval (eval at evaluate (:311:30), <anonymous>:84:5)
+    at async <anonymous>:337:30
+    at /tmp/emberisle-759-atomic/scripts/classic-switch-prove.mjs:29:29 {
+  log: []
+}
+
+Node.js v22.23.4

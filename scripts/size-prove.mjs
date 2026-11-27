@@ -40,7 +40,12 @@ const CEILINGS = [
   // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
   // start from the Play page; index measured 127,203 B.
   { name: "index", gzipBytes: 128000 },
-  { name: "IslandCanvas", gzipBytes: 203500 }, // #1307, 2026-11-04: raised from 202,500 B to 203,500 B
+  { name: "IslandCanvas", gzipBytes: 205500 }, // #1877, 2026-11-24: raised from 204,500 B to 205,500 B (was #1857, 2026-11-22)
+  // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
+  { name: "classic-board", gzipBytes: 19500 },
+  // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)
+  // and shared by jelly-board and classic-board; measured 1,370 B gzip. New chunk only; the desk set this ceiling on 2026-11-17.
+  { name: "appearance-controller", gzipBytes: 1500 },
   { name: "jelly-board", gzipBytes: 9000 },
   { name: "hex-jelly", gzipBytes: 50000 },
   { name: "harbor-jelly", gzipBytes: 11500 },
@@ -98,6 +103,9 @@ const CEILINGS = [
   // #1363, 2026-11-07: a sticker as the tray, seat bubble and chat log draw it (animated loop, reduced-motion still), loaded
   // with the first sticker; measured 949 B gzip. New chunk only; the desk sets this ceiling.
   { name: "Sticker", gzipBytes: 1050 },
+  // #1452 and #1453, 2026-11-09: the results screen's island awards and dice strip, one chunk the win screen fetches as the
+  // table starts; measured 2,048 B gzip. New chunk only; the desk set this ceiling on #1452 (q-size-standing, option A).
+  { name: "ResultsStory", gzipBytes: 2200 },
   // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
   // New chunk only; the desk sets this ceiling.
   { name: "ambience", gzipBytes: 550 },
@@ -126,8 +134,13 @@ const CEILINGS = [
   // #1665, 2026-11-14: the message icon the seat menu shares with chat; measured 248 B gzip. New chunk; the desk set this
   // ceiling (PR #1674).
   { name: "message-square", gzipBytes: 280 },
+  // #1592, 2026-11-17: shared tray focus helper for TradeToast and losses; measured 638 B gzip. New chunk; the desk set this ceiling (PR #1647).
+  { name: "tray-focus", gzipBytes: 700 },
   // #827: other seats' public roll and trade gains load lazily (online only); a new chunk, so this ceiling is its only limit.
   { name: "SeatPublicGains", gzipBytes: 1800 },
+  // #1593, 2026-11-17: the dock-mark atlas (painted-board white symbols/pips and lite planks), shared by harbor-jelly and the
+  // lite board; measured 1,090 B gzip. Desk set this 1,200 B ceiling on 2026-11-17 under q-size-standing A.
+  { name: "dock-marks", gzipBytes: 1200 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

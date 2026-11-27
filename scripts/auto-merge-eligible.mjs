@@ -1,9 +1,18 @@
 #!/usr/bin/env node
-// Decides whether a pull request may auto-merge (#923): phase 1 is docs only. Run by .github/workflows/auto-merge.yml.
+// Decides whether a pull request may auto-merge (#923). Run by .github/workflows/auto-merge.yml.
+// Phase 1 is docs only. Phase 2 (owner decision 2026-11-21, docs/DESK.md) also merges a code PR, unless the repo
+// variable AUTO_MERGE_CODE is "off": it needs a complete clean review footer at the head from a different model than the
+// builder, and it never touches a governance file unless the PR carries `owner-merge` and the clerk's marker for that head.
+// Either phase needs GitHub to say the PR merges cleanly, and green `checks` and `loosen` runs at the head.
 // It reads the API only. It never checks out or runs the PR's code: the workflow checks out the default branch's copy
-// of this one file. Eligibility comes from the PR files API, the head SHA's `checks` run and the desk's clean marker,
-// never from labels or authors. Every rule fails closed: an excluded path wins over the allow list, and any API error
-// or missing field means no merge.
+// of this one file. Eligibility comes from the PR files API, the head SHA's check runs, the newest review and the
+// clerk's markers. It reads three labels, and ignores every other label and every author name:
+//   needs-owner  holds the PR until `owner-ok` counts.
+//   owner-ok     counts only with the clerk's <!-- owner-ok: <head SHA> --> in a trusted comment that starts
+//                `Owner answer (Desk page`, for this exact head. It lifts `needs-owner` and a review's ask for the owner.
+//   owner-merge  counts only with <!-- owner-merge: <head SHA> --> in the same kind of comment, for this exact head. It
+//                lifts the governance refusals in a code PR. It never lifts an unsafe path, the review, the checks or the head pin.
+// Every rule fails closed: an excluded path wins over the allow list, and any API error or missing field means no merge.
 import { randomUUID } from "node:crypto";
 import { appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -11,10 +20,12 @@ import { pathToFileURL } from "node:url";
 export const MAX_CHANGED_LINES = 400;
 const ALLOW = ["docs/", ".github/ISSUE_TEMPLATE/"];
 // Governance docs: agents and the desk act on these, so they keep the desk's own merge.
-const EXCLUDE_EXACT = ["README.md", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md"];
+const EXCLUDE_EXACT = ["README.md", "docs/LOOPING.md", "docs/builder-kit/builder-agent.md", "docs/builder-kit/launch.sh", "docs/DESK.md", "docs/REVIEWING.md", "docs/DECISIONS.md", "docs/LANES.md", "docs/FRAMEWORK.md", "docs/HELPERS.md", "docs/ORCHESTRATOR.md", "docs/OWNER.md", "docs/DECISIONS-archive.md"];
+// Governance folders inside docs/: the flow's role files (#1861).
+const EXCLUDE_DOCS_PREFIX = ["docs/flow/"];
 const EXCLUDE_PREFIX = [".github/", "scripts/", "server/", "src/"];
 // Matched on the file name in any folder: agents read a nested AGENTS.md or CLAUDE.md, and GitHub reads docs/CODEOWNERS.
-const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "CODEOWNERS", ".gitignore"];
+const EXCLUDE_NAME = ["AGENTS.md", "CLAUDE.md", "GEMINI.md", ".mcp.json", "CODEOWNERS", ".gitignore"];
 const EXCLUDE_SUFFIX = [".mjs", ".ts"];
 // Only added and modified files qualify: no removed, renamed, copied or mode-changed ("changed") files.
 const STATUSES = ["added", "modified"];
@@ -24,6 +35,96 @@ const TRUSTED = ["OWNER", "MEMBER", "COLLABORATOR"];
 const ACTIONS_APP_ID = 15368;
 const SHA = /^[0-9a-f]{40}$/;
 const MARKER = /<!--\s*review-desk:\s*clean\s+([0-9a-f]{40})\s*-->/g;
+const REVIEW = /<!--\s*review-desk(?:\s*-->|:\s*clean\b)/;
+const FOOTER = /Reviewer:\s*([^·\r\n]+?)\s*·\s*Builder:\s*([^·\r\n]+?)\s*·\s*Head:\s*([0-9a-f]{40})(?=\s|$)/i;
+// Phase 2: the flow's own machinery keeps the owner's merge. ci.yml is allowed, because every new proof is registered there.
+const CODE_EXCLUDE_PREFIX = [".github/", ".claude/"];
+const CODE_ALLOW_EXACT = [".github/workflows/ci.yml"];
+const CODE_EXCLUDE_SCRIPT = /^scripts\/(?:(?:auto-merge|desk-gate|desk-board|pr-signal)[^/]*|loosen-prove\.mjs|registered-prove\.mjs|size-prove\.mjs)$/;
+// Registration files: a code PR may only add lines to these. A removed or changed line needs `owner-merge`.
+const ADD_ONLY = ["package.json", ".github/workflows/ci.yml"];
+// The check runs that must be green at the head. `loosen` is advisory in CI, but a PR that loosens a proof never merges on its own.
+const REQUIRED_RUNS = ["checks", "loosen"];
+
+// Why a path can't auto-merge in a code PR, or null if it can.
+export function codeRefusal(path) {
+  if (typeof path !== "string" || !path) return "no path";
+  if (path.startsWith("/") || path.includes("\\") || /[\u0000-\u001f]/.test(path) || path.split("/").some((s) => s === "" || s === "." || s === ".."))
+    return "unsafe path";
+  const lower = path.toLowerCase();
+  const name = lower.slice(lower.lastIndexOf("/") + 1);
+  if (EXCLUDE_EXACT.some((p) => p.toLowerCase() === lower)) return "governance file";
+  if (EXCLUDE_DOCS_PREFIX.some((p) => lower.startsWith(p))) return "governance folder";
+  if (EXCLUDE_NAME.some((n) => n.toLowerCase() === name)) return "governance file name";
+  if (CODE_EXCLUDE_SCRIPT.test(lower)) return "merge machinery";
+  if (CODE_EXCLUDE_PREFIX.some((p) => lower.startsWith(p)) && !CODE_ALLOW_EXACT.includes(path)) return "governance folder";
+  return null;
+}
+
+// Every reason a changed file can't auto-merge in a code PR, as { path, why }, or an empty list. Both paths of a rename
+// count. ci.yml and package.json pass only when the patch adds lines and removes none.
+export function fileRefusals(f) {
+  const out = [];
+  const paths = [f?.filename, f?.previous_filename].filter((p) => p !== undefined);
+  for (const path of paths) {
+    const why = codeRefusal(path);
+    if (why) out.push({ path, why });
+  }
+  const addsOnly = f?.status === "modified" && f.deletions === 0 && typeof f.patch === "string" && !/^-/m.test(f.patch);
+  if (paths.some((p) => ADD_ONLY.includes(p)) && !addsOnly) out.push({ path: f.filename, why: "removed or changed lines in a registration file" });
+  return out;
+}
+
+// A review that asks for the owner's look or listen. The same wording scripts/desk-board.mjs reads.
+const OWNER_ASK = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i;
+const DECLINES = /\b(?:no|not)\b[^\n.]{0,40}\b(?:needed|required|necessary)\b|\balready\b/i;
+// True when the newest review from a trusted account asks for the owner. The reviewer may add `needs-owner` a moment
+// after it posts, so the merge must not win that race.
+export function ownerAsked(comments) {
+  const newest = [...(comments ?? [])].reverse().find((c) => TRUSTED.includes(c.author_association) && String(c.body ?? "").includes("<!-- review-desk -->"));
+  if (!newest) return false;
+  // Hidden comments and `code spans` are not an ask, and neither is a line that declines one: "no approval needed",
+  // "sign-off is on the issue already". Any other "no" or "not" on a line leaves the ask standing.
+  const lines = String(newest.body).replace(/<!--[\s\S]*?-->/g, "").replace(/`[^`\n]*`/g, "").split(/\r?\n/);
+  return lines.some((line) => !DECLINES.test(line) && OWNER_ASK.test(line));
+}
+
+// "Claude Opus 5.5", "opus-5.5" and "Opus  5.5" are one model.
+const model = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^claude/, "");
+
+// The footer of the newest review comment from a trusted account, or null. Only the newest review counts: if its
+// footer is missing or malformed, an older clean review never stands in for it.
+export function reviewFooter(comments) {
+  for (const c of [...(comments ?? [])].reverse()) {
+    const body = String(c.body ?? "");
+    if (!TRUSTED.includes(c.author_association) || !body.includes("<!-- review-desk -->")) continue;
+    const m = body.match(FOOTER);
+    if (!m) return null;
+    const head = m[3].toLowerCase();
+    return { reviewer: model(m[1]), builder: model(m[2]), head,
+      clean: [...body.matchAll(MARKER)].some((k) => k[1] === head) };
+  }
+  return null;
+}
+
+// The reasons from codeRefusal() that the owner's `owner-merge` may lift. Never "no path" or "unsafe path".
+const LIFTABLE = /^(?:governance (?:file|file name|folder)|merge machinery|removed or changed lines in a registration file)$/;
+const OWNER_MERGE = /<!-- owner-merge: ([0-9a-f]{40}) -->/gi;
+const OWNER_OK = /<!-- owner-ok: ([0-9a-f]{40}) -->/gi;
+// Only the clerk's comment carrying his answer holds a marker. A review or a note that quotes one is not his yes.
+const OWNER_ANSWER = "Owner answer (Desk page";
+// The head the owner said yes to: the last marker in the newest trusted `Owner answer` comment that carries one, or
+// null. So the label alone, or a yes to an older head, never counts.
+function ownerHead(comments, marker) {
+  for (const c of (comments ?? []).toReversed()) {
+    if (!TRUSTED.includes(c.author_association)) continue;
+    const found = String(c.body ?? "").startsWith(OWNER_ANSWER) ? [...String(c.body ?? "").matchAll(marker)] : [];
+    if (found.length) return found[found.length - 1][1].toLowerCase();
+  }
+  return null;
+}
+export const ownerMergeHead = (comments) => ownerHead(comments, OWNER_MERGE);
+export const ownerOkHead = (comments) => ownerHead(comments, OWNER_OK);
 
 // Why a path can't auto-merge, or null if it can. Excludes are checked first, case-insensitively.
 export function pathRefusal(path) {
@@ -33,6 +134,7 @@ export function pathRefusal(path) {
   const lower = path.toLowerCase();
   const name = lower.slice(lower.lastIndexOf("/") + 1);
   if (EXCLUDE_EXACT.some((p) => lower === p.toLowerCase())) return "excluded governance file";
+  if (EXCLUDE_DOCS_PREFIX.some((p) => lower.startsWith(p))) return "excluded governance folder";
   if (EXCLUDE_PREFIX.some((p) => lower.startsWith(p.toLowerCase()))) return "excluded folder";
   if (EXCLUDE_NAME.some((n) => name === n.toLowerCase())) return "excluded file name";
   if (/^package.*\.json$/.test(name)) return "excluded package file";
@@ -43,18 +145,46 @@ export function pathRefusal(path) {
 
 // pr: the PR from the API. headAfter: its head SHA read again after everything else, so a push mid-check is caught.
 // files: every page of the PR files API. checkRuns: the head SHA's check runs named `checks`. comments: its issue comments.
-export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranch }) {
+// code: false when the repo variable AUTO_MERGE_CODE is "off"; the workflow passes "on" otherwise.
+export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranch, code = false }) {
   const no = (reason) => ({ merge: false, reason });
   const sha = pr?.head?.sha;
   if (!SHA.test(sha ?? "")) return no("no head SHA");
   if (headAfter !== sha) return no(`head moved from ${sha} to ${headAfter} during the check`);
   if (pr.state !== "open" || pr.merged || pr.draft) return no("PR is not open and ready");
+  if (pr.mergeable !== true) return no("GitHub does not say the PR merges cleanly");
   if (!defaultBranch || pr.base?.ref !== defaultBranch) return no(`base is not ${defaultBranch}`);
   if (!Array.isArray(files) || !files.length) return no("no changed files");
   if (files.length !== pr.changed_files) return no(`files API listed ${files.length} of ${pr.changed_files} files`);
 
+  // `owner-ok` counts only with the clerk's marker for this exact head. Otherwise it is read as absent.
+  const okPinned = ownerOkHead(comments) === sha;
+  const labels = (pr.labels ?? []).map((l) => l?.name).filter((n) => n !== "owner-ok" || okPinned);
+  if (labels.includes("needs-owner") && !labels.includes("owner-ok")) return no("`needs-owner` without `owner-ok`: waits for the owner");
+  if (ownerAsked(comments) && !labels.includes("owner-ok")) return no("the newest review asks for the owner, and `owner-ok` is not on the PR");
+
+  const docsOnly = files.every((f) => STATUSES.includes(f.status) && !pathRefusal(f.filename))
+    && files.reduce((n, f) => n + f.additions + f.deletions, 0) < MAX_CHANGED_LINES;
+  const asCode = code === true && !docsOnly;
+  const ownerMerge = labels.includes("owner-merge") && ownerMergeHead(comments) === sha;
+  if (asCode) {
+    for (const f of files) {
+      for (const { path, why } of fileRefusals(f)) {
+        // `owner-merge` is the owner's tap on the Desk page, carried by the clerk for this exact head. It lifts only the
+        // governance reasons: an unsafe path still refuses, and the review, the checks and the head pin still apply.
+        if (why && !(ownerMerge && LIFTABLE.test(why))) return no(`${JSON.stringify(path)}: ${why}`);
+      }
+    }
+    const footer = reviewFooter(comments);
+    if (!footer) return no("no complete review footer");
+    if (footer.head !== sha) return no(`the newest review is for ${footer.head}, not ${sha}`);
+    if (!footer.clean) return no("the newest review is not clean");
+    if (!footer.reviewer || !footer.builder) return no("the review footer does not name both models");
+    if (footer.reviewer === footer.builder) return no("reviewer and builder are the same model");
+  }
+
   let lines = 0;
-  for (const f of files) {
+  for (const f of asCode ? [] : files) {
     if (!STATUSES.includes(f.status)) return no(`${JSON.stringify(f.filename)} is ${f.status}`);
     const refusal = pathRefusal(f.filename);
     if (refusal) return no(`${JSON.stringify(f.filename)}: ${refusal}`);
@@ -63,21 +193,29 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   }
   if (lines >= MAX_CHANGED_LINES) return no(`${lines} changed lines, the limit is under ${MAX_CHANGED_LINES}`);
 
-  const runs = (checkRuns ?? []).filter((r) => r.name === "checks" && r.app?.id === ACTIONS_APP_ID);
-  if (!runs.length) return no("no `checks` run on the head SHA");
-  if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success"))
-    return no("`checks` is not green on the head SHA");
+  for (const name of REQUIRED_RUNS) {
+    // A skipped run checked nothing, so it neither passes nor fails the PR: CI skips `checks` on some events (a draft's
+    // first run), and that run stays beside the real one at the same head. Every other run must be green.
+    const runs = (checkRuns ?? []).filter((r) => r.name === name && r.app?.id === ACTIONS_APP_ID && r.conclusion !== "skipped");
+    if (!runs.length) return no(`no \`${name}\` run on the head SHA`);
+    if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success"))
+      return no(`\`${name}\` is not green on the head SHA`);
+  }
 
-  const marked = (comments ?? [])
+  // Only the newest review counts, so a later review with findings is never outweighed by an older clean marker. A
+  // review is a trusted comment with the review header or a clean marker; a docs PR needs no footer.
+  const latest = (comments ?? [])
     .filter((c) => TRUSTED.includes(c.author_association))
-    .some((c) => [...String(c.body ?? "").matchAll(MARKER)].some((m) => m[1] === sha));
-  if (!marked) return no(`no desk clean marker for ${sha}`);
+    .findLast((c) => REVIEW.test(String(c.body ?? "")));
+  const marked = [...String(latest?.body ?? "").matchAll(MARKER)].some((m) => m[1] === sha);
+  if (!marked) return no(`the newest review has no clean marker for ${sha}`);
 
+  if (asCode) return { merge: true, reason: `${files.length} files, checks green, different-model review clean at ${sha}`, sha };
   return { merge: true, reason: `${files.length} docs files, ${lines} lines, checks green, desk clean at ${sha}`, sha };
 }
 
 async function main() {
-  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_OUTPUT, PR_NUMBER, RUN_HEAD_SHA, DEFAULT_BRANCH } = process.env;
+  const { GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_OUTPUT, PR_NUMBER, RUN_HEAD_SHA, DEFAULT_BRANCH, AUTO_MERGE_CODE } = process.env;
   if (!GITHUB_TOKEN || !GITHUB_REPOSITORY || !GITHUB_OUTPUT || !DEFAULT_BRANCH) throw new Error("needs GITHUB_TOKEN, GITHUB_REPOSITORY, GITHUB_OUTPUT, DEFAULT_BRANCH");
   // Nothing printed below can act as a workflow command, whatever the PR named its files.
   console.log(`::stop-commands::${randomUUID()}`);
@@ -109,11 +247,12 @@ async function main() {
   const pr = await get(`/pulls/${number}`);
   const files = await all(`/pulls/${number}/files`);
   const sha = SHA.test(pr.head?.sha ?? "") ? pr.head.sha : null;
-  const checkRuns = sha ? (await get(`/commits/${sha}/check-runs?check_name=checks&filter=latest&per_page=100`)).check_runs : [];
+  const checkRuns = [];
+  for (const name of sha ? REQUIRED_RUNS : []) checkRuns.push(...(await get(`/commits/${sha}/check-runs?check_name=${name}&filter=latest&per_page=100`)).check_runs);
   const comments = await all(`/issues/${number}/comments`);
   const headAfter = (await get(`/pulls/${number}`)).head?.sha;
 
-  const decision = decide({ pr, headAfter, files, checkRuns, comments, defaultBranch: DEFAULT_BRANCH });
+  const decision = decide({ pr, headAfter, files, checkRuns, comments, defaultBranch: DEFAULT_BRANCH, code: AUTO_MERGE_CODE === "on" });
   console.log(`PR #${number}: ${decision.merge ? "merge" : "no merge"}, ${decision.reason}`);
   if (decision.merge) appendFileSync(GITHUB_OUTPUT, `merge=true\nnumber=${number}\nsha=${decision.sha}\n`);
 }

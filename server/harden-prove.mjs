@@ -1,7 +1,7 @@
 // Untrusted input: bad messages, card-minting discards, oversized pictures, a player who leaves mid-game, and the two
 // caps around watchers: SPECTATOR_MAX=0 turns watching off, and watchers never count toward ROOM_MAX (#349).
 import { spawn } from "node:child_process";
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, watch } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import WebSocket from "ws";
@@ -9,10 +9,37 @@ import { createGame } from "../src/lib/game/board.ts";
 import { applyAction } from "../src/lib/game/rules.ts";
 
 let host;
+let small3;
 function fail(why, extra) {
   console.log("FAIL", why, extra ?? "");
   host?.kill("SIGKILL");
+  small3?.kill("SIGKILL");
   process.exit(1);
+}
+
+async function waitRoomFiles(dir, count, ms = 5000) {
+  const list = () => readdirSync(dir).filter((f) => f.endsWith(".json"));
+  if (list().length >= count) return list();
+  return await new Promise((resolve) => {
+    let done = false;
+    const finish = (files) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      watcher?.close();
+      resolve(files);
+    };
+    const check = () => {
+      const files = list();
+      if (files.length >= count) finish(files);
+    };
+    let watcher;
+    try { watcher = watch(dir, check); } catch {}
+    const poll = setInterval(check, 25);
+    const timer = setTimeout(() => finish(list()), ms);
+    check();
+  });
 }
 
 // 1. The engine rejects bad bags and non-arrays instead of minting cards or throwing.
@@ -48,7 +75,6 @@ console.log("engine rejects bad bags, names, and non-arrays");
 
 // Rooms go to a temp folder, dropped on exit, so the real host never restores this proof's tables (#207).
 const ROOMS_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(ROOMS_DIR, { recursive: true, force: true }));
 // 2. The host survives garbage, caps pictures, and picks picture ids itself.
 host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
@@ -56,7 +82,10 @@ host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   env: { ...process.env, PORT: "0", GRACE_MS: "100", SPECTATOR_MAX: "0", ROOMS_DIR, RESULTS_DIR: `${ROOMS_DIR}/results` },
   stdio: ["ignore", "pipe", "pipe"],
 });
-process.on("exit", () => host.kill("SIGKILL"));
+process.on("exit", () => {
+  host.kill("SIGKILL");
+  rmSync(ROOMS_DIR, { recursive: true, force: true });
+});
 for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 const port = await new Promise((resolve, reject) => {
   host.stdout.on("data", (d) => {
@@ -203,13 +232,15 @@ console.log(`SPECTATOR_MAX=0: the first watcher of the started table got "${noWa
 
 // 4. A host with ROOM_MAX=3 opens three tables and refuses the fourth; one seat flooding non-chat messages is throttled (#281).
 const SMALL_DIR = mkdtempSync(path.join(tmpdir(), "emberisle-rooms-"));
-process.on("exit", () => rmSync(SMALL_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 }));
-const small3 = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+small3 = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL(".", import.meta.url),
   env: { ...process.env, PORT: "0", ROOMS_DIR: SMALL_DIR, RESULTS_DIR: `${SMALL_DIR}/results`, ROOM_MAX: "3" },
   stdio: ["ignore", "pipe", "pipe"],
 });
-process.on("exit", () => small3.kill("SIGKILL"));
+process.on("exit", () => {
+  small3.kill("SIGKILL");
+  rmSync(SMALL_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+});
 const port3 = await new Promise((resolve, reject) => {
   small3.stdout.on("data", (d) => {
     const mm = String(d).match(/listening (\d+)/);
@@ -226,9 +257,8 @@ for (const [i, x] of four.entries()) {
   await (i < 3 ? x.next("welcome").then((w) => codes.push(w.code)) : x.next("error").then((e) => (e.message === "The host is full." ? e : fail("fourth table answer", e.message))));
 }
 if (four[3].inbox.some((e) => e.type === "welcome")) fail("the fourth table opened");
-// Saves are debounced (SAVE_MS, G5), so give the three tables their write.
-await new Promise((r) => setTimeout(r, 500));
-const files = readdirSync(SMALL_DIR).filter((f) => f.endsWith(".json"));
+// Saves are debounced (SAVE_MS, G5), so wait for the three room files instead of a fixed sleep.
+const files = await waitRoomFiles(SMALL_DIR, 3);
 if (files.length !== 3) fail("rooms/ should hold three files", files);
 console.log("ROOM_MAX=3: three hellos got welcome, the fourth got 'The host is full.', rooms/ holds", files.length, "files");
 

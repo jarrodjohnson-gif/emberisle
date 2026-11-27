@@ -5,27 +5,26 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { preview } from "vite";
 
-const temp = mkdtempSync(path.join(tmpdir(), "emberisle-open-host-"));
 const errors = [];
 const hostErrors = [];
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
-  cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", DIST: path.resolve("dist"), ROOMS_DIR: path.join(temp, "rooms"), RESULTS_DIR: `${path.join(temp, "rooms")}/results`, PROFILES_DIR: path.join(temp, "profiles") },
+let temp, host, browser, served, fixture;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (temp) rmSync(temp, { recursive: true, force: true });
 });
-host.stderr.on("data", d => hostErrors.push(String(d)));
-let browser, served, fixture;
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
+
 try {
-  const port = await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("native host startup timed out")), 30000);
-    host.on("error", reject);
-    host.on("exit", code => reject(new Error(`native host exited ${code}`)));
-    host.stdout.on("data", d => {
-      const match = String(d).match(/listening (\d+)/);
-      if (match) { clearTimeout(timer); resolve(Number(match[1])); }
-    });
+  temp = mkdtempSync(path.join(tmpdir(), "emberisle-open-host-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: { ...process.env, PORT: "0", DIST: path.resolve("dist"), ROOMS_DIR: path.join(temp, "rooms"), RESULTS_DIR: `${path.join(temp, "rooms")}/results`, PROFILES_DIR: path.join(temp, "profiles") },
   });
+  host.stderr.on("data", d => hostErrors.push(String(d)));
+  const port = await waitForHostPort(host);
   const native = `http://127.0.0.1:${port}`;
   const socketURL = `ws://127.0.0.1:${port}`;
   fixture = new WebSocket(socketURL);
@@ -39,7 +38,8 @@ try {
       if (message.type === "error") { clearTimeout(timer); reject(new Error(message.message)); }
     });
   });
-  served = await preview({ preview: { host: "127.0.0.1", port: Number(process.env.OPEN_HOST_PORT) || 8494, strictPort: true }, logLevel: "error" });
+  const previewPort = Number(process.env.OPEN_HOST_PORT) || 0;
+  served = await preview({ preview: { host: "127.0.0.1", port: previewPort, strictPort: previewPort !== 0 }, logLevel: "error" });
   const staticURL = served.resolvedUrls.local[0];
   browser = await chromium.launch({
     args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
@@ -90,11 +90,14 @@ try {
   assert.deepEqual(hostErrors, []);
   console.log("open-host-prove: all passed");
 } finally {
-  await browser?.close();
-  if (served) await new Promise(resolve => served.httpServer.close(resolve));
+  if (browser) await browser.close().catch(() => {});
+  if (served) await new Promise(resolve => served.httpServer.close(resolve)).catch(() => {});
   fixture?.close();
-  if (host.exitCode === null && host.signalCode === null) {
-    await new Promise(resolve => { host.once("exit", resolve); host.kill(); });
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
   }
-  rmSync(temp, { recursive: true, force: true });
+  if (temp) rmSync(temp, { recursive: true, force: true });
 }

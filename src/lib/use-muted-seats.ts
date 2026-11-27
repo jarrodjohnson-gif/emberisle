@@ -4,14 +4,19 @@ import { MUTE_EVENT, MUTE_KEY, mutedByCode, readMutedSeats } from "@/lib/muted-s
 
 // Muting is a browser preference, scoped to one table code; no message reaches the host.
 export function useMutedSeats(code: string) {
-  const [seats, setSeats] = useState<string[]>(() => readMutedSeats(code));
+  const [, bump] = useState(0);
 
   useEffect(() => {
-    const syncLocal = () => setSeats(readMutedSeats(code));
+    const syncLocal = () => bump((n) => n + 1);
     const syncStorage = (event: StorageEvent) => {
-      if (event.key !== null && event.key !== `${MUTE_KEY}${code}`) return;
-      mutedByCode.delete(code);
-      setSeats(readMutedSeats(code));
+      if (event.key === null) {
+        mutedByCode.clear();
+        bump((n) => n + 1);
+      } else if (event.key.startsWith(MUTE_KEY)) {
+        const changed = event.key.slice(MUTE_KEY.length);
+        mutedByCode.delete(changed);
+        if (changed === code) bump((n) => n + 1);
+      }
     };
     window.addEventListener(MUTE_EVENT, syncLocal);
     window.addEventListener("storage", syncStorage);
@@ -20,8 +25,6 @@ export function useMutedSeats(code: string) {
       window.removeEventListener("storage", syncStorage);
     };
   }, [code]);
-
-  useEffect(() => setSeats(readMutedSeats(code)), [code]);
 
   const toggle = (seat: string) => {
     if (!code || !seat) return;
@@ -35,9 +38,9 @@ export function useMutedSeats(code: string) {
     } catch {
       // The in-memory preference still applies and syncs to this tab's chat and reaction views.
     }
-    setSeats(value);
+    bump((n) => n + 1);
     window.dispatchEvent(new Event(MUTE_EVENT));
   };
 
-  return { muted: new Set(seats), toggle };
+  return { muted: new Set(readMutedSeats(code)), toggle };
 }

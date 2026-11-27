@@ -28,6 +28,7 @@ export class LandingDust {
   }
 
   emit(x: number, y: number, z: number) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
     this.puffs++;
     const room = MAX_GRAINS - this.grains.length;
     if (room <= 0) return;
@@ -46,6 +47,7 @@ export class LandingDust {
   }
 
   step(dt: number) {
+    if (!Number.isFinite(dt) || dt <= 0) return;
     let i = this.grains.length;
     while (i--) {
       const g = this.grains[i]!;

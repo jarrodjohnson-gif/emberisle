@@ -89,7 +89,7 @@ const drawn = (page, n, ms = 8000) =>
     });
   }, [n, ms]);
 
-async function open(width, height, touch, water = "simple", view = null, jelly = null) {
+async function open(width, height, touch, water = "simple", view = null, jelly = null, readback = false) {
   const ctx = await browser.newContext({ viewport: { width, height }, ...(touch ? { isMobile: true, hasTouch: true } : {}) });
   await ctx.addInitScript((w) => localStorage.setItem("emberisle-water", w), water);
   // The full Hex Jelly scenes, where software GL would build the lite board (jelly-board.md).
@@ -125,21 +125,23 @@ async function open(width, height, touch, water = "simple", view = null, jelly =
       }
     };
   });
-  // Copy every drawn frame into a 2D canvas, so pixels can be read back without preserveDrawingBuffer.
-  await page.evaluate(() => {
-    const isle = window.__isle;
-    const gl = isle.renderer.domElement;
-    const copy = document.createElement("canvas");
-    window.__frame = copy;
-    const draw = isle.composer.render.bind(isle.composer);
-    isle.composer.render = (...a) => {
-      const out = draw(...a);
-      copy.width = gl.width;
-      copy.height = gl.height;
-      copy.getContext("2d").drawImage(gl, 0, 0);
-      return out;
-    };
-  });
+  // #1748: copy drawn frames to a 2D canvas only on crystal-sea pages that call patch(); other pages skip the extra GPU readback.
+  if (readback) {
+    await page.evaluate(() => {
+      const isle = window.__isle;
+      const gl = isle.renderer.domElement;
+      const copy = document.createElement("canvas");
+      window.__frame = copy;
+      const draw = isle.composer.render.bind(isle.composer);
+      isle.composer.render = (...a) => {
+        const out = draw(...a);
+        copy.width = gl.width;
+        copy.height = gl.height;
+        copy.getContext("2d").drawImage(gl, 0, 0);
+        return out;
+      };
+    });
+  }
   return page;
 }
 
@@ -247,7 +249,7 @@ try {
   // lighter where sand shows through the shallow band. Both points sit on the outward line from the middle of a coast edge
   // with no dock, 0.6 and 3.5 units out, inside the HUD hole.
   {
-    const page = await open(1280, 720, false, "crystal", "overhead");
+    const page = await open(1280, 720, false, "crystal", "overhead", null, true);
     await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.water?.path === "crystal" && window.__isle.lastState && window.__emberisle.getState().state && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
     await page.waitForFunction((n) => window.__isle.renders > n, (await page.evaluate(() => window.__isle.renders)) + 2, { timeout: STEP_MS });
@@ -326,14 +328,20 @@ try {
   ]) {
     const tag = `${w}x${h}${touch ? " touch" : ""}`;
     const page = await open(w, h, touch);
+    const jellyStart = performance.now();
     await page.getByRole("button", { name: "Pass and play" }).click();
     await page.waitForFunction(() => window.__emberisle?.getState().state && window.__isle.lastState, null, { timeout: STEP_MS });
     await page.evaluate(() => {
       const g = window.__emberisle;
       while (g.getState().state.phase === "rollOff") g.getState().dispatch({ type: "roll" });
     });
+    // #1748: wait for the play board's jelly scene within the existing 30 s bound and log time-to-jelly before drawn(page, 3).
+    const jellyMs = await page.waitForFunction(() => Boolean(window.__isle.jelly), null, { timeout: 30_000 })
+      .then(() => Math.round(performance.now() - jellyStart))
+      .catch(() => null);
+    check(`${tag}: jelly scene ready within 30 s`, jellyMs !== null && jellyMs <= 30_000, { jellyMs });
     // A state change marks the fit due at once and the next frame starts its glide, so both must be clear.
-    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide, null, { timeout: STEP_MS });
+    await page.waitForFunction(() => window.__isle.lastSeq === window.__emberisle.getState().state.seq && !window.__isle.refitDue && !window.__isle.glide && Boolean(window.__isle.jelly), null, { timeout: STEP_MS });
     await drawn(page, 3);
     // The camera as the orbit sees it, plus what a wrong gesture could change: the game's seq and the pieces on the board.
     const pose = () =>

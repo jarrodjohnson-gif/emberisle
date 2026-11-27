@@ -1,44 +1,39 @@
 // Open-table list for server/host.mjs (#833).
-// At most one open table per host process: the first host to set visibility:"open" claims the slot.
-// Only { code, name, seated, status } is ever published — private table codes are never exposed.
+// Several open tables may be listed at once (#944): who may host is host.mjs's rule, one live table per host player.
+// Only { code, name, seated, total, status } is ever published — private table codes are never exposed.
 
-let openRoom = null;
+const openRooms = new Set();
 
-/** @returns {boolean} false when another open table already holds the single slot. */
+/** @returns {boolean} true once the room is listed. */
 export function registerOpenTable(room) {
-  if (openRoom && openRoom !== room) return false;
-  openRoom = room;
+  openRooms.add(room);
   return true;
 }
 
 export function unregisterOpenTable(room) {
-  if (openRoom === room) openRoom = null;
+  openRooms.delete(room);
 }
 
-/** Drop the open listing when the game ends or nobody is connected (slot stays free for a new open host). */
+/** Drop the open listing when the game ends or nobody is connected. */
 export function maybeReleaseOpenSlot(room) {
-  if (openRoom !== room) return;
+  if (!openRooms.has(room)) return;
   if (room.game?.phase === "over" || !room.seats.some((s) => s.ws)) unregisterOpenTable(room);
 }
 
-export function getOpenTables() {
-  if (!openRoom) return [];
-  const status = openRoom.game
-    ? openRoom.game.phase === "over"
-      ? "over"
-      : "playing"
-    : "lobby";
+function entry(room) {
+  const status = room.game ? (room.game.phase === "over" ? "over" : "playing") : "lobby";
   // Name follows the current host seat so a handoff keeps the label honest.
-  const hostSeat = openRoom.seats.find((s) => s.id === openRoom.host) ?? openRoom.seats[0];
-  // Count every seat (bots included): sitDown refuses at the room's cap, 4, or 6 for an expanded room (#1611).
-  const seated = openRoom.seats.length;
-  return [
-    {
-      code: openRoom.code,
-      name: `${hostSeat?.name ?? "Host"}'s table`,
-      seated,
-      total: openRoom.variant === "expanded" ? 6 : 4,
-      status,
-    },
-  ];
+  const hostSeat = room.seats.find((s) => s.id === room.host) ?? room.seats[0];
+  return {
+    code: room.code,
+    name: `${hostSeat?.name ?? "Host"}'s table`,
+    // Count every seat (bots included): sitDown refuses at the room's cap, 4, or 6 for an expanded room (#1611).
+    seated: room.seats.length,
+    total: room.variant === "expanded" ? 6 : 4,
+    status,
+  };
+}
+
+export function getOpenTables() {
+  return [...openRooms].map(entry);
 }

@@ -15,6 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { chromium } from "./proof-browser.mjs";
+import { hostPort as waitForHostPort } from "./proof-host-port.mjs";
 import { createServer } from "vite";
 
 const arg = (name) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : null; };
@@ -28,19 +29,16 @@ const INK = "rgb(38, 61, 60)";
 const PENDING_TYPE = new Set(["fortunes-button"]);
 const PENDING_FOCUS = new Set(["win-row"]);
 
-const rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1418-rooms-"));
-const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], { cwd: new URL("../server/", import.meta.url), env: { ...process.env, PORT: "0", ROOMS_DIR: rooms } });
-const hostPort = await new Promise((resolve, reject) => {
-  host.on("error", reject);
-  host.stdout.on("data", (d) => { const m = String(d).match(/listening (\d+)/); if (m) resolve(Number(m[1])); });
-  host.on("exit", (code) => reject(new Error(`host exited ${code}`)));
+let rooms;
+let host;
+let vite;
+let url;
+let browser;
+process.on("exit", () => {
+  if (host && host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 });
-const vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
-await vite.listen();
-const url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
-const browser = await chromium.launch({
-  args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
-});
+for (const s of ["SIGINT", "SIGTERM"]) process.on(s, () => process.exit(130));
 
 // Every visible button and tab: the label, whether it is the Button primitive, its box, type, and whether any of its text
 // runs onto a second line or past its box (or past the clip box of an ellipsis span inside it).
@@ -130,6 +128,26 @@ const out = { sizes: [] };
 const errors = [];
 const problems = [];
 try {
+  rooms = mkdtempSync(path.join(tmpdir(), "emberisle-1418-rooms-"));
+  host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
+    cwd: new URL("../server/", import.meta.url),
+    env: {
+      ...process.env,
+      PORT: "0",
+      ROOMS_DIR: rooms,
+      PROFILES_DIR: path.join(rooms, "profiles"),
+      RESULTS_DIR: `${rooms}/results`,
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const hostPort = await waitForHostPort(host);
+  vite = await createServer({ server: { host: "127.0.0.1", port: 0 }, logLevel: "error" });
+  await vite.listen();
+  url = `http://127.0.0.1:${vite.httpServer.address().port}/?host=ws://127.0.0.1:${hostPort}`;
+  browser = await chromium.launch({
+    args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+  });
+
   for (const [width, height] of SIZES) {
     const tag = `${width}x${height}`;
     const touch = width < 1000;
@@ -241,10 +259,15 @@ try {
     console.log(`${tag}: ${Object.entries(rec.screens).map(([n, s]) => `${n} ${s.buttons.length} buttons, ${s.focus.length} focused`).join("; ")}`);
   }
 } finally {
-  await browser.close();
-  await vite.close();
-  host.kill();
-  rmSync(rooms, { recursive: true, force: true });
+  if (browser) await browser.close().catch(() => {});
+  if (vite) await vite.close().catch(() => {});
+  if (host && host.exitCode === null && host.signalCode === null) {
+    const exited = new Promise((resolve) => host.once("exit", resolve));
+    host.kill();
+    await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 2000))]);
+    if (host.exitCode === null && host.signalCode === null) host.kill("SIGKILL");
+  }
+  if (rooms) rmSync(rooms, { recursive: true, force: true });
 }
 out.errors = errors;
 out.problems = problems;

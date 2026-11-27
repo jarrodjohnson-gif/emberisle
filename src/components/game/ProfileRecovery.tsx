@@ -23,22 +23,28 @@ type Errs = Partial<Record<Key, string>>;
 // The sheet's sticky action row, as on its other forms.
 const actions = (children: ReactNode) => <div className="sticky bottom-0 -mx-5 space-y-3 border-t border-border bg-surface px-5 pb-5 pt-3">{children}</div>;
 
+const EMPTY = { login: "", code: "", pin: "", newPin: "", pinConfirm: "" };
+
 export function ProfileRecovery({ ui }: { ui: RecoveryUi }) {
   const { kind, c, go, keep, setKeep, showPin, setShowPin } = ui;
   const snap = c.getSnapshot();
   const root = useRef<HTMLDivElement>(null);
-  const [v, setV] = useState({ login: "", code: "", pin: "", newPin: "", pinConfirm: "" });
+  const [v, setV] = useState(EMPTY);
   const [errors, setErrors] = useState<Errs>({});
   const [busy, setBusy] = useState(false);
   const [written, setWritten] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // A form or the save screen takes the focus as it opens; a refused field takes it after a press.
+  // Reset form state and move focus on open; return focus to the opener button on close.
   useEffect(() => {
     if (kind === "link" || kind === "row") return;
+    setV(EMPTY);
+    setErrors({});
+    setWritten(false);
+    setCopied(false);
     root.current?.querySelector<HTMLElement>(kind === "save" ? '[role="group"]' : "input")?.focus();
-    // New recovery code and the save screen hand the focus to the summary's recovery button, once the summary is drawn.
-    if (kind === "code" || kind === "save") return () => void requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-opens="code"]')?.focus());
+    const opener = kind === "recover" ? "recover" : "code";
+    return () => void requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-opens="${opener}"]`)?.focus());
   }, [kind]);
   useEffect(() => root.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), [errors]);
 
@@ -46,7 +52,7 @@ export function ProfileRecovery({ ui }: { ui: RecoveryUi }) {
   if ((kind === "link" || kind === "row") && !snap.recovery) return null;
   if (kind === "link") {
     return (
-      <Button variant="ghost" className="h-auto min-h-11 self-start whitespace-normal px-3 text-left" onClick={() => go("recover")}>
+      <Button variant="ghost" data-opens="recover" className="h-auto min-h-11 self-start whitespace-normal px-3 text-left" onClick={() => go("recover")}>
         Forgot your PIN? Use your recovery code
       </Button>
     );

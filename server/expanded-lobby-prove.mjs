@@ -501,6 +501,10 @@ function partnerRoom(code, g, human) {
   const me = h.state.you;
   const diskGame = async (seq) => {
     for (let i = 0; i < 200; i++) {
+      // A bot or partner may advance while this read waits for the coalesced save. That old sequence may never be
+      // written (or may already have been replaced). Choose again from the latest client state, never from a newer
+      // disk game paired with an older legal-action view. Keep the original bound for a genuinely stalled save.
+      if (h.state.game.seq !== seq) return null;
       try {
         const g = roomFile(A, code).game;
         if (g.seq === seq) return g;
@@ -510,6 +514,9 @@ function partnerRoom(code, g, human) {
     throw new Error(`no saved game at seq ${seq}`);
   };
   const STALE = "The table has updated. Please try again.";
+  const OFFER_GONE = "Offer is gone.";
+  // #1778: a late "Offer is gone." from an earlier tradeAnswer (e.g. arriving during diskGame) is not a reply to this move.
+  const moveError = () => h.inbox.find((x) => x.type === "error" && !(answered > 0 && x.message === OFFER_GONE));
   const mine = (st) => st.game.phase !== "over" && (st.legal.actions.length || st.legal.outpost.length || st.legal.path.length || st.legal.wayfarer.length || st.legal.discard);
   const stop = Date.now() + 240_000;
   let answered = 0;
@@ -527,13 +534,20 @@ function partnerRoom(code, g, human) {
       continue;
     }
     const g = await diskGame(st.game.seq);
+    if (!g) continue;
     const action = st.game.phase === "main" && g.role === "partner" && moves % 3 === 0 ? { type: "endTurn" } : chooseBotAction(g, me) ?? { type: "endTurn" };
     const intent = toIntent(action) ?? { type: "pass" };
     h.act(intent);
     moves++;
-    await h.until(() => h.state.game.seq !== st.game.seq || h.inbox.some((x) => x.type === "error"), "an answer to my move", 5000);
+    await h.until(() => h.state.game.seq !== st.game.seq || moveError(), "an answer to my move", 5000);
+    if (moves === 1 && h.state.game.seq !== st.game.seq) {
+      // Force the disk-selection race once: this view was actionable, but an accepted move has now superseded it and
+      // its saved snapshot. A slow reader must abandon that view, not wait forever for the old exact sequence.
+      await h.until(() => roomFile(A, code).game.seq > st.game.seq, "the first move is durable");
+      eq(await diskGame(st.game.seq), null, "a superseded saved-game read returns to the current client view");
+    }
     if (h.state.game.seq === st.game.seq) {
-      const err = h.inbox.find((x) => x.type === "error");
+      const err = moveError();
       // The host answers this while the room is busy (it is saving, or the table moved between my read and my send). It
       // is not a refusal of the move itself: read the state again and choose again. On CI it hit a roll (#1660).
       if (err?.message === STALE) continue;

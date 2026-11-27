@@ -1,18 +1,18 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { mkdir, rename, writeFile } from "node:fs/promises";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { WebSocketServer } from "ws";
 import { chooseBotAction, chooseRecoveryAction, logBotAction } from "../src/lib/game/ai.ts";
 import { createGame } from "../src/lib/game/board.ts";
 // Also registers the paired turns, so applyAction can play a restored five or six seat game (#1605, #1610).
 import { createExpandedGame, EXPANDED_COLORS, EXPANDED_COORDS, PARTNER_NO_TRADE, pairedAcceptTrade, pairedTradeAsk } from "../src/lib/game/expanded.ts";
 import { applyAction, bankShort, legalCities, legalRoads, legalSettle, playable, stealTargets, totalVP, validBag } from "../src/lib/game/rules.ts";
-import { COST, PLAYER_COLORS, RESOURCES } from "../src/lib/game/types.ts";
+import { COST, PLAYER_COLORS, RESOURCES, RESOURCE_LABEL } from "../src/lib/game/types.ts";
 import { JOIN_CODE, PROTO } from "../src/lib/net/proto.ts";
 import { allow, cleanText, loadEmotes, remember, SOUNDBOARD } from "./chat.mjs";
 import { cue } from "./cue.mjs";
@@ -341,7 +341,7 @@ function visibleProfiles(room) {
 }
 
 function seatsMsg(room) {
-  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
+  return { type: "seats", code: room.code, seats: seatsOf(room), watching: room.watchers.size, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room), ...(room.choose ? { choose: room.choose } : {}) };
 }
 
 // A room's variant (#1611; six-players.md, "Lobby and network limits"): fixed when the table opens, before the first seat
@@ -350,6 +350,11 @@ function seatsMsg(room) {
 // all, on the wire or on disk, so they stay byte for byte as before.
 const expandedRoom = (room) => room.variant === "expanded";
 const expandedTag = (room) => (expandedRoom(room) ? { variant: "expanded" } : {});
+// #1156: how the table lays its number tokens, fixed when the table opens: the official spiral (the default) or Random.
+// Anything else reads as Random: a room saved before the setting had its board dealt at random, so it stays Random.
+const NUMBERS_FIXED = "The host chooses the number tokens in the lobby.";
+const NUMBER_TOKENS = ["official", "random"];
+const tokensOf = (room) => (room.numberTokens === "official" ? "official" : "random");
 const paletteOf = (room) => (expandedRoom(room) ? EXPANDED_COLORS : PLAYER_COLORS);
 const seatRange = (room) => (expandedRoom(room) ? [5, 6] : [3, 4]);
 // Clients that can show the expanded island say so in every hello (`caps`). Raising PROTO would not do: older protocol
@@ -401,6 +406,8 @@ function snapshot(room, over = {}) {
     game: room.game,
     victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10,
     wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on",
+    // A room from before the setting has none and stays as it was saved: no field reads as Random.
+    ...(room.numberTokens ? { numberTokens: tokensOf(room) } : {}),
     ...expandedTag(room),
     seats: room.seats.map(({ id, name, color, ready, pid, secret, bot, turnDeadline, turnStartedAt, needs, extension, profileId }) => ({ id, name, color, ready, pid, secret, ...(bot ? { bot: true } : {}), ...(needs ? { needs } : {}), turnDeadline: turnDeadline ?? null, turnStartedAt: turnStartedAt ?? null, extension, ...(profileId ? { profileId } : {}) })),
     // Optional versioned metadata (#764): no ROOM_SHAPE bump, so a legacy room loads with no roster and is not tracked.
@@ -422,16 +429,19 @@ async function flush(room) {
   if (!room.dirty || !rooms.has(room.code) || room.saving) return;
   room.dirty = false;
   const file = path.join(ROOMS, `${room.code}.json`);
+  const tmp = `${file}.tmp`;
   const run = (async () => {
     const json = snapshot(room);
     await mkdir(ROOMS, { recursive: true });
-    await writeFile(`${file}.tmp`, json);
-    await rename(`${file}.tmp`, file);
+    await writeFile(tmp, json);
+    await rename(tmp, file);
   })();
   room.saving = run;
   try {
     await run;
   } catch (err) {
+    room.dirty = true;
+    await rm(tmp, { force: true }).catch(() => {});
     console.error("save failed:", err);
   }
   room.saving = null;
@@ -475,12 +485,14 @@ function flushAll() {
     clearTimeout(room.saveTimer);
     room.saveTimer = null;
     room.dirty = false;
+    const file = path.join(ROOMS, `${room.code}.json`);
+    const tmp = `${file}.tmp`;
     try {
-      const file = path.join(ROOMS, `${room.code}.json`);
       mkdirSync(ROOMS, { recursive: true });
-      writeFileSync(`${file}.tmp`, snapshot(room));
-      renameSync(`${file}.tmp`, file);
+      writeFileSync(tmp, snapshot(room));
+      renameSync(tmp, file);
     } catch (err) {
+      rmSync(tmp, { force: true });
       console.error("save failed:", err);
     }
   }
@@ -761,6 +773,7 @@ async function load() {
         botDeclined: saved.botDeclined ?? {},
         visibility: saved.visibility === "open" ? "open" : "private",
         wayfarerMode: saved.wayfarerMode === "off" ? "off" : "on",
+        numberTokens: NUMBER_TOKENS.includes(saved.numberTokens) ? saved.numberTokens : undefined,
         variant: saved.variant ?? (g?.variant ? "expanded" : "classic"),
         // Legacy hosted snapshots had no practice-bot seats, so a bot linked to a held seat means takeover.
         recoveryPids: [...new Set([...(Array.isArray(saved.recoveryPids) ? saved.recoveryPids : []), ...legacyRecovery])].slice(-recoveryCap(saved.game)),
@@ -870,7 +883,8 @@ export function viewFor(game, you) {
 
 // Goods lost to successful steals (#550) stay on the host until the win: no view carries them, not even the seat's own.
 // At the win every seat and watcher gets the count with the final state, a 0 for a seat that lost nothing.
-function withoutLoss({ goodsLost, ...rest }) {
+// #1452: so do the results screen's award counts (`tally`); the final state carries each seat's, when it has any.
+function withoutLoss({ goodsLost, tally, ...rest }) {
   return rest;
 }
 
@@ -1064,6 +1078,12 @@ function deadlineOf(room) {
 function pushState(room) {
   // Recovery during rejoin or takeover can finish a game too. Release before publishing it.
   maybeReleaseOpenSlot(room);
+  if (room.game?.phase === "over") {
+    for (const seat of room.seats) {
+      clearTimeout(seat.graceTimer);
+      seat.graceTimer = null;
+    }
+  }
   armTurns(room);
   extensions(room).sync();
   // The soonest armed window, and whose it is, so every HUD can count it down (#345). `serverNow` lets a client
@@ -1207,7 +1227,7 @@ function freshAction(ws, room, msg) {
   const seen = (ws.seat.actionCids ??= []);
   // Discards and offer replies from other seats can race with progress in the same turn.
   // Their rules still validate the outstanding discard/offer; connection and cid prevent replays.
-  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
+  const parallel = ws.seat.pid !== room.game.current && ["discard", "tradeAnswer", "tradeCounter", "tradeCounterCancel", "turnExtensionAsk", "turnExtensionAnswer"].includes(msg.type);
   if (
     ws.seat.ws !== ws ||
     typeof msg.cid !== "string" || msg.cid.length === 0 || msg.cid.length > 64 ||
@@ -1256,7 +1276,7 @@ function seatOf(secret) {
     return own.length === given.length && timingSafeEqual(own, given);
   };
   for (const room of rooms.values()) {
-    const seat = room.seats.find(same);
+    const seat = room.seats.find((s) => !s.bot && same(s));
     if (seat) return { room, seat };
   }
   return null;
@@ -1316,7 +1336,7 @@ function route(req, res) {
       const body = Buffer.concat(chunks);
       // Served as image/jpeg, so only JPEG bytes (SOI marker) are kept.
       if (size < 3 || body[0] !== 0xff || body[1] !== 0xd8 || body[2] !== 0xff) return res.writeHead(400).end();
-      if (storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
+      if (avatars.size - (held() ? 1 : 0) >= AVATAR_MAX || storeBytes() - held() + size > AVATAR_STORE_BYTES) return res.writeHead(503).end();
       forgetAvatar(seat);
       const id = randomBytes(8).toString("hex");
       avatars.set(id, { body });
@@ -1329,12 +1349,17 @@ function route(req, res) {
     return;
   }
   const got = url.pathname.match(/^\/avatars\/(.+)\.jpg$/);
-  if (req.method === "GET" && got && avatars.has(got[1])) {
-    res.writeHead(200, { "content-type": "image/jpeg", "x-content-type-options": "nosniff" });
-    res.end(avatars.get(got[1]).body);
+  if ((req.method === "GET" || req.method === "HEAD") && got && avatars.has(got[1])) {
+    const body = avatars.get(got[1]).body;
+    res.writeHead(200, {
+      "content-type": "image/jpeg",
+      "content-length": body.length,
+      "x-content-type-options": "nosniff",
+    });
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
-  if (req.method === "GET" && url.pathname === "/tables") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/tables") {
     // Same allow() throttle shape as the WS peek/list bucket (#833 review).
     const key = ipKey(req.socket.remoteAddress, req.headers["cf-connecting-ip"]) ?? "loopback";
     const now = Date.now();
@@ -1348,16 +1373,17 @@ function route(req, res) {
         "cache-control": "no-cache",
         "retry-after": "1",
       });
-      res.end("[]");
+      res.end(req.method === "HEAD" ? undefined : "[]");
       return;
     }
     const body = JSON.stringify(getOpenTables());
     res.writeHead(200, {
       "content-type": "application/json",
+      "content-length": Buffer.byteLength(body),
       "access-control-allow-origin": "*",
       "cache-control": "no-cache",
     });
-    res.end(body);
+    res.end(req.method === "HEAD" ? undefined : body);
     return;
   }
   if (req.method === "GET" || req.method === "HEAD") {
@@ -1445,14 +1471,33 @@ function seatColor(room, raw) {
   return palette.find((c) => !room.seats.some((s) => s.color === c));
 }
 
+// A seat's host tag is a one-way digest of its secret, sent with every welcome. The browser sends its tags back when it
+// opens another table, so the host can tell who already holds a host seat. A tag never sits anyone down (#944).
+const hostTag = (secret) => createHash("sha256").update(`host-tag:${secret}`).digest("hex").slice(0, 32);
+
+// One live table per host player (#944): a player who holds the host seat of a table whose game is not over, with
+// someone connected, can't open another. The player is the verified profile, or the tags this browser was given here.
+function hostingAlready(profileId, tags) {
+  const mine = new Set(Array.isArray(tags) ? tags.slice(0, 8).filter((t) => typeof t === "string") : []);
+  if (!profileId && !mine.size) return false;
+  for (const room of rooms.values()) {
+    if (room.game?.phase === "over" || !room.seats.some((s) => s.ws)) continue;
+    const host = room.seats.find((s) => s.id === room.host);
+    if (host && ((profileId && host.profileId === profileId) || mine.has(hostTag(host.secret)))) return true;
+  }
+  return false;
+}
+
 function openTable(ws, msg) {
   if (msg.wayfarerMode !== undefined && !["on", "off"].includes(msg.wayfarerMode)) return send(ws, { type: "error", message: "Choose Wayfarer On or Off." });
+  if (msg.numberTokens !== undefined && !NUMBER_TOKENS.includes(msg.numberTokens)) return send(ws, { type: "error", message: "Choose Official spiral or Random number tokens." });
   if (msg.variant !== undefined && msg.variant !== "classic" && msg.variant !== "expanded") return send(ws, { type: "error", message: "Choose 4, 5 or 6 seats." });
   if (msg.variant === "expanded" && !canExpand(msg)) return send(ws, { type: "error", update: true, message: UPDATE });
   if (rooms.size >= ROOM_MAX) return send(ws, { type: "error", message: "The host is full." });
   // An optional profile, verified before the table opens; a refusal opens nothing (#764).
   const profile = seatCredential(profiles, ws, msg, () => false);
   if (profile?.code) return send(ws, { type: "error", ...profile });
+  if (hostingAlready(profile?.profileId, msg.hostTags)) return send(ws, { type: "error", message: "You're already hosting a table." });
   const now = Date.now();
   const mine = ws.ipKey ? ipBucket(ws.ipKey, now) : null;
   if (mine && !allow(mine, now, OPEN_IP_CAP, 1000 / OPEN_IP_MS)) return send(ws, { type: "error", message: "You have opened several tables lately. Try again in a minute." });
@@ -1461,7 +1506,7 @@ function openTable(ws, msg) {
     return send(ws, { type: "error", message: "Too many new tables right now. Try again in a minute." });
   }
   const visibility = msg.visibility === "open" ? "open" : "private";
-  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
+  const room = { victoryTarget: 10, wayfarerMode: msg.wayfarerMode ?? "on", numberTokens: msg.numberTokens ?? "official", variant: msg.variant ?? "classic", visibility, code: code(), seats: [], game: null, host: null, next: 0, offer: null, offerTimer: null, botDeclined: {}, chat: [], chatSeq: 0, watchers: new Set() };
   rooms.set(room.code, room);
   const seat = {
     id: `s${room.next++}`,
@@ -1471,6 +1516,7 @@ function openTable(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -1478,13 +1524,10 @@ function openTable(ws, msg) {
   };
   room.seats.push(seat);
   room.host = seat.id;
-  if (visibility === "open" && !registerOpenTable(room)) {
-    rooms.delete(room.code);
-    return send(ws, { type: "error", message: "An open table is already listed." });
-  }
+  if (visibility === "open") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: true, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1507,6 +1550,7 @@ function sitDown(ws, msg) {
     avatarId: null,
     ready: false,
     ws,
+    caps: Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [],
     bucket: { tokens: 5, at: Date.now() },
     act: { tokens: ACT_CAP, at: Date.now() },
     secret: randomBytes(16).toString("hex"),
@@ -1515,7 +1559,7 @@ function sitDown(ws, msg) {
   room.seats.push(seat);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: false, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} sat down.`);
   publish(room);
 }
@@ -1531,12 +1575,12 @@ function watch(ws, msg) {
   if (room.watchers.size >= SPECTATOR_MAX) return send(ws, { type: "error", message: "Table is full to watch." });
   room.watchers.add(ws);
   ws.watch = room;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, spectator: true, chat: room.chat, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   watchersChanged(room, "Someone is watching.");
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now() });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room) });
 }
 
 // The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
@@ -1586,14 +1630,15 @@ async function startGame(ws, room) {
   if (n < least || n > most) return send(ws, { type: "error", message: `Need ${least} or ${most} at the table.` });
   if (room.seats.some((s) => !s.ready)) return send(ws, { type: "error", message: "Not everyone is ready." });
   // Exactly the seats at the table: five people are never filled to six. Seat numbers follow the lobby rows.
-  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on" });
+  const game = (expandedRoom(room) ? createExpandedGame : createGame)({ humans: room.seats.map((s) => ({ name: s.name })), bots: 0, victoryTarget: room.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? "on", numberTokens: tokensOf(room) });
   const order = [...room.seats];
   order.forEach((s, i) => {
     s.needs = undefined;
     game.players[i].color = s.color;
     if (s.bot) game.players[i].kind = "bot";
   });
-  if (!(await durableStart(ws, room, order, game, () => room.seats.length === order.length && order.every((s, i) => room.seats[i] === s)))) return;
+  const isLive = (s) => s.bot || (s.ws && s.ws.readyState === s.ws.OPEN);
+  if (!(await durableStart(ws, room, order, game, () => room.host === ws.seat.id && room.seats.length === order.length && order.every((s, i) => room.seats[i] === s && s.ready && isLive(s))))) return;
   closeTtt(room.seats, "start", null, send);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
@@ -1705,7 +1750,7 @@ async function replay(ws, room, live, isLive, variant) {
     for (const s of live) if (!colors.has(s)) colors.set(s, PLAYER_COLORS.find((c) => ![...colors.values()].includes(c)));
   }
   const order = [...(winner ? [winner, ...live.filter((s) => s !== winner)] : live), ...bots];
-  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on" });
+  const game = (variant === "expanded" ? createExpandedGame : createGame)({ humans: order.map((s) => ({ name: s.name })), bots: 0, winnerFirst: Boolean(winner), victoryTarget: room.victoryTarget ?? old.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? old.wayfarerMode ?? "on", numberTokens: tokensOf(room) });
   order.forEach((s, i) => {
     s.needs = undefined;
     game.players[i].color = colors.get(s) ?? s.color;
@@ -1735,7 +1780,7 @@ async function replay(ws, room, live, isLive, variant) {
   // #1411: every "play again" was for the game that just ended.
   for (const seat of room.seats) seat.again = undefined;
   for (const seat of room.seats) seat.turnKey = undefined;
-  // Reclaim a finished open room's slot only if no successor has taken it (#986).
+  // A finished open room is listed again for its rematch, beside any newer open table (#986, #944).
   if (room.visibility === "open") registerOpenTable(room);
   for (const seat of room.seats) if (seat.ws) seat.ws.actionConnection = randomBytes(16).toString("hex");
   hear("ui_confirm");
@@ -1823,15 +1868,17 @@ function openOffer(room, from, give, want) {
   // ends; it has no run-out (until and seconds are null). A bot's offer keeps the run-out, so a bot never stalls the table.
   // #1507 (owner q1517-bot-offer-stall A): no card shows a countdown for any offer; `seconds` stays on the wire only.
   const runOut = room.game.players.find((p) => p.id === from)?.kind === "bot";
-  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
+  const offer = (room.offer = { tradeId, from, give, want, declined: new Set(), counters: new Map(), counterUsed: new Set(), counter: room.game.players.find((p) => p.id === from)?.kind === "bot" || room.seats.find((seat) => seat.pid === from)?.caps?.includes("counter") === true, botTimers: [], until: runOut ? Date.now() + OFFER_MS : null });
   if (runOut) {
     room.offerTimer = setTimeout(() => {
+      for (const counter of [...offer.counters.values()]) botCounterAnswer(room, offer, counter);
+      if (room.offer !== offer) return;
       closeOffer(room);
       broadcast(room, { type: "tradeClosed", tradeId });
       botsOn(room, offer);
     }, OFFER_MS);
   }
-  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null });
+  broadcast(room, { type: "tradeOffer", tradeId, from, give, want, seconds: runOut ? OFFER_MS / 1000 : null, ...(offer.counter ? { counter: true } : {}) });
   offer.peopleUntil = Date.now() + PEOPLE_FIRST_MS;
   offer.heldYes = [];
   offer.botTimers.push(setTimeout(() => releaseHeld(room, offer), PEOPLE_FIRST_MS));
@@ -1853,7 +1900,7 @@ function botAnswer(room, offer, pid) {
 
 function peopleWaiting(room, offer) {
   if (Date.now() >= offer.peopleUntil) return false;
-  return room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
+  return offer.counters.size > 0 || room.game.players.some((p) => p.kind !== "bot" && p.id !== offer.from && !offer.declined.has(p.id));
 }
 
 // Held Yeses go in the order the bots gave them, so the first bot to say Yes still takes it.
@@ -1920,7 +1967,7 @@ function respond(room, actor, yes) {
     }
     say(room, line);
     const askees = room.game.players.filter((p) => p.id !== offer.from);
-    if (askees.every((p) => offer.declined.has(p.id))) {
+    if (askees.every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
       if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
         (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
       }
@@ -1951,6 +1998,92 @@ function respond(room, actor, yes) {
   hear("trade_yes");
   broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: actor });
   if (!botsOn(room, offer)) pushState(room);
+}
+
+// Counter terms are public and always from the original asker's side. They live only with the offer.
+const bagWords = (bag) => RESOURCES.filter((r) => bag[r]).map((r) => `${bag[r]} ${RESOURCE_LABEL[r].toLowerCase()}`).join(", ");
+const counterEvent = (offer, counter) => ({ type: "tradeCounter", tradeId: offer.tradeId, counterId: counter.counterId, by: counter.by, name: counter.name, give: counter.give, want: counter.want });
+const payable = (player, bag) => player && RESOURCES.every((r) => (bag[r] ?? 0) <= player.resources[r]);
+const nonempty = (bag) => RESOURCES.some((r) => (bag[r] ?? 0) > 0);
+const sameBag = (a, b) => RESOURCES.every((r) => (a[r] ?? 0) === (b[r] ?? 0));
+
+function counterClosed(room, offer, counter, why) {
+  if (room.offer !== offer || !offer.counters.delete(counter.counterId)) return;
+  clearTimeout(counter.timer);
+  broadcast(room, { type: "tradeCounterClosed", tradeId: offer.tradeId, counterId: counter.counterId, why });
+  if (room.game.players.filter((p) => p.id !== offer.from).every((p) => offer.declined.has(p.id)) && !offer.counters.size) {
+    if (room.game.players.find((p) => p.id === offer.from)?.kind === "bot") {
+      (room.botDeclined ??= {})[offer.from] = { give: offer.give, want: offer.want };
+    }
+    closeOffer(room);
+    broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId });
+    botsOn(room, offer);
+  } else if (!peopleWaiting(room, offer)) releaseHeld(room, offer);
+}
+
+function counterAsk(ws, room, msg) {
+  const offer = room.offer;
+  const by = ws.seat.pid;
+  if (!offer || msg.tradeId !== offer.tradeId) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.phase !== "main" || room.game.role === "partner") return send(ws, { type: "error", message: "Cannot trade now." });
+  if (!offer.counter || !ws.seat.caps?.includes("counter") || by === offer.from || offer.counterUsed.has(by)) return send(ws, { type: "error", message: "Bad trade." });
+  if (!validBag(msg.give) || !validBag(msg.want) || !nonempty(msg.give) || !nonempty(msg.want) || RESOURCES.some((r) => msg.give[r] && msg.want[r]) || (sameBag(msg.give, offer.give) && sameBag(msg.want, offer.want))) return send(ws, { type: "error", message: "Bad trade." });
+  if (!payable(room.game.players.find((p) => p.id === by), msg.want)) return send(ws, { type: "error", message: "You lack those goods." });
+  const counter = { counterId: `${offer.tradeId}-c${offer.counterUsed.size + 1}`, by, name: ws.seat.name, give: { ...msg.give }, want: { ...msg.want } };
+  offer.counterUsed.add(by);
+  offer.counters.set(counter.counterId, counter);
+  broadcast(room, counterEvent(offer, counter));
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  say(room, `${counter.name} counters ${asker.name.replace(/ \(bot\)$/i, "")}: ${bagWords(counter.want)} for ${bagWords(counter.give)}.`);
+  if (asker.kind === "bot") {
+    counter.timer = setTimeout(() => botCounterAnswer(room, offer, counter), BOT_ANSWER_MS + randomInt(BOT_ANSWER_MS + 1));
+    offer.botTimers.push(counter.timer);
+  }
+}
+
+function settleCounter(room, offer, counter, yes) {
+  if (!yes) return counterClosed(room, offer, counter, "no");
+  const asker = room.game.players.find((p) => p.id === offer.from);
+  const sender = room.game.players.find((p) => p.id === counter.by);
+  if (!payable(asker, counter.give)) return "You lack those goods.";
+  if (!payable(sender, counter.want)) return counterClosed(room, offer, counter, "gone");
+  const offered = applyAction(room.game, offer.from, { type: "offerTrade", to: counter.by, give: counter.give, want: counter.want });
+  if (offered.error) return "Cannot trade now.";
+  const accepted = applyAction(offered.state, counter.by, { type: "respondTrade", accept: true });
+  if (accepted.error) return accepted.error;
+  const before = room.game;
+  closeOffer(room);
+  const lines = newLog(before.log, accepted.state.log).filter((line) => !line.includes(" offers a trade to "));
+  room.game = { ...accepted.state, log: [...before.log, ...lines].slice(-200) };
+  if (advanceRoomNeeds(room, before, room.game, true)) publish(room);
+  for (const line of lines) say(room, line);
+  const seat = room.seats.find((s) => s.pid === offer.from);
+  if (seat) disarmTurn(seat);
+  hear("trade_yes");
+  broadcast(room, { type: "tradeClosed", tradeId: offer.tradeId, taker: counter.by });
+  if (!botsOn(room, offer)) pushState(room);
+}
+
+function botCounterAnswer(room, offer, counter) {
+  if (room.offer !== offer || !offer.counters.has(counter.counterId) || room.game.players.find((p) => p.id === offer.from)?.kind !== "bot") return;
+  const error = settleCounter(room, offer, counter, pairedAcceptTrade(room.game, offer.from, { from: counter.by, give: counter.want, want: counter.give }));
+  if (error && room.offer === offer) counterClosed(room, offer, counter, "no");
+}
+
+function counterAnswer(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || offer.from !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  if (room.game.role === "partner" || room.game.phase !== "main") return send(ws, { type: "error", message: "Cannot trade now." });
+  const error = settleCounter(room, offer, counter, msg.yes === true);
+  if (error) send(ws, { type: "error", message: error });
+}
+
+function counterCancel(ws, room, msg) {
+  const offer = room.offer;
+  const counter = offer?.counters.get(msg.counterId);
+  if (!offer || msg.tradeId !== offer.tradeId || !counter || counter.by !== ws.seat.pid) return send(ws, { type: "error", message: "Offer is gone." });
+  counterClosed(room, offer, counter, "back");
 }
 
 function talk(ws, room, msg) {
@@ -2128,6 +2261,7 @@ function handle(ws, raw) {
     // hello with no code opens a table; hello with a code sits down (build bible 2.3, 10).
     if (msg.type === "create" || (msg.type === "hello" && !msg.code)) return openTable(ws, msg);
     if (msg.wayfarerMode !== undefined) return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
+    if (msg.numberTokens !== undefined) return send(ws, { type: "error", message: NUMBERS_FIXED });
     if (msg.type === "hello" && typeof msg.secret === "string") return rejoin(ws, msg);
     if (msg.type === "join" || msg.type === "hello") return sitDown(ws, msg);
     return send(ws, { type: "error", message: "not ready" });
@@ -2135,6 +2269,7 @@ function handle(ws, raw) {
   const room = ws.room;
   if (msg.type === "leave") return leaveOnPurpose(ws, room);
   if (msg.wayfarerMode !== undefined || msg.type === "setWayfarerMode") return send(ws, { type: "error", message: "Wayfarer mode is fixed when the table is created." });
+  if (msg.numberTokens !== undefined) return send(ws, { type: "error", message: NUMBERS_FIXED });
   if (msg.type === "chat" || msg.type === "react" || msg.type === "sound") return talk(ws, room, msg);
   if (TTT_TYPES.has(msg.type)) {
     const now = Date.now();
@@ -2158,6 +2293,14 @@ function handle(ws, raw) {
     if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "The target is fixed for this game." });
     if (msg.value !== 7 && msg.value !== 10) return send(ws, { type: "error", message: "Choose 7 or 10 points." });
     room.victoryTarget = msg.value;
+    return publish(room);
+  }
+  // #1156, owner answer B: the host may change the number tokens in the lobby, and between games, like the target.
+  if (msg.type === "setNumberTokens") {
+    if (ws.seat.id !== room.host) return send(ws, { type: "error", message: "Only the host can choose the number tokens." });
+    if (room.game && room.game.phase !== "over") return send(ws, { type: "error", message: "Number tokens are fixed for this game." });
+    if (!NUMBER_TOKENS.includes(msg.value)) return send(ws, { type: "error", message: "Choose Official spiral or Random number tokens." });
+    room.numberTokens = msg.value;
     return publish(room);
   }
   if (msg.type === "ready") {
@@ -2186,6 +2329,9 @@ function handle(ws, raw) {
     if (error) return send(ws, { type: "error", message: error });
     return; // The extension changed callback publishes the updated state.
   }
+  if (msg.type === "tradeCounter") return counterAsk(ws, room, msg);
+  if (msg.type === "tradeCounterAnswer") return counterAnswer(ws, room, msg);
+  if (msg.type === "tradeCounterCancel") return counterCancel(ws, room, msg);
   if (msg.type === "tradeAsk") return ask(ws, room, msg);
   if (msg.type === "tradeAnswer") return answer(ws, room, msg);
   if (msg.type === "tradeCancel") return cancelOffer(ws, room, msg);
@@ -2210,19 +2356,20 @@ function rejoin(ws, msg) {
   if (!room) return send(ws, { type: "error", message: "No table with that code" });
   // Before the seat is touched: a refused rejoin leaves the seat held, its timers running, for an updated page.
   if (refusesClient(ws, room, msg)) return;
-  const seat = room.seats.find((s) => s.secret === msg.secret);
+  const seat = room.seats.find((s) => !s.bot && s.secret === msg.secret);
   if (!seat) return send(ws, { type: "error", message: "Seat is gone." });
   if (seat.ws && seat.ws.readyState === seat.ws.OPEN) return send(ws, { type: "error", message: "Seat is taken." });
   clearTimeout(seat.graceTimer);
   clearTimeout(seat.holdTimer);
   seat.graceTimer = seat.holdTimer = null;
   seat.ws = ws;
+  seat.caps = Array.isArray(msg.caps) ? msg.caps.filter((c) => typeof c === "string") : [];
   seat.gone = null;
-  // Restore discovery after a reload, without displacing a newer open table.
+  // Restore discovery after a reload, beside any newer open table.
   if (room.visibility === "open" && room.game?.phase !== "over") registerOpenTable(room);
   ws.room = room;
   ws.seat = seat;
-  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", ...expandedTag(room) });
+  send(ws, { type: "welcome", proto: PROTO, serverSha: SERVER_SHA, serverNow: Date.now(), code: room.code, you: seat.id, host: seat.id === room.host, chat: room.chat, secret: seat.secret, hostTag: hostTag(seat.secret), ...HOLD_INFO, victoryTarget: room.victoryTarget ?? room.game?.victoryTarget ?? 10, wayfarerMode: room.wayfarerMode ?? room.game?.wayfarerMode ?? "on", numberTokens: tokensOf(room), ...expandedTag(room) });
   say(room, `${seat.name} is back.`);
   publish(room);
   resendTtt(seat, send);
@@ -2247,10 +2394,11 @@ function rejoin(ws, msg) {
 // person's offer holds, so the asker needs its card and Cancel again after a reload.
 function resendOffer(ws, room, seat, offer) {
   const seconds = offer.until === null ? null : Math.max(0, Math.floor((offer.until - Date.now()) / 1000));
-  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds });
+  send(ws, { type: "tradeOffer", tradeId: offer.tradeId, from: offer.from, give: offer.give, want: offer.want, seconds, ...(offer.counter ? { counter: true } : {}) });
   for (const by of offer.declined) {
     send(ws, { type: "tradeDeclined", tradeId: offer.tradeId, by, name: room.game.players.find((p) => p.id === by).name });
   }
+  for (const counter of offer.counters.values()) send(ws, counterEvent(offer, counter));
 }
 
 function dropRoom(room) {
@@ -2281,7 +2429,7 @@ function hold(room, seat) {
   // A dropped seat is the grace timer's business, never the turn timer's (#344).
   disarmTurn(seat);
   if (room.game) extensions(room).sync();
-  if (room.game && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
+  if (room.game && room.game.phase !== "over" && seat.pid) seat.graceTimer = setTimeout(() => takeOver(room, seat), GRACE_MS);
   seat.holdTimer = setTimeout(() => letGo(room, seat), room.game ? HOLD_MS : LOBBY_HOLD_MS);
   // Free the open-list slot when nobody is connected so a finished or abandoned table cannot block a new open host.
   maybeReleaseOpenSlot(room);
@@ -2297,6 +2445,7 @@ function handOffHost(room) {
 // The grace is over: the practice bot plays the seat so the table never waits longer than that.
 function takeOver(room, seat) {
   seat.graceTimer = null;
+  if (!room.game || room.game.phase === "over") return;
   const p = room.game.players.find((x) => x.id === seat.pid);
   if (!p || p.kind === "bot") return;
   if (room.offer?.from === seat.pid) {
@@ -2308,6 +2457,10 @@ function takeOver(room, seat) {
   // Assistance is marked for the outcome and never cleared by a rejoin; the frozen roster keeps the seat human (#889).
   room.assisted = [...new Set([...(room.assisted ?? []), seat.pid])];
   room.game = { ...room.game, players: room.game.players.map((x) => (x === p ? { ...x, kind: "bot", name: `${x.name} (bot)` } : x)) };
+  if (room.offer) {
+    const offer = room.offer;
+    for (const counter of [...offer.counters.values()]) if (counter.by === seat.pid) counterClosed(room, offer, counter, "gone");
+  }
   seat.needs = undefined;
   say(room, `${seat.name} is played by the bot until they return.`);
   publish(room);

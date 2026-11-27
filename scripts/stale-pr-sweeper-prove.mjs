@@ -34,7 +34,7 @@ function fake(pulls = [pr()], initial = []) {
     }
     if (method === 'GET') {
       reads++;
-      if (api.onRead) api.onRead(reads, pulls, comments);
+      if (api.onRead) api.onRead(reads, pulls, comments, api);
       return structuredClone(pulls.find(p => p.number === n));
     }
     if (method === 'POST' && path.endsWith('/comments')) comments.push({ id: comments.length + 100, user: bot, body: body.body });
@@ -45,7 +45,7 @@ function fake(pulls = [pr()], initial = []) {
     }
     if (method === 'POST' && path.endsWith('/labels')) {
       pulls.find(p => path.includes(`/issues/${p.number}/`)).labels.push({ name: 'stale' });
-      if (api.onLabelWrite) api.onLabelWrite(pulls, comments);
+      if (api.onLabelWrite) api.onLabelWrite(pulls, comments, api);
     }
     if (method === 'DELETE' && path.endsWith('/labels/stale')) {
       const target = pulls.find(p => path.includes(`/issues/${p.number}/`));
@@ -401,5 +401,77 @@ ok('B1: actual inline permission probe validates target identity, applies/restor
 const empty = githubApi('fake-token', async () => ({ ok: true, status: 204, json: () => { throw new Error('204 must not parse JSON'); } }));
 assert.equal(await empty('DELETE', '/repos/owner/repo/issues/1/labels/stale'), null);
 ok('DELETE label responses support HTTP 204 without attempting JSON parsing');
+{
+  // Review arriving mid-sweep on a PR with zero initial reviews blocks both labeling and close comments.
+  const reviewBeforeLabel = fake([pr(1)], [marker(6)]);
+  reviewBeforeLabel.api.onRead = (n, _p, _c, api) => {
+    if (n === 2) api.reviews = [{ id: 201, submitted_at: new Date(now - 60_000).toISOString(), state: 'COMMENTED' }];
+  };
+  await run(reviewBeforeLabel);
+  assert(!reviewBeforeLabel.pulls[0].labels.some(l => l.name === 'stale'));
+  assert.equal(reviewBeforeLabel.writes().length, 0);
+
+  const reviewAtLabelCheck = fake([pr(1)], [marker(6)]);
+  reviewAtLabelCheck.api.onRead = (n, _p, _c, api) => {
+    if (n === 3) api.reviewComments = [{ id: 202, created_at: new Date(now - 60_000).toISOString() }];
+  };
+  await run(reviewAtLabelCheck);
+  assert(!reviewAtLabelCheck.pulls[0].labels.some(l => l.name === 'stale'));
+  assert.equal(reviewAtLabelCheck.writes().length, 0);
+
+  const reviewBeforeClose = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(10)]);
+  reviewBeforeClose.api.onRead = (n, _p, _c, api) => {
+    if (n === 2) api.reviews = [{ id: 203, submitted_at: new Date(now - 60_000).toISOString(), state: 'COMMENTED' }];
+  };
+  await run(reviewBeforeClose);
+  assert.equal(reviewBeforeClose.pulls[0].state, 'open');
+  assert.equal(reviewBeforeClose.writes().length, 0);
+}
+ok('mid-sweep reviews block stale labeling and closing comments even when reviews started empty');
+{
+  // A new head push or draft conversion gets a fresh observation window, never backdated to an older review.
+  const newHeadWithOldReview = fake([pr(1, { head: { sha: newer }, labels: [{ name: 'stale' }] })], [marker(15)]);
+  newHeadWithOldReview.api.reviews = [{ id: 204, submitted_at: new Date(now - 7 * DAY).toISOString(), state: 'COMMENTED' }];
+  await run(newHeadWithOldReview);
+  assert.equal(activity(newHeadWithOldReview.comments).sha, newer);
+  assert.equal(activity(newHeadWithOldReview.comments).observedAt, new Date(now).toISOString());
+  assert(!newHeadWithOldReview.pulls[0].labels.some(l => l.name === 'stale'));
+
+  const draftWithOldReview = fake([pr(1, { draft: true, labels: [{ name: 'stale' }] })], [marker(15)]);
+  draftWithOldReview.api.reviews = [{ id: 205, submitted_at: new Date(now - 7 * DAY).toISOString(), state: 'COMMENTED' }];
+  await run(draftWithOldReview);
+  assert.equal(activity(draftWithOldReview.comments).observedAt, new Date(now).toISOString());
+  assert(!draftWithOldReview.pulls[0].labels.some(l => l.name === 'stale'));
+
+  const futureReview = fake([pr(1, { labels: [{ name: 'stale' }] })], [marker(15)]);
+  futureReview.api.reviews = [
+    { id: 206, submitted_at: new Date(now - DAY).toISOString(), state: 'COMMENTED' },
+    { id: 207, submitted_at: new Date(now + 10 * DAY).toISOString(), state: 'COMMENTED' },
+  ];
+  await run(futureReview);
+  assert.equal(activity(futureReview.comments).observedAt, new Date(now - DAY).toISOString());
+}
+ok('initialize never backdates new heads or drafts to old reviews and ignores future review timestamps');
+{
+  // keep-open, draft, or a review landing during POST /labels rolls back the stale label.
+  for (const kind of ['keep-open', 'draft', 'review']) {
+    const f = fake([pr(1)], [marker(6)]);
+    f.api.onLabelWrite = (pulls, _c, api) => {
+      if (kind === 'keep-open') pulls[0].labels.push({ name: 'keep-open' });
+      else if (kind === 'draft') pulls[0].draft = true;
+      else api.reviews = [{ id: 208, submitted_at: new Date(now - 1000).toISOString(), state: 'COMMENTED' }];
+    };
+    await run(f);
+    assert(!f.pulls[0].labels.some(l => l.name === 'stale'), `${kind}: stale rolled back`);
+    assert(f.writes().some(c => c.method === 'DELETE' && c.path.endsWith('/labels/stale')), `${kind}: DELETE sent`);
+  }
+  // Same-second new-head event updates marker sha and clears stale label.
+  const sameSecond = fake([pr(1, { head: { sha: newer }, labels: [{ name: 'stale' }] })], [marker(0, { sha, labeledAt: new Date(now - DAY).toISOString() })]);
+  await run(sameSecond, { event: { action: 'synchronize', pull_request: { number: 1, head: { sha: newer }, updated_at: new Date(now).toISOString() } } });
+  assert.equal(activity(sameSecond.comments).sha, newer);
+  assert.equal(activity(sameSecond.comments).labeledAt, undefined);
+  assert(!sameSecond.pulls[0].labels.some(l => l.name === 'stale'));
+}
+ok('post-label rollback covers keep-open, draft and reviews; same-second new-head events rewrite marker and clear stale');
 ok('workflow stays owner-gated, default-branch-only, with no branch deletion permissions');
 console.log(`stale-pr-sweeper-prove: PASS ${groups} groups (offline)`);

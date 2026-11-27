@@ -4,6 +4,8 @@
 body:has(.win-screen) [data-hud-stack] { visibility: hidden; }
 /* White, as the score surfaces are (public-score-prove), a shade off the tray's #fbfdfc. */
 .win-sheet { max-height: 100%; gap: 4px; background: #fff; }
+/* #1453 (desk answer A, 2026-11-14): tall desktop sheets stay within 60% of the viewport; the list area scrolls to reach the dice strip. */
+@media (min-width: 768px) and (min-height: 481px) { .win-sheet { max-height: 60vh; } }
 .win-head { font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
 .win-how { color: #52625f; font-size: 14px; line-height: 20px; }
 /* The tray's buttons: a soft fill for the quiet ones, ink for the one primary. */
