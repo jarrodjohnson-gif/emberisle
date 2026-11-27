@@ -363,6 +363,9 @@ function workflowRules(text) {
   assert.equal(merge.split("labels[]=merge-by-chat'").length, 2, "one place adds merge-by-chat");
   assert.match(merge, /if ! grep -qE [^\n]*<<<"\$out"; then\n[^\n]*\n\s+exit 0\n/, "any other refusal stops before the hand-over");
   assert.match(merge, /if \[ "\$head" != "\$SHA" \]; then\n[^\n]*\n\s+exit 0\n/, "a moved head stops before the hand-over");
+  const policy = `if grep -q 'base branch policy prohibits the merge' <<<"$out" && grep -q '^\\.github/workflows/' <<<"$files"; then`;
+  assert.ok(at(policy) > 0 && at(policy) < at(steps[0]), "the branch-policy wording is read before the refusal check");
+  assert.ok(at(`files=$(GH_TOKEN="$LABEL_TOKEN" gh api --paginate "repos/$REPO/pulls/$NUM/files" --jq '.[].filename')`) > 0, "the PR's own file list decides");
   assert.match(merge, /printf '%s\\n' "\$out" \| sed 's\/::\/: :\/g'/, "GitHub's words never start a workflow command");
   // 11: any CI conclusion re-checks the PR.
   assert.equal(/workflow_run\.conclusion/.test(text), false, "no filter on the CI conclusion");
@@ -383,6 +386,8 @@ const WORKFLOW_MUTANTS = [
   ["9: reset gets the workflow's wide token", "    permissions:\n      issues: write\n    steps:", "    steps:"],
   ["9: the workflow grants write to every job", "permissions: {}\n", "permissions:\n  contents: write\n"],
   ["10: every refusal is handed over", "if ! grep -qE", "if false && grep -qE"],
+  ["10: a branch-policy refusal is handed over with no workflow file", ` && grep -q '^\\.github/workflows/' <<<"$files"; then`, "; then"],
+  ["10: the branch-policy wording is never handed over", "if grep -q 'base branch policy prohibits the merge'", "if false && grep -q 'base branch policy prohibits the merge'"],
   ["10: a moved head is handed over", 'if [ "$head" != "$SHA" ]; then', 'if false; then'],
   ["10: no marker comment", "<!-- merge-by-chat: %s -->", "merge by chat"],
   ["10: GitHub's words printed raw", "printf '%s\\n' \"$out\" | sed 's/::/: :/g'", "printf '%s\\n' \"$out\""],

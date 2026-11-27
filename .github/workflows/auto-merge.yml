@@ -124,6 +124,12 @@ jobs:
           fi
           # GitHub's words can name the PR's files, so no line of them may start a workflow command.
           printf '%s\n' "$out" | sed 's/::/: :/g'
+          # GitHub words the workflow-file refusal two ways. The second is its general branch-policy line, so it counts
+          # only when this PR changes a workflow file (#1881 and #1875 waited two days on it, 2026-11-27).
+          files=$(GH_TOKEN="$LABEL_TOKEN" gh api --paginate "repos/$REPO/pulls/$NUM/files" --jq '.[].filename')
+          if grep -q 'base branch policy prohibits the merge' <<<"$out" && grep -q '^\.github/workflows/' <<<"$files"; then
+            out='without `workflows` permission: GitHub worded it as a branch-policy refusal'
+          fi
           if ! grep -qE 'refusing to allow a GitHub App to create or update workflow|without .workflows. permission' <<<"$out"; then
             echo "::warning::auto-merge could not merge PR #$NUM at $SHA, and not for the workflow-permission reason; left as it is"
             exit 0
