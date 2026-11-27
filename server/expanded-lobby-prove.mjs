@@ -501,6 +501,10 @@ function partnerRoom(code, g, human) {
   const me = h.state.you;
   const diskGame = async (seq) => {
     for (let i = 0; i < 200; i++) {
+      // A bot or partner may advance while this read waits for the coalesced save. That old sequence may never be
+      // written (or may already have been replaced). Choose again from the latest client state, never from a newer
+      // disk game paired with an older legal-action view. Keep the original bound for a genuinely stalled save.
+      if (h.state.game.seq !== seq) return null;
       try {
         const g = roomFile(A, code).game;
         if (g.seq === seq) return g;
@@ -530,11 +534,18 @@ function partnerRoom(code, g, human) {
       continue;
     }
     const g = await diskGame(st.game.seq);
+    if (!g) continue;
     const action = st.game.phase === "main" && g.role === "partner" && moves % 3 === 0 ? { type: "endTurn" } : chooseBotAction(g, me) ?? { type: "endTurn" };
     const intent = toIntent(action) ?? { type: "pass" };
     h.act(intent);
     moves++;
     await h.until(() => h.state.game.seq !== st.game.seq || moveError(), "an answer to my move", 5000);
+    if (moves === 1 && h.state.game.seq !== st.game.seq) {
+      // Force the disk-selection race once: this view was actionable, but an accepted move has now superseded it and
+      // its saved snapshot. A slow reader must abandon that view, not wait forever for the old exact sequence.
+      await h.until(() => roomFile(A, code).game.seq > st.game.seq, "the first move is durable");
+      eq(await diskGame(st.game.seq), null, "a superseded saved-game read returns to the current client view");
+    }
     if (h.state.game.seq === st.game.seq) {
       const err = moveError();
       // The host answers this while the room is busy (it is saving, or the table moved between my read and my send). It

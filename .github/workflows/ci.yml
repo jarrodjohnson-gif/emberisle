@@ -17,6 +17,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  # auto-merge.yml starts a run on main after a merge made with the workflow token, which fires no push event.
+  workflow_dispatch:
 
 # A new push to a PR cancels that PR's older run, so stale commits stop holding runners. Runs on main are never cancelled.
 concurrency:
@@ -278,6 +280,8 @@ jobs:
         run: npm run registered-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run land-layout-prove
+      - if: needs.changes.outputs.docs_only != 'true'
+        run: npm run classic-geometry-prove
       - if: needs.changes.outputs.docs_only != 'true'
         run: npm run proof-host-port-prove
       - if: needs.changes.outputs.docs_only != 'true'
@@ -560,6 +564,8 @@ jobs:
         run: npm run tray-offers-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run game-log-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
+        run: npm run health-clock-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'
         run: npm run connection-health-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a1'

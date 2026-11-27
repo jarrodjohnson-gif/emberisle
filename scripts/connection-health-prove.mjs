@@ -1,5 +1,6 @@
 // Real browser + real host. Only the browser clock advances; the host's flood limiter keeps real time.
 import assert from "node:assert/strict";
+import { pauseHealthClock } from "./health-clock.mjs";
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -130,10 +131,7 @@ if (process.argv.includes("--host-fixture")) {
     await page.waitForFunction(() => window.__emberisle);
     // Hold Date during setup so pauseAt cannot receive an already-past target (#1493).
     // Then restore Date advancement while timers stay paused; retain a normal monotonic origin.
-    const clockStart = new Date();
-    await page.clock.setFixedTime(clockStart);
-    await page.clock.pauseAt(clockStart);
-    await page.clock.setSystemTime(clockStart);
+    await pauseHealthClock(page);
     // Exercise the transport without the store: a duplicate welcome cannot cancel a pending challenge's timeout.
     await page.evaluate(async () => {
       const { connectTable } = await import("/src/lib/net/table.ts");

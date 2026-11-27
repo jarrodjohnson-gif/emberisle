@@ -74,13 +74,14 @@ Query `decisions` for documents whose `at` is in the last 7 days. An answer is o
      - If it equals the card's `head`, end your comment with `<!-- owner-merge: <that SHA> -->`. Then add `owner-merge`, and remove `on-desk`.
      - If the head has moved, add nothing. Remove `on-desk`, so job 2 writes a fresh card.
      - If the PR is already merged, only mark the answer handled.
+     - If he picked `A: merged it` on a switched-off card, only mark the answer handled: he merged it on GitHub, and no builder has anything to do.
      - Never add `owner-merge` when the option he picked has no `ok: true`.
    - **Any other card** gets `owner-ok` only when all four hold:
      - the option he picked has `ok: true`;
      - his note is empty;
      - no other card for the same PR is still unanswered;
      - the PR's head SHA equals the card's `head`.
-     This is the one case where an agent adds `owner-ok`: it is his tap, carried over. Then remove `on-desk`.
+     Then end your `Owner answer` comment with `<!-- owner-ok: <that SHA> -->`, and add the label after the comment is posted. Without that marker for the head, auto-merge reads the label as absent. This is the one case where an agent adds `owner-ok`: it is his tap, carried over. Then remove `on-desk`.
    - **In every other case,** replace `on-desk` with `answered`. Do this only once no card for that PR or issue is still unanswered.
 6. Update the answer with `handled_for` (a copy of `at`), `handled` (one line on what you did) and `comment` (the card's `comment`). Pin it with `if_version`. Tidy may then delete the card.
 7. In the same update, set `log: true` when his answer is a standing rule. See "Which answers are standing rules" below.
