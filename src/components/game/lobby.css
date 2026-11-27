@@ -27,9 +27,9 @@
   min-height: 44px;
   min-width: 44px;
 }
-.lobby-layout button:not([data-emote]), .lobby-layout input, .lobby-layout [role="tab"] { font-size: 15px; font-weight: 600; }
-.lobby-layout input { font-size: 17px !important; }
-.lobby-layout button, .lobby-layout [role="tab"] { display: inline-flex; align-items: center; justify-content: center; line-height: 20px; text-align: center; }
+.lobby-layout button:not([data-emote]), .lobby-layout input, .lobby-layout [role="tab"] { font-size: 0.9375rem; font-weight: 600; }
+.lobby-layout input { font-size: 1.0625rem !important; }
+.lobby-layout button, .lobby-layout [role="tab"] { display: inline-flex; align-items: center; justify-content: center; line-height: 1.25rem; text-align: center; }
 .lobby-header, .lobby-rules, .lobby-action-buttons, .lobby-summary {
   display: flex;
   align-items: center;
@@ -40,14 +40,14 @@
    the same spot and back; the button keeps its size, so nothing moves. */
 .lobby-layout .lobby-code { position: relative; min-width: 72px; max-width: 100%; padding: 0 12px; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: transparent; color: var(--ink); }
 .lobby-code > span { transition: opacity 200ms ease; }
-.lobby-code > [data-testid="table-code"] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 28px; line-height: 34px; letter-spacing: 1px; font-weight: 700; }
-.lobby-code > span:last-child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; opacity: 0; font-size: 13px; line-height: 18px; font-weight: 600; color: var(--gain); }
+.lobby-code > [data-testid="table-code"] { display: block; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 1.75rem; line-height: 2.125rem; letter-spacing: 1px; font-weight: 700; }
+.lobby-code > span:last-child { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; opacity: 0; font-size: 0.8125rem; line-height: 1.125rem; font-weight: 600; color: var(--gain); }
 .lobby-code[data-copied] > [data-testid="table-code"] { opacity: 0; }
 .lobby-code[data-copied] > span:last-child { opacity: 1; }
 .lobby-code:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* #1156, owner answer B: Numbers, right of the code. The host's is a sliding switch (design: Fable 5.2 on PR #1866): grey
    for Official spiral, sea for Random; the thumb slides 16 px. Guests read the same two lines with no track. */
-.lobby-layout .lobby-numbers, .lobby-layout button.lobby-numbers { display: flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 44px; margin-left: auto; padding: 0 8px; border: 0; background: transparent; font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; text-align: right; }
+.lobby-layout .lobby-numbers, .lobby-layout button.lobby-numbers { display: flex; flex: 0 0 auto; align-items: center; gap: 6px; min-height: 44px; margin-left: auto; padding: 0 8px; border: 0; background: transparent; font-size: 0.8125rem; line-height: 1.125rem; font-weight: 500; color: #46524e; text-align: right; }
 .lobby-numbers-text { display: flex; flex-direction: column; min-width: 6.5em; } /* "Official spiral" fits, so a flip never moves the switch */
 .lobby-numbers-text > b { font-weight: 700; color: #1d5f64; }
 .lobby-switch { position: relative; width: 40px; height: 24px; border-radius: 12px; background: #899b9b; transition: background-color 180ms ease; }
@@ -81,12 +81,12 @@
   justify-content: center;
   height: 44px;
   padding-left: 4px;
-  font-size: 15px;
-  line-height: 20px;
+  font-size: 0.9375rem;
+  line-height: 1.25rem;
 }
 .lobby-rule-status > * { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0; }
 .lobby-rule-status > span:first-child { color: #1d5f64; font-weight: 700; }
-.lobby-rule-status > *:last-child { font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; }
+.lobby-rule-status > *:last-child { font-size: 0.8125rem; line-height: 1.125rem; font-weight: 500; color: #46524e; }
 .lobby-players {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -112,10 +112,10 @@
   border-radius: 12px;
   background: #fff;
 }
-.lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 17px; font-weight: 600; color: #263b3b; }
+.lobby-name { display: flex; width: fit-content; max-width: 100%; min-width: 0; align-items: center; font-size: 1.0625rem; font-weight: 600; color: #263b3b; }
 .lobby-name > button, .lobby-name > input { width: 100%; }
-.lobby-player-status { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; pointer-events: none; }
-.lobby-layout .lobby-player > button:not([data-emote]) { grid-column: 3; grid-row: 1 / 3; padding: 0 8px; font-size: 13px; font-weight: 600; line-height: 16px; white-space: normal; }
+.lobby-player-status { grid-column: 2; grid-row: 2; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.8125rem; font-weight: 500; line-height: 1.125rem; color: #46524e; pointer-events: none; }
+.lobby-layout .lobby-player > button:not([data-emote]) { grid-column: 3; grid-row: 1 / 3; padding: 0 8px; font-size: 0.8125rem; font-weight: 600; line-height: 1rem; white-space: normal; }
 .lobby-layout .lobby-player > button[data-testid="remove-bot"] { padding: 0; }
 .lobby-player > button svg { width: 16px; height: 16px; }
 /* an empty seat has an invisible dot: drop its column so "Empty" and Add bot both fit on a 320 px phone */
@@ -125,7 +125,7 @@
 .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { margin-left: 8px; padding: 0 7px; }
 .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 2 / 4; }
 @media (min-width: 361px) and (orientation: portrait), (min-height: 601px) {
-  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 15px; line-height: 20px; }
+  .lobby-layout .lobby-player > button:not([data-emote]) { font-size: 0.9375rem; line-height: 1.25rem; }
 }
 .lobby-bubble { grid-column: 3; grid-row: 1; align-self: center; justify-self: end; min-width: 0; max-width: 100%; pointer-events: none; }
 .lobby-chat-panel {
@@ -143,7 +143,7 @@
 .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 1.0625rem; line-height: 1.375rem; }
 .lobby-chat-panel [data-testid="emoji-row"] { gap: 8px; justify-content: space-between; }
 .lobby-chat-panel [data-testid="emoji-row"] button, .lobby-chat-panel [role="tab"] { background: transparent; }
-.lobby-chat-panel [data-testid="emoji-row"] button { font-size: 24px; font-weight: 400; }
+.lobby-chat-panel [data-testid="emoji-row"] button { font-size: 1.5rem; font-weight: 400; }
 .lobby-chat-panel [role="tab"] { padding-inline: 8px; color: #263b3b; }
 .lobby-chat-panel input {
   border: 1px solid #899b9b;
@@ -152,12 +152,12 @@
 .lobby-chat-panel [data-testid="sounds-tab"], .lobby-chat-panel [data-testid="sounds-tab"] [role="group"] { gap: 8px; }
 .lobby-actions { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .lobby-summary { height: 44px; justify-content: space-between; }
-.lobby-summary > p { font-size: 17px; line-height: 22px; font-weight: 600; color: #263b3b; }
+.lobby-summary > p { font-size: 1.0625rem; line-height: 1.375rem; font-weight: 600; color: #263b3b; }
 .lobby-summary [role="radiogroup"] { gap: 8px; }
 .lobby-action-buttons > * { flex: 1 1 0; padding: 0 11px; }
 .lobby-action-buttons > button:first-child { font-weight: 700; }
 .lobby-action-buttons > button:last-child { flex: 0 0 auto; white-space: nowrap; }
-.lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 17px; line-height: 22px; }
+.lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 1.0625rem; line-height: 1.375rem; }
 @media (min-width: 701px) {
   .lobby-action-buttons, .lobby-summary [role="radiogroup"] { gap: 12px; }
 }
@@ -165,16 +165,16 @@
 @media (max-width: 600px) and (orientation: portrait) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); width: auto; }
   .lobby-layout .lobby-layout-cover { padding: 12px; }
-  .lobby-code > [data-testid="table-code"] { font-size: 22px; line-height: 28px; }
+  .lobby-code > [data-testid="table-code"] { font-size: 1.375rem; line-height: 1.75rem; }
 }
 @media (max-width: 350px) and (orientation: portrait) {
   .lobby-action-buttons > button:not(:last-child) { padding: 0 6px; }
 }
 @media (max-width: 340px) and (orientation: portrait) {
-  .lobby-rules > button { font-size: 13px; padding-inline: 4px; }
+  .lobby-rules > button { font-size: 0.8125rem; padding-inline: 4px; }
   .lobby-layout .lm button { padding-inline: 6px; }
   .lobby-action-buttons > button { padding: 0 4px; }
-  .lobby-action-buttons > button:last-child { font-size: 13px; }
+  .lobby-action-buttons > button:last-child { font-size: 0.8125rem; }
 }
 @media (max-height: 600px) and (orientation: landscape) {
   .lobby-layout { inset: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); width: auto; }
@@ -196,7 +196,7 @@
   .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px var(--seats-h, 96px) minmax(148px, 1fr) 96px; overflow-y: auto; }
   .lobby-players { grid-template-rows: repeat(2, 44px); grid-auto-rows: 44px; }
   .lobby-player { grid-template-rows: 22px 18px; --seat-row: 22px; --seat-pad: 1px; }
-  .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 18px; line-height: 22px; }
+  .lobby-player .lobby-bubble [data-seat-bubble="react"] .size-8 { width: 22px; height: 22px; font-size: 1.125rem; line-height: 1.375rem; }
 }
 @media (max-width: 700px) and (orientation: landscape) {
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
@@ -215,13 +215,13 @@
 }
 
 .lobby-bubble [data-seat-bubble] > div { max-width: 100%; padding: 0; background: none; box-shadow: none; backdrop-filter: none; }
-.lobby-bubble [data-seat-bubble="react"] .size-8 { width: 26px; height: 26px; font-size: 22px; line-height: 26px; }
+.lobby-bubble [data-seat-bubble="react"] .size-8 { width: 26px; height: 26px; font-size: 1.375rem; line-height: 1.625rem; }
 .lobby-bubble [data-seat-bubble="sound"] > div > span { min-width: 0; }
-.lobby-bubble [data-seat-bubble="sound"] > div > span > span:first-child { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; line-height: 18px; }
+.lobby-bubble [data-seat-bubble="sound"] > div > span > span:first-child { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.8125rem; line-height: 1.125rem; }
 .lobby-bubble [data-seat-bubble="sound"] svg { display: inline; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; }
 .lobby-player:has(> .lobby-bubble [data-seat-bubble="sound"]) { grid-template-columns: 12px minmax(40px, 1fr) minmax(0, max-content); }
 @media (max-width: 360px) and (orientation: portrait) {
-  .lobby-code > [data-testid="table-code"] { font-size: 18px; line-height: 28px; letter-spacing: 0; }
+  .lobby-code > [data-testid="table-code"] { font-size: 1.125rem; line-height: 1.75rem; letter-spacing: 0; }
   .lobby-chat-panel [data-testid="emoji-row"] { display: flex; gap: 12px; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x mandatory; }
   .lobby-chat-panel [data-testid="emoji-row"] > button { flex: 0 0 44px; scroll-snap-align: start; }
   .lobby-layout .lobby-layout-cover { grid-template-rows: 44px 44px var(--seats-h, 96px) minmax(218px, 1fr) 96px; padding: 8px; }
@@ -234,7 +234,7 @@
   margin: calc(-1px - var(--seat-pad)) 0 calc(var(--seat-row) - 44px + 1px + var(--seat-pad));
   padding: calc(1px + var(--seat-pad)) 0 calc(43px - var(--seat-pad) - var(--seat-row));
   line-height: var(--seat-row);
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 600;
 }
 /* #1350: another player's name is a button too, with the same box; only your own name carries the dotted "edit me" underline */
@@ -242,41 +242,41 @@
 .lobby-name > button[data-testid="rename-seat"] { text-decoration: underline dotted; text-underline-offset: 4px; }
 .lobby-name > input[data-testid="rename-input"] { min-width: 0; flex: 1; border: 1px solid #cbcfc6; border-radius: 8px; background: #fff9f0; color: #263d3c; }
 .lobby-layout .dot { width: 12px; height: 12px; }
-.lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 13px; line-height: 18px; font-weight: 500; color: #46524e; }
+.lobby-summary [data-testid="victory-target"] { gap: 8px; font-size: 0.8125rem; line-height: 1.125rem; font-weight: 500; color: #46524e; }
 @media (max-width: 360px) and (max-height: 600px) and (orientation: portrait) {
   .lobby-layout { inset: max(8px, env(safe-area-inset-top)) 16px max(8px, env(safe-area-inset-bottom)); }
 }
 @media (max-width: 600px) and (orientation: portrait) {
-  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 14px; }
-  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 14px; line-height: 20px; }
+  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 0.875rem; }
+  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 0.875rem; line-height: 1.25rem; }
   .lobby-chat-panel [data-testid="chat-log"] > li { font-size: 0.875rem; line-height: 1.1875rem; }
-  .lobby-layout input { font-size: 16px !important; }
-  .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 13px; line-height: 16px; }
+  .lobby-layout input { font-size: 1rem !important; }
+  .lobby-layout .lobby-player:has(> [data-testid="add-bot"]) > button { padding: 0 10px; font-size: 0.8125rem; line-height: 1rem; }
 }
 @media (max-width: 390px) and (orientation: portrait) {
-  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 13px; }
-  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 13px; }
+  .lobby-name, .lobby-name > button, .lobby-name > input[data-testid="rename-input"] { font-size: 0.8125rem; }
+  .lobby-summary > p, .lobby-layout .lobby-action-buttons > button:not(:last-child) { font-size: 0.8125rem; }
 }
 @media (max-width: 380px) and (orientation: portrait) {
   .lobby-layout .lobby-layout-cover { padding: 8px; }
 }
 @media (max-width: 900px) {
   .lobby-layout .lm button:last-child { width: 76px; white-space: normal; }
-  .lobby-layout .lm button:last-child span { display: block; max-width: 60px; line-height: 20px; text-align: center; }
+  .lobby-layout .lm button:last-child span { display: block; max-width: 60px; line-height: 1.25rem; text-align: center; }
 }
 /* #1262: an open game may use the phone's top inset. Table stays on the usual inset, and Close drops the card back. */
 @media (max-width: 600px) and (orientation: portrait) {
   .lobby-layout.lg { top: max(0px, env(safe-area-inset-top)); }
 }
 .lobby-layout .ly { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
-.lobby-layout .lr { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
+.lobby-layout .lr { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 0.8125rem; font-weight: 500; line-height: 1.125rem; color: #46524e; }
 .lobby-layout .ls { display: flex; min-height: 0; flex-direction: column; gap: 8px; }
-.lobby-layout .ls h2 { margin: 0; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
+.lobby-layout .ls h2 { margin: 0; font-size: 1.0625rem; font-weight: 600; line-height: 1.375rem; color: #263b3b; }
 .lobby-layout .lt, .lobby-layout .lx-tile { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; }
 .lobby-layout .lw { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; }
 .lobby-layout .lt > span:nth-child(2), .lobby-layout .lx-tile > span:nth-child(2) { display: flex; min-width: 0; flex: 1; flex-direction: column; }
-.lobby-layout .lt b, .lobby-layout .lx-tile b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; font-weight: 600; line-height: 22px; color: #263b3b; }
-.lobby-layout .lt > span:nth-child(2) span, .lobby-layout .lx-tile > span:nth-child(2) span { font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
+.lobby-layout .lt b, .lobby-layout .lx-tile b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1.0625rem; font-weight: 600; line-height: 1.375rem; color: #263b3b; }
+.lobby-layout .lt > span:nth-child(2) span, .lobby-layout .lx-tile > span:nth-child(2) span { font-size: 0.8125rem; font-weight: 500; line-height: 1.125rem; color: #46524e; }
 .lobby-layout .lt > button { padding: 0 8px; border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; color: #263b3b; }
 .lobby-wait { display: flex; min-height: 0; flex: 1; flex-direction: column; gap: 8px; }
 .lobby-wait-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -286,15 +286,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 600;
-  line-height: 22px;
+  line-height: 1.375rem;
   color: #263b3b;
 }
 .lobby-wait-stage { position: relative; width: 100%; aspect-ratio: 580 / 320; overflow: hidden; background: #000; }
 .lobby-wait-stage > * { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .lobby-wait-holds { display: none; gap: 8px; }
-.lobby-wait-keys { flex-shrink: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; line-height: 18px; color: #46524e; }
+.lobby-wait-keys { flex-shrink: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8125rem; font-weight: 500; line-height: 1.125rem; color: #46524e; }
 @media (pointer: coarse) {
   .lobby-wait-holds { display: flex; }
 }
@@ -306,21 +306,125 @@
 
 /* #1263: tic-tac-toe. The tile shares the shelf tile's look; cells are 68 px on a portrait phone and 48 px elsewhere. */
 .lobby-layout .lm button { position: relative; }
-.lobby-layout .lb { position: absolute; top: 0; right: 0; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #1d5f64; color: #fff; font-size: 13px; font-weight: 600; line-height: 20px; }
+.lobby-layout .lb { position: absolute; top: 0; right: 0; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 10px; background: #1d5f64; color: #fff; font-size: 0.8125rem; font-weight: 600; line-height: 1.25rem; }
 .lobby-layout .lx-tile { flex-wrap: wrap; }
-.lobby-layout .lx-pic { display: flex; width: 44px; height: 44px; flex: 0 0 44px; align-items: center; justify-content: center; border-radius: 8px; background: #b2ce80; color: #263d3c; font-size: 22px; font-weight: 700; }
+.lobby-layout .lx-pic { display: flex; width: 44px; height: 44px; flex: 0 0 44px; align-items: center; justify-content: center; border-radius: 8px; background: #b2ce80; color: #263d3c; font-size: 1.375rem; font-weight: 700; }
 .lobby-layout .lx-tile > button { padding: 0 12px; }
 .lobby-layout .lx-pick { display: flex; flex: 1 0 100%; flex-wrap: wrap; gap: 8px; }
-.lobby-layout .lx-who { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; font-size: 15px; font-weight: 500; line-height: 20px; color: #263b3b; }
+.lobby-layout .lx-who { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; font-size: 0.9375rem; font-weight: 500; line-height: 1.25rem; color: #263b3b; }
 .lobby-layout .lx-who > span { display: inline-flex; min-width: 0; align-items: center; gap: 6px; }
-.lobby-layout .lx-who i { font-style: normal; font-size: 18px; font-weight: 800; }
+.lobby-layout .lx-who i { font-style: normal; font-size: 1.125rem; font-weight: 800; }
 .lobby-layout .lx-who b { font-weight: 600; text-align: center; }
 .lobby-layout .lx-grid { display: grid; grid-template-columns: repeat(3, 48px); grid-auto-rows: 48px; gap: 8px; justify-content: center; }
-.lobby-layout .lx-grid button { border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; font-size: 24px; font-weight: 800; }
+.lobby-layout .lx-grid button { border: 1px solid #cbd3d3; border-radius: 12px; background: #fff; font-size: 1.5rem; font-weight: 800; }
 .lobby-layout .lx-grid button.lx-win { background: #e3efe9; }
 .lobby-layout .lx-foot { display: flex; justify-content: space-between; gap: 8px; }
 .lobby-layout .lx-foot > :last-child { margin-left: auto; }
 @media (max-width: 600px) and (orientation: portrait) {
   .lobby-layout .lx-grid { grid-template-columns: repeat(3, 68px); grid-auto-rows: 68px; }
-  .lobby-layout .lx-grid button { font-size: 28px; }
+  .lobby-layout .lx-grid button { font-size: 1.75rem; }
+}
+
+/* #1235: larger text sizes. Design: docs/design/lobby-text-size (Fable 5.2). Owner answers 2026-11-22: card 1 A, card 2 "ask Fable",
+   which picked A. The rules below are the design's measured mock layer, kept with its `html` prefix so they sit above the media
+   queries earlier in this file exactly as measured. At the default text size every max(px, rem) resolves to today's px.
+   Rule 1: fixed heights become max(today's px, the same size in rem). Rule 2: the card scrolls when it must; the bottom bar is
+   sticky, with a hairline above it while the card scrolls. */
+html .lobby-layout { container: lobby / inline-size; --pad: 20px; }
+/* Only the Table tab: the design measured no other. Play games (.ly) keeps today's rows. */
+html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) {
+  grid-template-rows: max-content max-content max-content minmax(min-content, 1fr) max-content;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { height: auto; min-height: 44px; }
+/* Rows wrap only when the text is larger than the default: --lobby-big is 1 then and 0 at 100%. At 100% a wider system font
+   (DejaVu on Linux) keeps today's single rows, as on main. A browser without style queries never wraps them. */
+@property --lobby-big { syntax: "<number>"; inherits: true; initial-value: 0; }
+html .lobby-layout { --lobby-big: sign(1rem - 16px); }
+@container style(--lobby-big: 1) {
+  html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { flex-wrap: wrap; }
+}
+html .lobby-layout-cover:not(:has(> .ly)) .lobby-rule-status { height: auto; min-height: 44px; }
+html .lobby-players { grid-template-rows: none; grid-auto-rows: max(52px, 3.25rem); }
+html .lobby-player { grid-template-rows: max(26px, 1.625rem) max(18px, 1.125rem); --seat-row: max(26px, 1.625rem); }
+html .lobby-chat-panel { min-height: min-content; }
+/* The bar keeps today's box and the card keeps its bottom padding (chat-prove's 12 px). Sticky stops at the card's padding edge, and a
+   shadow in the card's colour fills the padding strip under it, so nothing that scrolls shows below the bar. --pad mirrors the card's padding. */
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { position: sticky; bottom: 0; z-index: 2; background: #f3f6f5; box-shadow: 0 var(--pad) 0 #f3f6f5; }
+/* The hairline: a scroll timeline is active only while the card can scroll, so the bar shows it then and never at a size that fits.
+   A browser without scroll timelines shows no hairline; nothing else changes. */
+html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { scroll-timeline: --lobby-card y; }
+/* Not motion: the timeline only switches the hairline on and off, so it is exempt from the reduced-motion reset in styles.css. */
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { animation: lobby-bar-line linear both !important; animation-timeline: --lobby-card !important; }
+@keyframes lobby-bar-line { from, to { box-shadow: 0 -1px 0 #cbd3d3, 0 var(--pad) 0 #f3f6f5; padding-top: 8px; } }
+@media (max-width: 600px) and (orientation: portrait) { html .lobby-layout { --pad: 12px; } }
+@media (max-width: 380px) and (orientation: portrait) { html .lobby-layout { --pad: 8px; } }
+@media (max-height: 700px) and (orientation: portrait) {
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(22px, 1.375rem) max(18px, 1.125rem); --seat-row: max(22px, 1.375rem); }
+}
+@media (max-height: 600px) and (orientation: landscape) {
+  html .lobby-layout { --pad: 8px; }
+  html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { grid-template-rows: max-content max-content minmax(min-content, 1fr) max-content; }
+}
+@media (max-width: 700px) and (orientation: landscape) {
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(18px, 1.125rem) max(18px, 1.125rem); --seat-row: max(18px, 1.125rem); }
+  html .lobby-rules > button:not([role="tab"]) { width: max(76px, 4.75rem); height: auto; }
+}
+@media (max-width: 900px) {
+  html .lobby-layout .lm button:last-child { width: max(76px, 4.75rem); height: auto; }
+  html .lobby-layout .lm button:last-child span { max-width: 3.75rem; line-height: 1.25rem; }
+}
+html .lobby-layout .lm { height: auto; min-height: 44px; }
+html .lobby-layout .lm button { height: auto; }
+/* Rule 3: a seat list narrower than 15.8rem + 8px becomes one column, name and status on one line.
+   That is where two 7.9rem cells and the 8 px gap stop fitting. The query says 7.9px: a 0.1 px allowance, so it never lags the grid. */
+html .lobby-players { container: seats / inline-size; grid-template-columns: repeat(auto-fit, minmax(min(100%, max(7.9rem, calc(50% - 4px))), 1fr)); }
+@container seats (max-width: calc(15.8rem + 7.9px)) {
+  html .lobby-player { grid-template: minmax(44px, auto) / 12px minmax(0, 1fr) auto auto; padding-block: 0; --seat-pad: 0px; }
+  html .lobby-player > .lobby-name { height: auto; align-self: center; }
+  html .lobby-name > button, html .lobby-name > input[data-testid="rename-input"] { height: 44px; margin: 0; padding: 0; line-height: 1.3; }
+  html .lobby-player-status { grid-column: 3; grid-row: 1; }
+  html .lobby-player:not(:has(> button)) .lobby-player-status { grid-column: 3 / 5; justify-self: end; }
+  html .lobby-layout .lobby-player > button:not([data-emote]) { grid-column: 4; grid-row: 1; }
+  html .lobby-bubble { grid-column: 4; }
+  html .lobby-player:has(> [data-testid="add-bot"]) { grid-template-columns: 0 minmax(0, 1fr) auto auto; }
+  html .lobby-player:has(> [data-testid="add-bot"]) > .lobby-name { grid-row: 1; }
+}
+/* Rule 4: on a narrow card, "How to play" wraps to two lines like "Play games", so the tab row stays one row. */
+@container lobby (max-width: 17rem) {
+  html .lobby-rules > button:not([role="tab"]) { width: max(76px, 4.75rem); height: auto; white-space: normal; }
+}
+/* Rule 5: the chat keeps one line of log, and a long tab name wraps instead of ending in an ellipsis. */
+html .lobby-chat-panel > div, html .lobby-chat-panel [role="tabpanel"] { min-height: min-content; }
+html .lobby-chat-panel [data-testid="chat-log"] { min-height: 1.375rem !important; flex-shrink: 0; }
+@container style(--lobby-big: 1) {
+  /* The bar's buttons may wrap to two lines, like "Play games" does in the tab row, and Leave table gives up its fixed width.
+     When even their single words can't share a row, the row wraps. */
+  html .lobby-action-buttons { flex-wrap: wrap; }
+  html .lobby-action-buttons > button { height: auto; min-width: min-content; white-space: normal; }
+  html .lobby-action-buttons > button:last-child { flex: 0 1 auto; }
+  html .lobby-chat-panel [role="tablist"] { flex-wrap: wrap; }
+}
+/* A tab name that can't fit wraps to two lines inside its 44 px tab instead of ending in an ellipsis, at any size. */
+html .lobby-chat-panel [role="tab"], html .lobby-chat-panel [role="tab"] * { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
+html .lobby-chat-panel [role="tab"] { height: auto; flex-shrink: 1; min-width: 0; }
+/* #1750, owner answer A (Fable 5.2 for Jarrod, 2026-11-27): code, "Wayfarer on" and Numbers share the header row where all
+   three fit. Where they don't, the caption stays in the tab row, and Numbers takes a second header row instead of being
+   hidden. The header and the tab row are the same width, so one width, in rem, decides both; it is the widest supported
+   code ("WWWW") with the caption and the host's switch, so a real code never squeezes them. */
+html .lobby-header, html .lobby-rules { container-type: inline-size; }
+html .lobby-header { container-name: lobby-head; }
+html .lobby-rules { container-name: lobby-rules; }
+.lobby-head-rule { display: none; flex: 0 0 auto; white-space: nowrap; font-size: 0.8125rem; line-height: 1.125rem; font-weight: 700; color: #1d5f64; } /* as in the tab row */
+@container lobby-head (min-width: 25rem) { .lobby-head-rule { display: block; } }
+@container lobby-rules (min-width: 25rem) { .lobby-rule-status > [data-testid="lobby-caption"] { display: none; } }
+/* On the Table tab the header grows to a second row for Numbers; the clip stays only on Play games, which keeps today's rows. */
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-height: 44px; row-gap: 8px; clip-path: none; }
+/* Above the default text size the tab row may wrap, so a caption that can't fit beside the tabs takes its own line, uncut.
+   At 100% it keeps today's single row, cut where it must be ("as today", answer A). */
+@container style(--lobby-big: 1) {
+  html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules > .lobby-rule-status { flex: 1 0 auto; }
 }

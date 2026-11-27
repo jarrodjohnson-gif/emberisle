@@ -12,6 +12,8 @@ import { createServer } from "vite";
 
 const { values } = parseArgs({ options: {
   run: { type: "string" }, out: { type: "string", default: "test-results/lobby-text-capture" },
+  // Pictures at other sizes, e.g. --sizes 440x956,956x440. The proof always runs the five issue viewports.
+  sizes: { type: "string", default: "320x568,375x667,390x844,844x390,1280x720" },
 } });
 assert.ok(values.run, "--run must name the capture");
 const out = resolve(values.out);
@@ -21,6 +23,7 @@ const metadata = {
   run: values.run,
   sourceCommit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
   scriptSHA256: createHash("sha256").update(readFileSync(new URL(import.meta.url))).digest("hex"),
+  styleSHA256: createHash("sha256").update(readFileSync(new URL("../src/components/game/lobby.css", import.meta.url))).digest("hex"),
   node: process.version,
   fixture: "real host/guest/bot/empty seat; desktop Chromium CSS viewports; reduced motion; device scale 1",
 };
@@ -28,7 +31,7 @@ const save = () => writeFileSync(join(out, "measurements.json"), JSON.stringify(
 const rooms = mkdtempSync(join(tmpdir(), "emberisle-lobby-text-"));
 const host = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
   cwd: new URL("../server/", import.meta.url),
-  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: join(rooms, "results") },
+  env: { ...process.env, PORT: "0", ROOMS_DIR: rooms, RESULTS_DIR: join(rooms, "results"), PROFILES_DIR: join(rooms, "profiles") },
 });
 let vite, browser;
 try {
@@ -75,10 +78,11 @@ try {
   await page.waitForFunction(() => { const g = window.__emberisle.getState(); return g.seats.find(s => s.id === g.seatId)?.ready; });
   const base = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
 
-  for (const [width, height] of [[320, 568], [375, 667], [390, 844], [844, 390], [1280, 720]]) {
+  for (const [width, height] of values.sizes.split(",").map(size => size.split("x").map(Number))) {
     await page.setViewportSize({ width, height });
     for (const scale of [1, 1.25, 1.5]) {
       await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; }, base * scale);
+      await page.evaluate(() => { document.querySelector(".lobby-cover").scrollTop = 0; });
       await page.evaluate(() => document.fonts.ready);
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const observed = await page.evaluate(() => {
@@ -91,7 +95,45 @@ try {
           code: '[data-testid="table-code"]', name: '[data-testid="lobby-name"] button', status: ".lobby-player-status",
           chat: '[data-testid="chat-log"] > li', input: "#chat-input", ready: ".lobby-action-buttons > button", summary: '[data-testid="lobby-status"]',
         };
+        const text = [], clippedText = [], caption = [], cutCaption = [];
+        const walker = document.createTreeWalker(document.querySelector(".lobby-layout"), NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          const element = node.parentElement;
+          if (!node.textContent.trim() || element.closest('.sr-only, [aria-hidden="true"]')) continue;
+          const style = getComputedStyle(element);
+          if (style.visibility !== "visible" || Number(style.opacity) === 0 || !element.getClientRects().length) continue;
+          const r = document.createRange(); r.selectNode(node);
+          const bounds = rect(r);
+          if (bounds.right <= bounds.x || bounds.bottom <= bounds.y) continue;
+          let clip = false;
+          for (let ancestor = element; ancestor && ancestor.matches(".lobby-layout, .lobby-layout *"); ancestor = ancestor.parentElement) {
+            const css = getComputedStyle(ancestor), box = rect(ancestor);
+            if ((ancestor.matches("button") || ["hidden", "clip"].includes(css.overflowX)) && (bounds.x < box.x - 1 || bounds.right > box.right + 1)) clip = true;
+            if ((ancestor.matches("button") || ["hidden", "clip"].includes(css.overflowY)) && (bounds.y < box.y - 1 || bounds.bottom > box.bottom + 1)) clip = true;
+          }
+          const entry = { text: node.textContent.trim(), font: parseFloat(style.fontSize) };
+          // #1750 answer A: the caption sits in the header or in the tab row by width. It is one text role wherever it is,
+          // kept last so a move never shifts the roles after it.
+          if (element.matches('.lobby-head-rule, [data-testid="lobby-caption"]')) caption.push(entry); else text.push(entry);
+          // #1750 answer A keeps the tab-row caption "as today" at the default size, cut where the row is short; the proof checks it apart.
+          if (clip) (element.matches('[data-testid="lobby-caption"]') ? cutCaption : clippedText).push(entry.text);
+        }
+        text.push(...caption);
+        const controls = [...document.querySelector(".lobby-layout").querySelectorAll('button, input, [role="tab"]')]
+          .filter(e => e.getClientRects().length && getComputedStyle(e).visibility === "visible")
+          .map(e => ({ label: e.getAttribute("aria-label") || e.textContent.trim(), bar: !!e.closest(".lobby-actions"), ...rect(e) }));
+        const controlOverlaps = [];
+        for (let i = 0; i < controls.length; i++) for (const b of controls.slice(i + 1)) {
+          const a = controls[i];
+          // #1235 design: the pinned bar is not paired with what scrolls under it. The reachability check covers that.
+          if (a.bar !== b.bar) continue;
+          if (Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1)
+            controlOverlaps.push([a.label, b.label]);
+        }
         return {
+          controlOverlaps, text, clippedText, cutCaption,
+          documentOverflowY: Math.max(0, document.documentElement.scrollHeight - innerHeight),
           root: parseFloat(getComputedStyle(document.documentElement).fontSize), code: code.textContent.trim(),
           codeFits: glyphs.x >= box.x - 0.5 && glyphs.right <= box.right + 0.5 && glyphs.y >= button.y - 0.5 && glyphs.bottom <= button.bottom + 0.5,
           cardOverflow: overflow(document.querySelector(".lobby-cover")),
@@ -99,6 +141,34 @@ try {
           documentOverflow: Math.max(0, document.documentElement.scrollWidth - innerWidth),
           fonts: Object.fromEntries(Object.entries(selectors).map(([key, selector]) => [key, parseFloat(getComputedStyle(document.querySelector(selector)).fontSize)])),
         };
+      });
+      observed.unreachableControls = await page.evaluate(async () => {
+        // #1235 design: scroll each control to the middle of the card. It is reachable when nothing covers its centre
+        // (not the pinned bar, not a clip) and it lies inside the card.
+        const root = document.querySelector(".lobby-layout"), cover = document.querySelector(".lobby-cover"), failed = [];
+        const frame = cover.getBoundingClientRect();
+        for (const element of root.querySelectorAll('button, input, [role="tab"]')) {
+          if (!element.getClientRects().length || getComputedStyle(element).visibility !== "visible") continue;
+          element.scrollIntoView({ block: "center", inline: "nearest" });
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          const r = element.getBoundingClientRect();
+          const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+          if (!(hit && (element.contains(hit) || hit.contains(element))) || r.left < frame.left - 1 || r.right > frame.right + 1
+            || r.top < frame.top - 1 || r.bottom > frame.bottom + 1) failed.push(element.getAttribute("aria-label") || element.textContent.trim());
+        }
+        cover.scrollTop = 0;
+        return failed;
+      });
+      observed.barPinned = await page.evaluate(() => {
+        const cover = document.querySelector(".lobby-cover"), bar = document.querySelector(".lobby-actions");
+        const inside = () => { const f = cover.getBoundingClientRect(), r = bar.getBoundingClientRect(); return r.top >= f.top - 1 && r.bottom <= f.bottom + 1; };
+        const scrolls = cover.scrollHeight > cover.clientHeight + 1, line = getComputedStyle(bar).boxShadow.includes("-1px");
+        if (scrolls !== line) return false;
+        const top = inside();
+        cover.scrollTop = cover.scrollHeight;
+        const end = inside();
+        cover.scrollTop = 0;
+        return top && end;
       });
       assert.equal(observed.code, code);
       assert.equal(observed.root, base * scale);
