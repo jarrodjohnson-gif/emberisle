@@ -17,6 +17,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
+  # auto-merge.yml starts a run on main after a merge made with the workflow token, which fires no push event.
+  workflow_dispatch:
 
 # A new push to a PR cancels that PR's older run, so stale commits stop holding runners. Runs on main are never cancelled.
 concurrency:

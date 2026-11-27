@@ -47,8 +47,9 @@ A tick starts when a message is exactly `hourly tick` or exactly `tick`. Jarrod'
    - Take only `number`, `title`, `draft`, `labels` and `updated_at`.
    - Never read a PR body here.
 2. **Merge what the workflow handed over.** Do this for each PR with both `signal:green` and `merge-by-chat`.
-   - Read that PR's head SHA and labels again.
-   - If both labels are still there, squash-merge it, pinned to that SHA.
+   - Read that PR's head SHA and labels again, and the newest comment by `github-actions[bot]` that carries `<!-- merge-by-chat: <SHA> -->`.
+   - If both labels are still there and the head equals that SHA, squash-merge it, pinned to that SHA.
+   - If there is no such comment, or its SHA is not the head, do not merge.
    - Never merge a PR without both labels. Never add either label yourself.
    - This is the one exception to "never merge" in AGENTS.md rule 7. It is yours alone.
    - If the merge is refused, leave it and go on.
