@@ -75,7 +75,8 @@ A tick starts when a message is exactly `hourly tick` or exactly `tick`. Jarrod'
 
    A red PR that carries `on-desk` waits for him. Never start a chat for it.
 6. **Start work chats, up to the limit.**
-   - The limit is **one work chat live at a time**. Jarrod set it on 2026-11-22 ("one builder at a time until the limit resets"). Only he changes it.
+   - The limit is **three work chats live at a time**. Jarrod raised it from one on 2026-11-27 (`docs/DECISIONS.md`). Only he changes it.
+   - Start them one by one. Each new chat takes a PR or a slot that no live chat holds.
    - A work chat is a builder or a PR-owner chat. The clerk and the planner do not count.
    - While fewer work chats are live than the limit:
      - First, one PR-owner chat for the first PR from step 5. It may take up to three PRs that share a builder model.
