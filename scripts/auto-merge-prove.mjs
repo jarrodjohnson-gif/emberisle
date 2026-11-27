@@ -363,6 +363,11 @@ function workflowRules(text) {
   assert.equal(merge.split("labels[]=merge-by-chat'").length, 2, "one place adds merge-by-chat");
   assert.match(merge, /if ! grep -qE [^\n]*<<<"\$out"; then\n[^\n]*\n\s+exit 0\n/, "any other refusal stops before the hand-over");
   assert.match(merge, /if \[ "\$head" != "\$SHA" \]; then\n[^\n]*\n\s+exit 0\n/, "a moved head stops before the hand-over");
+  // The branch-policy wording is handed over only for a PR whose own file list has a workflow file. The block runs
+  // before the refusal check, in this order, and the words it leaves in $out are ones that check accepts.
+  const policy = merge.match(/\n +if grep -q 'base branch policy prohibits the merge' <<<"\$out"; then\n +files=\$\(GH_TOKEN="\$LABEL_TOKEN" gh api --paginate "repos\/\$REPO\/pulls\/\$NUM\/files" --jq '\.\[\]\.filename'\)\n +if grep -q '\^\\\.github\/workflows\/' <<<"\$files"; then\n +out='([^'\n]*)'\n +fi\n +fi\n +if ! grep -qE '([^'\n]*)' <<<"\$out"; then\n/);
+  assert.ok(policy, "the branch-policy block sits right before the refusal check: wording, then the PR's files, then a workflow file");
+  assert.match(policy[1], new RegExp(policy[2]), "the words the block leaves pass the refusal check");
   assert.match(merge, /printf '%s\\n' "\$out" \| sed 's\/::\/: :\/g'/, "GitHub's words never start a workflow command");
   // 11: any CI conclusion re-checks the PR.
   assert.equal(/workflow_run\.conclusion/.test(text), false, "no filter on the CI conclusion");
@@ -383,6 +388,11 @@ const WORKFLOW_MUTANTS = [
   ["9: reset gets the workflow's wide token", "    permissions:\n      issues: write\n    steps:", "    steps:"],
   ["9: the workflow grants write to every job", "permissions: {}\n", "permissions:\n  contents: write\n"],
   ["10: every refusal is handed over", "if ! grep -qE", "if false && grep -qE"],
+  ["10: a branch-policy refusal is handed over with no workflow file", `            if grep -q '^\\.github/workflows/' <<<"$files"; then\n`, "            if true; then\n"],
+  ["10: the branch-policy wording is never handed over", "if grep -q 'base branch policy prohibits the merge'", "if false && grep -q 'base branch policy prohibits the merge'"],
+  ["10: the branch-policy block does nothing", "              out='without `workflows` permission: GitHub worded it as a branch-policy refusal'\n", "              :\n"],
+  ["10: the block's words fail the refusal check", "out='without `workflows` permission: GitHub", "out='no workflows right: GitHub"],
+  ["10: the file list is read after it is used", `            files=$(GH_TOKEN="$LABEL_TOKEN" gh api --paginate "repos/$REPO/pulls/$NUM/files" --jq '.[].filename')\n            if grep -q '^\\.github/workflows/' <<<"$files"; then\n`, `            if grep -q '^\\.github/workflows/' <<<"$files"; then\n            files=$(GH_TOKEN="$LABEL_TOKEN" gh api --paginate "repos/$REPO/pulls/$NUM/files" --jq '.[].filename')\n`],
   ["10: a moved head is handed over", 'if [ "$head" != "$SHA" ]; then', 'if false; then'],
   ["10: no marker comment", "<!-- merge-by-chat: %s -->", "merge by chat"],
   ["10: GitHub's words printed raw", "printf '%s\\n' \"$out\" | sed 's/::/: :/g'", "printf '%s\\n' \"$out\""],
