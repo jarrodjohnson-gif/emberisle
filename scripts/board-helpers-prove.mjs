@@ -55,13 +55,17 @@ for (const [q, r, expected] of [[0, 0, "0,0"], [3, 7, "3,7"], [-3, 7, "-3,7"], [
   check(`axialKey ${expected}`, () => assert.equal(axialKey(q, r), expected));
 }
 
+let deals = 0;
+for (const numberTokens of [undefined, "random"]) {
+console.log(`layout: ${numberTokens ?? "default"}`);
 for (const [kind, create, seats, seeds] of [
   ["classic", createGame, 3, 200], ["classic", createGame, 4, 200],
   ["expanded", createExpandedGame, 5, 50], ["expanded", createExpandedGame, 6, 50],
 ]) {
   check(`${kind} ${seats} seats: seeds 1..${seeds} have no adjacent red tokens`, () => {
     for (let seed = 1; seed <= seeds; seed++) {
-      const game = create({ seed, humans: [{ name: "Fixture" }], bots: seats - 1 });
+      const game = create({ seed, humans: [{ name: "Fixture" }], bots: seats - 1, numberTokens });
+      deals++;
       assert.equal(game.players.length, seats);
       const red = game.hexes.filter(h => h.terrain !== "waste" && (h.pip === 6 || h.pip === 8));
       assert.ok(red.length > 0, `${kind} ${seats} seed ${seed}: red tokens exist`);
@@ -73,4 +77,5 @@ for (const [kind, create, seats, seeds] of [
     }
   });
 }
-console.log(`board-helpers-prove: PASS ${cases} cases; 500 seeded deals`);
+}
+console.log(`board-helpers-prove: PASS ${cases} cases; ${deals} seeded deals`);
