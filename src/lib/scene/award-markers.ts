@@ -179,9 +179,15 @@ export class AwardMarkers {
     const tops = new Map<string, number>();
     const box = new T.Box3();
     for (const o of pieces) {
-      // The resting top, measured from the piece's own geometry; a landing piece is measured from where it will rest.
-      box.setFromObject(o);
-      tops.set(o.userData.key as string, box.max.y - o.position.y + (o.userData.restY as number));
+      // The resting top, measured from the piece's own geometry. A landing piece is posed at rest for the measure (its
+      // drop and squash move it and scale it), then put back where its landing has it.
+      const [y, scale] = [o.position.y, o.scale.clone()];
+      o.position.y = o.userData.restY as number;
+      o.scale.set(1, 1, 1);
+      tops.set(o.userData.key as string, box.setFromObject(o).max.y);
+      o.position.y = y;
+      o.scale.copy(scale);
+      o.updateMatrixWorld(true);
     }
     const built = buildAwards(plan, { at: (id) => vmap.get(id), top: (k) => tops.get(k) }, this.material);
     for (const m of [...built.children]) this.group.add(m);

@@ -83,7 +83,7 @@ const CEILINGS = [
   // measured 469 B. Ceilings decided by Opus under the owner's 2026-11-06 size-limit delegation (PR #1355 review).
   { name: "ProfileSheet", gzipBytes: 6000 },
   { name: "focus-trap", gzipBytes: 550 },
-  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): measured
+  // #766 slice 2, 2026-11-07. ProfileForms: measured 2,182 B. eye-off (the EyeOff icon the bundler split out): 
   // 292 B. Ceilings decided by Opus per q-size-standing (PR #1401 review).
   { name: "ProfileForms", gzipBytes: 2350 },
   { name: "eye-off", gzipBytes: 310 },
@@ -109,7 +109,7 @@ const CEILINGS = [
   // #662, 2026-11-08: the sea-and-wind ambience loop, loaded on its first start after the first gesture; measured 461 B gzip.
   // New chunk only; the desk sets this ceiling.
   { name: "ambience", gzipBytes: 550 },
-  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; measured
+  // #1411, 2026-11-08: a guest's I'll play again and the win screen's count, loaded as an online table starts; 
   // 412 B gzip. New chunk only; the desk set this ceiling.
   { name: "PlayAgain", gzipBytes: 450 },
   // #1350, 2026-11-11: the read-only profile card for another lobby seat, loaded when a name is first pressed.
@@ -122,7 +122,7 @@ const CEILINGS = [
   // New chunk only; proposed, the desk sets this ceiling. Raised to 1,750 B by the owner on 2026-11-13 (q1617-gamelog-ceiling,
   // A): it sat at its 1,550 B ceiling and builds flipped on a byte of gzip variation.
   { name: "GameLog", gzipBytes: 1750 },
-  // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; measured
+  // #1609: the five and six seat island and paired turns (src/lib/game/expanded.ts), loaded only for those games; 
   // 2,952 B gzip. New chunk; the desk set this ceiling (PR #1655, 2026-11-14, with q1655-five-six-start A).
   { name: "expanded", gzipBytes: 3300 },
   // #1665, 2026-11-14: the seat menu, loaded on idle and on the first seat press; measured 2,726 B gzip. New chunk; the desk
@@ -141,8 +141,8 @@ const CEILINGS = [
   // #1593, 2026-11-17: the dock-mark atlas (painted-board white symbols/pips and lite planks), shared by harbor-jelly and the
   // lite board; measured 1,090 B gzip. Desk set this 1,200 B ceiling on 2026-11-17 under q-size-standing A.
   { name: "dock-marks", gzipBytes: 1200 },
-  // #743 (#642), 2026-11-27: the board's path banner and army flag, loaded the first time a game has a holder; measured
-  // 1,923 B gzip. New chunk only; proposed, the desk sets this ceiling.
+  // #743 (#642), 2026-11-27: the board's path banner and army flag, loaded the first time a game has a holder; 
+  // 1964 B gzip. New chunk only; proposed, the desk sets this ceiling.
   { name: "award-markers", gzipBytes: 2100 },
 ];
 

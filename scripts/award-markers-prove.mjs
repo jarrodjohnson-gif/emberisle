@@ -93,7 +93,6 @@ const READ = () => {
       m.raycast({ ray: { origin: m.position, direction: m.position }, near: 0, far: 1 }, hits);
       return hits.length;
     }),
-    geometries: isle.renderer.info.memory.geometries,
   };
 };
 
@@ -137,7 +136,10 @@ try {
       const isle = window.__isle;
       return isle.awards.group.children.map((m) => {
         const p = isle.pieces.children.find((c) => c.userData.key === m.userData.key);
-        // The piece's resting top, from its own bounds.
+        // The piece's resting top, from its own bounds, posed at rest (it may still be landing: lower and scaled).
+        const [y, scale] = [p.position.y, p.scale.clone()];
+        p.position.y = p.userData.restY;
+        p.scale.set(1, 1, 1);
         p.updateMatrixWorld(true);
         let maxY = -Infinity;
         p.traverse((o) => {
@@ -146,7 +148,10 @@ try {
           const bb = o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld);
           maxY = Math.max(maxY, bb.max.y);
         });
-        return { lift: m.position.y - (maxY - p.position.y + p.userData.restY) };
+        p.position.y = y;
+        p.scale.copy(scale);
+        p.updateMatrixWorld(true);
+        return { lift: m.position.y - maxY };
       });
     });
     assert.ok(heights.every((x) => Math.abs(x.lift - 0.045) < 1e-6), `${tag}: strip lift above the path ${JSON.stringify(heights)}`);
@@ -206,15 +211,30 @@ try {
     r = await page.evaluate(READ);
     assert.equal(r.keys.length, 0, `${tag}: an army holder with only outposts has no flag`);
 
-    // Transfers back and forth leak no geometry.
+    // Transfers back and forth leak no geometry: every marker geometry a transfer replaces is disposed, and the group never
+    // holds more than one assembly.
+    const watch = () =>
+      page.evaluate(() => {
+        window.__made ??= 0;
+        window.__gone ??= 0;
+        for (const m of window.__isle.awards.group.children) {
+          if (m.geometry.__watched) continue;
+          m.geometry.__watched = true;
+          window.__made++;
+          m.geometry.addEventListener("dispose", () => window.__gone++);
+        }
+        return window.__isle.awards.group.children.length;
+      });
     await push(page, { n: 5, road: true, army: true, buildings: ["stronghold"] });
-    const g0 = (await page.evaluate(READ)).geometries;
+    const sizes = [await watch()];
     for (let i = 0; i < 6; i++) {
       await push(page, { n: 5 });
       await push(page, { n: 5, road: true, army: true, buildings: ["stronghold"] });
+      sizes.push(await watch());
     }
-    const g1 = (await page.evaluate(READ)).geometries;
-    assert.ok(g1 <= g0, `${tag}: geometries grew over transfers, ${g0} -> ${g1}`);
+    const leak = await page.evaluate(() => ({ made: window.__made, gone: window.__gone, live: window.__isle.awards.group.children.length }));
+    assert.ok(sizes.every((n) => n === 7), `${tag}: marker count over transfers ${sizes}`);
+    assert.equal(leak.made - leak.gone, leak.live, `${tag}: undisposed marker geometry ${JSON.stringify(leak)}`);
 
     // The title's demo island: none.
     await page.evaluate(() => {
