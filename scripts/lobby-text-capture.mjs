@@ -95,7 +95,7 @@ try {
           code: '[data-testid="table-code"]', name: '[data-testid="lobby-name"] button', status: ".lobby-player-status",
           chat: '[data-testid="chat-log"] > li', input: "#chat-input", ready: ".lobby-action-buttons > button", summary: '[data-testid="lobby-status"]',
         };
-        const text = [], clippedText = [], caption = [];
+        const text = [], clippedText = [], caption = [], cutCaption = [];
         const walker = document.createTreeWalker(document.querySelector(".lobby-layout"), NodeFilter.SHOW_TEXT);
         let node;
         while ((node = walker.nextNode())) {
@@ -116,7 +116,8 @@ try {
           // #1750 answer A: the caption sits in the header or in the tab row by width. It is one text role wherever it is,
           // kept last so a move never shifts the roles after it.
           if (element.matches('.lobby-head-rule, [data-testid="lobby-caption"]')) caption.push(entry); else text.push(entry);
-          if (clip) clippedText.push(entry.text);
+          // #1750 answer A keeps the tab-row caption "as today" at the default size, cut where the row is short; the proof checks it apart.
+          if (clip) (element.matches('[data-testid="lobby-caption"]') ? cutCaption : clippedText).push(entry.text);
         }
         text.push(...caption);
         const controls = [...document.querySelector(".lobby-layout").querySelectorAll('button, input, [role="tab"]')]
@@ -131,7 +132,7 @@ try {
             controlOverlaps.push([a.label, b.label]);
         }
         return {
-          controlOverlaps, text, clippedText,
+          controlOverlaps, text, clippedText, cutCaption,
           documentOverflowY: Math.max(0, document.documentElement.scrollHeight - innerHeight),
           root: parseFloat(getComputedStyle(document.documentElement).fontSize), code: code.textContent.trim(),
           codeFits: glyphs.x >= box.x - 0.5 && glyphs.right <= box.right + 0.5 && glyphs.y >= button.y - 0.5 && glyphs.bottom <= button.bottom + 0.5,

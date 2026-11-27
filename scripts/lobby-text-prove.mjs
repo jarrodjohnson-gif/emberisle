@@ -22,6 +22,9 @@ for (const row of result.records) {
   check(row.barPinned, `${row.tag}: the bottom bar stays inside the card at the top and at the end of the scroll, with a hairline exactly when the card scrolls`);
   check(row.unreachableControls.length === 0, `${row.tag}: controls reachable: ${row.unreachableControls.join(" | ")}`);
   check(row.clippedText.length === 0, `${row.tag}: text not clipped: ${row.clippedText.join(" | ")}`);
+  // #1750, owner answer A: where code, caption and Numbers don't share the header, the caption stays in the tab row as today.
+  // At 100% that row stays one line, as on main, so the caption may be cut there; above 100% it must be whole.
+  check(row.scale === 1 || row.cutCaption.length === 0, `${row.tag}: caption not clipped above 100%: ${row.cutCaption.join(" | ")}`);
   check(row.text.length > 0 && row.text.length === base.text.length, `${row.tag}: all visible text roles retained`);
   for (const [role, font] of Object.entries(row.fonts)) {
     check(Math.abs(font - base.fonts[role] * row.scale) <= 0.25, `${row.tag}: ${role} font ${font}, expected ${base.fonts[role] * row.scale}`);
