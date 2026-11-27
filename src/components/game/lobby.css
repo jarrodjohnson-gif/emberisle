@@ -337,7 +337,6 @@ html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) {
   overflow-y: auto;
   overscroll-behavior: contain;
 }
-/* The header keeps #1866's 44 px row and clip: where the caption goes beside the code and Numbers is still Jarrod's call. */
 html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { height: auto; min-height: 44px; }
 /* Rows wrap only when the text is larger than the default: --lobby-big is 1 then and 0 at 100%. At 100% a wider system font
    (DejaVu on Linux) keeps today's single rows, as on main. A browser without style queries never wraps them. */
@@ -412,3 +411,20 @@ html .lobby-chat-panel [data-testid="chat-log"] { min-height: 1.375rem !importan
 /* A tab name that can't fit wraps to two lines inside its 44 px tab instead of ending in an ellipsis, at any size. */
 html .lobby-chat-panel [role="tab"], html .lobby-chat-panel [role="tab"] * { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
 html .lobby-chat-panel [role="tab"] { height: auto; flex-shrink: 1; min-width: 0; }
+/* #1750, owner answer A (Fable 5.2 for Jarrod, 2026-11-27): code, "Wayfarer on" and Numbers share the header row where all
+   three fit. Where they don't, the caption stays in the tab row, and Numbers takes a second header row instead of being
+   hidden. The header and the tab row are the same width, so one width, in rem, decides both; it is the widest supported
+   code ("WWWW") with the caption and the host's switch, so a real code never squeezes them. */
+html .lobby-header, html .lobby-rules { container-type: inline-size; }
+html .lobby-header { container-name: lobby-head; }
+html .lobby-rules { container-name: lobby-rules; }
+.lobby-head-rule { display: none; flex: 0 0 auto; white-space: nowrap; font-size: 0.8125rem; line-height: 1.125rem; font-weight: 700; color: #1d5f64; } /* as in the tab row */
+@container lobby-head (min-width: 25rem) { .lobby-head-rule { display: block; } }
+@container lobby-rules (min-width: 25rem) { .lobby-rule-status > [data-testid="lobby-caption"] { display: none; } }
+/* On the Table tab the header grows to a second row for Numbers; the clip stays only on Play games, which keeps today's rows. */
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-height: 44px; row-gap: 8px; clip-path: none; }
+/* Above the default text size the tab row may wrap, so a caption that can't fit beside the tabs takes its own line, uncut.
+   At 100% it keeps today's single row, cut where it must be ("as today", answer A). */
+@container style(--lobby-big: 1) {
+  html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules > .lobby-rule-status { flex: 1 0 auto; }
+}

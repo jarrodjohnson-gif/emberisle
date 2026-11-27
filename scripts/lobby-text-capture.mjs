@@ -95,7 +95,7 @@ try {
           code: '[data-testid="table-code"]', name: '[data-testid="lobby-name"] button', status: ".lobby-player-status",
           chat: '[data-testid="chat-log"] > li', input: "#chat-input", ready: ".lobby-action-buttons > button", summary: '[data-testid="lobby-status"]',
         };
-        const text = [], clippedText = [];
+        const text = [], clippedText = [], caption = [];
         const walker = document.createTreeWalker(document.querySelector(".lobby-layout"), NodeFilter.SHOW_TEXT);
         let node;
         while ((node = walker.nextNode())) {
@@ -113,9 +113,12 @@ try {
             if ((ancestor.matches("button") || ["hidden", "clip"].includes(css.overflowY)) && (bounds.y < box.y - 1 || bounds.bottom > box.bottom + 1)) clip = true;
           }
           const entry = { text: node.textContent.trim(), font: parseFloat(style.fontSize) };
-          text.push(entry);
+          // #1750 answer A: the caption sits in the header or in the tab row by width. It is one text role wherever it is,
+          // kept last so a move never shifts the roles after it.
+          if (element.matches('.lobby-head-rule, [data-testid="lobby-caption"]')) caption.push(entry); else text.push(entry);
           if (clip) clippedText.push(entry.text);
         }
+        text.push(...caption);
         const controls = [...document.querySelector(".lobby-layout").querySelectorAll('button, input, [role="tab"]')]
           .filter(e => e.getClientRects().length && getComputedStyle(e).visibility === "visible")
           .map(e => ({ label: e.getAttribute("aria-label") || e.textContent.trim(), bar: !!e.closest(".lobby-actions"), ...rect(e) }));

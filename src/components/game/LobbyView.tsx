@@ -127,6 +127,8 @@ export function LobbyView({ Numbers, ConnectionStatus, ChatBox, SeatBubbles, How
               <span ref={codeElement} data-testid="table-code" className="font-display">{code}</span>
               <span>Copied</span>
             </button>
+            {/* #1750, answer A: the caption sits here when code, caption and Numbers fit one row; else in the tab row. CSS picks one. */}
+            <span className="lobby-head-rule">Wayfarer {rule}</span>
             <Numbers />
           </div>
           {copied && !copied.ok ? <div className="lobby-copy-fallback">{fallback}</div> : fallback}
