@@ -158,7 +158,7 @@ try {
       observed.barPinned = await page.evaluate(() => {
         const cover = document.querySelector(".lobby-cover"), bar = document.querySelector(".lobby-actions");
         const inside = () => { const f = cover.getBoundingClientRect(), r = bar.getBoundingClientRect(); return r.top >= f.top - 1 && r.bottom <= f.bottom + 1; };
-        const scrolls = cover.scrollHeight > cover.clientHeight + 1, line = getComputedStyle(bar).boxShadow !== "none";
+        const scrolls = cover.scrollHeight > cover.clientHeight + 1, line = getComputedStyle(bar).boxShadow.includes("-1px");
         if (scrolls !== line) return false;
         const top = inside();
         cover.scrollTop = cover.scrollHeight;

@@ -339,23 +339,26 @@ html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) {
 }
 /* The header keeps #1866's 44 px row and clip: where the caption goes beside the code and Numbers is still Jarrod's call. */
 html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { height: auto; min-height: 44px; }
-html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { flex-wrap: wrap; }
-/* At 320 wide "Need 1 more player" and "Win at 7 10" overflow today's row by 1 px with the 8 px gap. A 4 px column gap keeps
-   them on one row at 100%, so the row wraps only when larger text needs it. */
-html .lobby-summary { column-gap: 4px; }
+/* Rows wrap only when the text is larger than the default: --lobby-big is 1 then and 0 at 100%. At 100% a wider system font
+   (DejaVu on Linux) keeps today's single rows, as on main. A browser without style queries never wraps them. */
+@property --lobby-big { syntax: "<number>"; inherits: true; initial-value: 0; }
+html .lobby-layout { --lobby-big: sign(1rem - 16px); }
+@container style(--lobby-big: 1) {
+  html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules, html .lobby-layout-cover:not(:has(> .ly)) .lobby-summary { flex-wrap: wrap; }
+}
 html .lobby-layout-cover:not(:has(> .ly)) .lobby-rule-status { height: auto; min-height: 44px; }
 html .lobby-players { grid-template-rows: none; grid-auto-rows: max(52px, 3.25rem); }
 html .lobby-player { grid-template-rows: max(26px, 1.625rem) max(18px, 1.125rem); --seat-row: max(26px, 1.625rem); }
 html .lobby-chat-panel { min-height: min-content; }
-/* The bottom bar: sticky, with the card's own padding under it. */
-html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { padding-bottom: 0; }
-html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { position: sticky; bottom: 0; z-index: 2; padding-bottom: var(--pad); background: #f3f6f5; }
+/* The bar keeps today's box and the card keeps its bottom padding (chat-prove's 12 px). Sticky stops at the card's padding edge, and a
+   shadow in the card's colour fills the padding strip under it, so nothing that scrolls shows below the bar. --pad mirrors the card's padding. */
+html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { position: sticky; bottom: 0; z-index: 2; background: #f3f6f5; box-shadow: 0 var(--pad) 0 #f3f6f5; }
 /* The hairline: a scroll timeline is active only while the card can scroll, so the bar shows it then and never at a size that fits.
    A browser without scroll timelines shows no hairline; nothing else changes. */
 html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { scroll-timeline: --lobby-card y; }
 /* Not motion: the timeline only switches the hairline on and off, so it is exempt from the reduced-motion reset in styles.css. */
 html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { animation: lobby-bar-line linear both !important; animation-timeline: --lobby-card !important; }
-@keyframes lobby-bar-line { from, to { box-shadow: 0 -1px 0 #cbd3d3; padding-top: 8px; } }
+@keyframes lobby-bar-line { from, to { box-shadow: 0 -1px 0 #cbd3d3, 0 var(--pad) 0 #f3f6f5; padding-top: 8px; } }
 @media (max-width: 600px) and (orientation: portrait) { html .lobby-layout { --pad: 12px; } }
 @media (max-width: 380px) and (orientation: portrait) { html .lobby-layout { --pad: 8px; } }
 @media (max-height: 700px) and (orientation: portrait) {
@@ -398,6 +401,14 @@ html .lobby-players { container: seats / inline-size; grid-template-columns: rep
 /* Rule 5: the chat keeps one line of log, and a long tab name wraps instead of ending in an ellipsis. */
 html .lobby-chat-panel > div, html .lobby-chat-panel [role="tabpanel"] { min-height: min-content; }
 html .lobby-chat-panel [data-testid="chat-log"] { min-height: 1.375rem !important; flex-shrink: 0; }
-html .lobby-chat-panel [role="tablist"] { flex-wrap: wrap; }
+@container style(--lobby-big: 1) {
+  /* The bar's buttons may wrap to two lines, like "Play games" does in the tab row, and Leave table gives up its fixed width.
+     When even their single words can't share a row, the row wraps. */
+  html .lobby-action-buttons { flex-wrap: wrap; }
+  html .lobby-action-buttons > button { height: auto; min-width: min-content; white-space: normal; }
+  html .lobby-action-buttons > button:last-child { flex: 0 1 auto; }
+  html .lobby-chat-panel [role="tablist"] { flex-wrap: wrap; }
+}
+/* A tab name that can't fit wraps to two lines inside its 44 px tab instead of ending in an ellipsis, at any size. */
 html .lobby-chat-panel [role="tab"], html .lobby-chat-panel [role="tab"] * { white-space: normal; overflow: visible; text-overflow: clip; text-align: left; }
 html .lobby-chat-panel [role="tab"] { height: auto; flex-shrink: 1; min-width: 0; }
