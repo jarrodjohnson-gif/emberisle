@@ -415,9 +415,9 @@ const MUTANTS = [
   { check: "stale", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined || !owner) return;", why: "no token check on completion" },
   { check: "refusals", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined) return;", why: "no owner check on refusal" },
   { check: "silence", file: "/src/lib/sound.ts", from: "subscribeSoundMix(() => { dropSilenced(); ", to: "subscribeSoundMix(() => { ", why: "no cancel on a silenced kind" },
-  { check: "endWait", file: "/src/lib/trade-sound.ts", from: "scope === foregroundScope() && afterOutcome(", to: "afterOutcome(", why: "no cancel of the delayed end music" },
+  { check: "endWait", file: "/src/lib/trade-sound.ts", from: "scope === foregroundScope && afterOutcome(", to: "afterOutcome(", why: "no cancel of the delayed end music" },
   { check: "queued", file: "/src/lib/sound.ts", from: "  while (next && next[3] !== undefined && owner?.token !== next[3]) next = queue.shift();\n", to: "", why: "no token check on a queued start" },
-  { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope() && m?.gameEnd(", to: "m?.gameEnd(", why: "no scope check on the game-end chunk" },
+  { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope && m?.gameEnd(", to: "m?.gameEnd(", why: "no scope check on the game-end chunk" },
   { check: "hide", file: "/src/components/game/WinScreen.tsx", from: "      cancelForeground();\n", to: "\n", why: "no cancel on hide" },
   { check: "callers", file: "/src/lib/game/store.ts", from: "  if (before?.phase === \"over\" && after.phase !== \"over\") cancelForeground();\n", to: "", why: "no cancel on a rematch" },
 ];

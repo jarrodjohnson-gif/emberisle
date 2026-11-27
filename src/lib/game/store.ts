@@ -122,8 +122,8 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     if (me && (mode === "hotseat" || after.winner === me)) haptics.buzz?.(HAPTIC_MS.win);
     // End music: once per live game end, after the sting; a reload into a finished game stays quiet. Leaving the end screen
     // (the menu, a rematch, a new game) cancels both, including while this chunk loads.
-    const scope = foregroundScope();
-    void tradeSounds.then((m) => scope === foregroundScope() && m?.gameEnd(before, after, me, mode));
+    const scope = foregroundScope;
+    void tradeSounds.then((m) => scope === foregroundScope && m?.gameEnd(before, after, me, mode));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -147,8 +147,10 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
   matchLine = null;
   if (before && before.phase !== "over" && after.turn >= before.turn && after.hexes.every((h, i) => h.terrain === before.hexes[i]?.terrain)) {
     const reached = claimMatchPoints(before, after);
-    if (reached[0]) playForeground("match_point", "match");
-    if (reached[0]) matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
+    if (reached[0]) {
+      playForeground("match_point", "match");
+      matchLine = `${reached[0].name} reached ${publicVP(after, reached[0].id)} points — one to win`;
+    }
   }
   if (mode !== "hotseat" && after.current === me && after.phase !== "over" && (reconnect || (before && before.current !== me))) cue("your_turn");
 }

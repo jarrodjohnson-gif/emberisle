@@ -31,6 +31,6 @@ export function gameEnd(before: GameState, after: GameState, me: string, mode: s
 // End music `ms` after the outcome, or when the outcome clip ends if that is later. A cancel, or silenced music, in between
 // drops it.
 export function endMusic(ms: number) {
-  const scope = foregroundScope();
-  setTimeout(() => scope === foregroundScope() && afterOutcome(() => playForeground("end_music", "end")), ms);
+  const scope = foregroundScope;
+  setTimeout(() => scope === foregroundScope && afterOutcome(() => playForeground("end_music", "end")), ms);
 }

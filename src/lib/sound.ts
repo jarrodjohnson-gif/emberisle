@@ -231,7 +231,6 @@ const RANK: Record<Foreground, number> = { outcome: 4, start: 3, match: 2, board
 type Owner = { role: Foreground; category: SoundCategory; token?: number; clip?: HTMLAudioElement; then?: () => void };
 let owner: Owner | null = null;
 let tokens = 0;
-let scope = 0;
 
 const audible = (category: SoundCategory) => unlocked && !muted && categoryGain(category) > 0 && (category !== "music" || bgOn);
 // A clip still loading its file counts as playing; a paused or finished one does not.
@@ -256,14 +255,6 @@ function cutOff() {
 // A foreground request goes through play()'s burst filter and pacing queue like any clip. It takes the channel only once
 // that gate admits it, so a request the gate drops never cuts the playing clip off.
 let handoff: Owner | undefined;
-function takeHandoff() {
-  const next = handoff;
-  handoff = undefined;
-  if (!next) return;
-  cutOff();
-  owner = next;
-  return (next.token = ++tokens);
-}
 
 export function playForeground(name: SoundName, role: Foreground, volume = 1, category = soundCategory(name)) {
   if (!audible(category) || (playing() && RANK[owner!.role] > RANK[role])) return;
@@ -279,13 +270,13 @@ export function afterOutcome(then: () => void) {
 }
 
 export function cancelForeground() {
-  scope++;
+  foregroundScope++;
   cutOff();
 }
 
 // Async callers (a lazy chunk, a timer) check this did not change before they start a clip: a cancel in between means the
-// table moved on.
-export const foregroundScope = () => scope;
+// table moved on. A live binding, read without a call.
+export let foregroundScope = 0;
 
 export function play(name: SoundName, volume = 1, category = soundCategory(name)) {
   if (!unlocked || muted || !categoryGain(category) || typeof Audio === "undefined") return;
@@ -295,7 +286,12 @@ export function play(name: SoundName, volume = 1, category = soundCategory(name)
   const now = Date.now();
   if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
-  queue.push([name, volume, category, takeHandoff()]);
+  if (handoff) {
+    cutOff();
+    owner = handoff;
+    handoff.token = ++tokens;
+  }
+  queue.push([name, volume, category, handoff?.token]);
   if (!pacing) pump();
 }
 
@@ -454,7 +450,7 @@ function syncVolumes() {
 // never resumes a tail.
 function dropSilenced() {
   if (owner && !audible(owner.category)) cutOff();
-  if (!audible("music")) scope++;
+  if (!audible("music")) foregroundScope++;
 }
 subscribeSoundMix(() => { dropSilenced(); syncVolumes(); syncMusic(); syncAmbience(); });
 

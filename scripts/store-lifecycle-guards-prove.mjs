@@ -88,7 +88,7 @@ function makeVite(rejectTradeSound) {
               export function playForeground(name, _role, vol) { globalThis.__soundSpy?.play(name, vol ?? 1); }
               export function cancelForeground() { globalThis.__soundSpy.stop("end_music"); globalThis.__soundSpy.stop("isaac_win"); }
               export function afterOutcome(then) { then(); }
-              export function foregroundScope() { return 0; }
+              export const foregroundScope = 0;
               export function resetTradePlease() {}
               export function yourTurn() {}
             `;
