@@ -19,6 +19,7 @@ for (const row of result.records) {
   check(row.documentOverflow === 0 && row.documentOverflowY === 0, `${row.tag}: page has no overflow`);
   check(row.cardOverflow.x <= 1, `${row.tag}: card has no horizontal overflow`);
   check(row.peopleOverflow.x <= 1 && row.peopleOverflow.y <= 1, `${row.tag}: seat text fits its grid`);
+  check(row.barPinned, `${row.tag}: the bottom bar stays inside the card at the top and at the end of the scroll, with a hairline exactly when the card scrolls`);
   check(row.unreachableControls.length === 0, `${row.tag}: controls reachable: ${row.unreachableControls.join(" | ")}`);
   check(row.clippedText.length === 0, `${row.tag}: text not clipped: ${row.clippedText.join(" | ")}`);
   check(row.text.length > 0 && row.text.length === base.text.length, `${row.tag}: all visible text roles retained`);

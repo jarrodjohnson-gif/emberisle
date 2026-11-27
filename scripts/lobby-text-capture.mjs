@@ -12,6 +12,8 @@ import { createServer } from "vite";
 
 const { values } = parseArgs({ options: {
   run: { type: "string" }, out: { type: "string", default: "test-results/lobby-text-capture" },
+  // Pictures at other sizes, e.g. --sizes 440x956,956x440. The proof always runs the five issue viewports.
+  sizes: { type: "string", default: "320x568,375x667,390x844,844x390,1280x720" },
 } });
 assert.ok(values.run, "--run must name the capture");
 const out = resolve(values.out);
@@ -76,7 +78,7 @@ try {
   await page.waitForFunction(() => { const g = window.__emberisle.getState(); return g.seats.find(s => s.id === g.seatId)?.ready; });
   const base = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
 
-  for (const [width, height] of [[320, 568], [375, 667], [390, 844], [844, 390], [1280, 720]]) {
+  for (const [width, height] of values.sizes.split(",").map(size => size.split("x").map(Number))) {
     await page.setViewportSize({ width, height });
     for (const scale of [1, 1.25, 1.5]) {
       await page.evaluate(size => { document.documentElement.style.fontSize = `${size}px`; }, base * scale);
@@ -116,10 +118,12 @@ try {
         }
         const controls = [...document.querySelector(".lobby-layout").querySelectorAll('button, input, [role="tab"]')]
           .filter(e => e.getClientRects().length && getComputedStyle(e).visibility === "visible")
-          .map(e => ({ label: e.getAttribute("aria-label") || e.textContent.trim(), ...rect(e) }));
+          .map(e => ({ label: e.getAttribute("aria-label") || e.textContent.trim(), bar: !!e.closest(".lobby-actions"), ...rect(e) }));
         const controlOverlaps = [];
         for (let i = 0; i < controls.length; i++) for (const b of controls.slice(i + 1)) {
           const a = controls[i];
+          // #1235 design: the pinned bar is not paired with what scrolls under it. The reachability check covers that.
+          if (a.bar !== b.bar) continue;
           if (Math.min(a.right, b.right) - Math.max(a.x, b.x) > 1 && Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y) > 1)
             controlOverlaps.push([a.label, b.label]);
         }
@@ -135,16 +139,32 @@ try {
         };
       });
       observed.unreachableControls = await page.evaluate(async () => {
-        const root = document.querySelector(".lobby-layout"), failed = [];
+        // #1235 design: scroll each control to the middle of the card. It is reachable when nothing covers its centre
+        // (not the pinned bar, not a clip) and it lies inside the card.
+        const root = document.querySelector(".lobby-layout"), cover = document.querySelector(".lobby-cover"), failed = [];
+        const frame = cover.getBoundingClientRect();
         for (const element of root.querySelectorAll('button, input, [role="tab"]')) {
           if (!element.getClientRects().length || getComputedStyle(element).visibility !== "visible") continue;
-          element.scrollIntoView({ block: "nearest", inline: "nearest" });
+          element.scrollIntoView({ block: "center", inline: "nearest" });
           await new Promise(resolve => requestAnimationFrame(resolve));
           const r = element.getBoundingClientRect();
-          if (r.left < -1 || r.right > innerWidth + 1 || r.top < -1 || r.bottom > innerHeight + 1) failed.push(element.getAttribute("aria-label") || element.textContent.trim());
+          const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+          if (!(hit && (element.contains(hit) || hit.contains(element))) || r.left < frame.left - 1 || r.right > frame.right + 1
+            || r.top < frame.top - 1 || r.bottom > frame.bottom + 1) failed.push(element.getAttribute("aria-label") || element.textContent.trim());
         }
-        document.querySelector(".lobby-cover").scrollTop = 0;
+        cover.scrollTop = 0;
         return failed;
+      });
+      observed.barPinned = await page.evaluate(() => {
+        const cover = document.querySelector(".lobby-cover"), bar = document.querySelector(".lobby-actions");
+        const inside = () => { const f = cover.getBoundingClientRect(), r = bar.getBoundingClientRect(); return r.top >= f.top - 1 && r.bottom <= f.bottom + 1; };
+        const scrolls = cover.scrollHeight > cover.clientHeight + 1, line = getComputedStyle(bar).boxShadow !== "none";
+        if (scrolls !== line) return false;
+        const top = inside();
+        cover.scrollTop = cover.scrollHeight;
+        const end = inside();
+        cover.scrollTop = 0;
+        return top && end;
       });
       assert.equal(observed.code, code);
       assert.equal(observed.root, base * scale);

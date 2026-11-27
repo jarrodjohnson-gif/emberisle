@@ -1,101 +1,59 @@
-# #1235 draft: font scaling and unresolved fit
+# #1235: the lobby at larger text sizes
 
-This is unfinished accessibility work, not a release or owner-acceptance claim.
-Builder: Codex-p, GPT-6.1 Sol. Base: `1b47ff2a96c1ba040cc0423a2b18b9bbf78495e4`.
-The runtime patch converts fixed font sizes and line heights to equivalent rem values.
-At a 16 px root, those declarations retain their numeric sizes. It selects no new caption placement.
+Builder: claude-opus-a (Claude Opus 5.5), adopting Codex-p's draft. Design: [`docs/design/lobby-text-size`](../../design/lobby-text-size/README.md) (Fable 5.2).
 
-## Local evidence
+## What is built
 
-The final proof and capture source stayed unchanged between the two controlled runs.
-Each ran 15 cases: five issue viewports at 100%, 125% and 150% root text size.
-Both used real host/guest/bot/empty-seat/chat fixtures, reduced motion and desktop Chromium CSS viewports.
-They used different real room codes; this is not a matched-code or performance experiment.
-No physical phone or OS Dynamic Type acceptance occurred. Other lobby panels remain unproven at enlarged text.
+- Codex-p's rem conversion, plus the Numbers lines (#1156), which landed in px after it.
+- The design's five rules, as `lobby.css` rules: rows grow with the text, seats go one per row when two no longer fit, "How to play" wraps on a narrow card, chat tab names wrap, and the chat keeps one line of log.
+- Card 2, answer A (Fable, as Jarrod asked): the bottom bar is pinned and everything above it scrolls as one sheet. A hairline shows above the bar only while the card scrolls.
+- The Table tab only. Play games keeps today's layout; the design did not measure it.
 
-| Run | Exit | Total failed checks | Font-scaling failed checks | Browser errors |
-|---|---:|---:|---:|---:|
-|Unchanged CSS with final proof|1|328|300|0|
-|Rem font units with final proof|1|38|0|0|
+## Still open: the header
 
-The full new proof FAILS. Scaling assertions improve; fit is unfinished.
-The new proof checks visible text and input fonts, clipping, control overlap/reachability, code fit and page/horizontal overflow.
-It does not establish acceptance of vertical card scrolling. That interpretation still needs an owner answer.
-All original capture assertions remain. The fixture isolates its profile store instead of touching the shared writer lock.
+Card 1 A puts "Wayfarer on" beside the room code. Since PR #1866 the Numbers control sits there, and the design never measured the two together. The caption stays in the tab row, and the header stays as #1866 built it, until Jarrod answers the `Question:` on PR #1750.
 
-At 150%, the font-unit draft still reports:
+`npm run lobby-text-prove` fails only on the header, every line of it:
 
-|Viewport|Code fits|Card overflow X/Y px|Clipped text nodes|Control overlaps|
-|---|---|---|---:|---:|
-|320x568|True|42/14|7|8|
-|375x667|False|7/14|7|3|
-|390x844|False|0/10|5|3|
-|844x390|False|0/14|5|2|
-|1280x720|False|0/2|2|3|
+| Case | Card scroll px | Clipped text | Overlapping controls | Unreachable | Bar pinned |
+|---|---:|---|---|---|---|
+| 320x568 at 100% | 0 | Wayfarer, on | none | none | yes |
+| 320x568 at 125% | 331 | none | none | none | yes |
+| 320x568 at 150% | 463 | none | Random numbers+Play games | Random numbers | yes |
+| 375x667 at 100% | 0 | Wayfarer, on | none | none | yes |
+| 375x667 at 125% | 0 | Wayfarer, on | none | none | yes |
+| 375x667 at 150% | 324 | none | Random numbers+Play games; Random numbers+How to play | none | yes |
+| 390x844 at 100% | 0 | on | none | none | yes |
+| 390x844 at 125% | 0 | Wayfarer, on | none | none | yes |
+| 390x844 at 150% | 203 | none | Random numbers+Play games; Random numbers+How to play | none | yes |
+| 844x390 at 100% | 0 | Wayfarer, on | none | none | yes |
+| 844x390 at 125% | 226 | none | Random numbers+Play games | Random numbers | yes |
+| 844x390 at 150% | 315 | none | Random numbers+Play games | Random numbers | yes |
+| 1280x720 at 100% | 0 | none | none | none | yes |
+| 1280x720 at 125% | 0 | none | none | none | yes |
+| 1280x720 at 150% | 87 | none | Random numbers+How to play | none | yes |
 
-The UNCHANGED `lobby-layout-prove` PASSES all eight viewports with zero browser errors on the font-unit draft.
-It retains the default two columns, minimum chat share, 44 px targets, 8 px gaps and no card/people scrolling.
-Typecheck, build, proof registration (242) and advisory loosen (zero changed existing proofs) passed locally.
-Size ceilings/growth passed against the preserved `/workspace/work/590` build.
-That build's runtime inputs match the base (`src`, `public`, Vite config, index.html and lockfile); it is not a fresh base-head build.
-Hosted CI and independent review remain separate. Draft skipped jobs are not passes.
+- "Wayfarer on" is cut at 100% too. Main cuts it the same way today ("Wayfar…").
+- "Random numbers" is the host's Numbers switch. When larger text widens the header, #1866's rule wraps the switch to a second row and clips it away. The overlap is that hidden box. At 844x390 from 125%, and at 320x568 at 150%, the host can't reach the switch.
 
-## Placement evidence for an owner decision
+Every other check passes in all fifteen cases: fonts follow the text size, the code fits, nothing scrolls sideways, the seats fit, and the bar stays inside the card at the top and at the end of the scroll.
 
-These are different real rooms. Room-code and background differences are not causal evidence.
+## Pictures
 
-Current baseline at 390x844, 100%: the rule caption truncates.
+[`built/`](built/): the five issue sizes and Jarrod's phone sizes (440x956, 956x440), each at 100%, 125% and 150%. Each picture shows the top of the card.
 
-![Baseline: truncated rule caption](baseline-390x844.png)
+| 440x956 at 100% | 125% | 150% |
+|---|---|---|
+| ![](built/440x956-100.png) | ![](built/440x956-125.png) | ![](built/440x956-150.png) |
 
-An external prototype made full labels fit, but added a rule row.
-Its unchanged layout proof FAILED the first 390x844 chat-share check: 0.46368715083798884 against 0.52.
-Later layout cases were unrun. The threshold stayed intact. This prototype CSS is not in the draft runtime patch.
+| 956x440 at 100% | 956x440 at 150% |
+|---|---|
+| ![](built/956x440-100.png) | ![](built/956x440-150.png) |
 
-![External prototype: full caption adds a row](full-caption-row-prototype-390x844.png)
+Capture: real local host, host Jarrod (ready), guest Josh, one bot, one empty seat, one chat line; desktop Chromium, reduced motion, device scale 1. Text size is the root font size: 16, 20 and 24 px. Phone sizes: `node scripts/lobby-text-capture.mjs --run phone --out <dir> --sizes 440x956,956x440`.
 
-Controlled DOM-only mock at 100%: move the existing rule summary beside the room code.
-This is a placement proposal, not product implementation or a proof pass.
-It uses the external prototype CSS. Enlarged-text layout and overlay issues still require work; the mock does not approve them.
+Not covered: a physical iPhone and iOS Dynamic Type, sizes above 150%, the Play games tab, six seats and long names.
 
-![Controlled placement mock: rule summary in header](header-placement-mock-390x844.png)
+## Earlier draft evidence (Codex-p, 2026-11-17)
 
-The external raw directory `resume-nov9/1235-text-size/` preserves all runs, JSON, screenshots, CSS and the mock script.
-The first baseline failed 263 checks before stronger input/overlap coverage; it is not the final same-proof comparison.
-The first prototype passed the earlier new-proof version but failed the existing layout proof.
-That earlier pass is not full fit coverage. No passing retry is offered as a causal repair.
-No existing proof assertion, deadline, budget, protocol or audio behavior changed.
-
-## Controlled phone scrolling decision pictures
-
-Requested by desk comment 6946386201. These four pictures are an UNAPPROVED
-external CSS/DOM mock, not the runtime patch or a product proof pass.
-Desktop Chromium 153.0.8010.12 uses touch/mobile emulation at 390x844, reduced
-motion and 125%/150% root font size; this is not physical-phone or OS text-size acceptance.
-The mock moves the existing summary into the header, uses vertical cover flow
-and gives the private fixture chat log natural height. No runtime layout changed.
-
-|Root size|Card top/bottom scroll px|Viewport/content height px|Clipped text|Control overlaps|Unreachable controls|
-|---|---|---|---|---|---|
-|125%|0/0|810/810|0|0|0|
-|150%|0/328|810/1138|0|0|0|
-
-Both records fit the real room code 2KUX and report zero horizontal/page overflow
-and zero browser errors. At 125% the top and bottom pictures are identical
-because no card scrolling is needed. At 150%, the top and bottom show the
-header and the final controls respectively. Visual inspection covers all four
-pictures; automated reachability observations cover intermediate controls.
-These observations do not approve scrolling or the header placement, establish
-physical touch usability, or repair the runtime draft's 38 failed checks.
-
-![125% top](390x844-125-top.png)
-![125% bottom](390x844-125-bottom.png)
-![150% top](390x844-150-top.png)
-![150% bottom](390x844-150-bottom.png)
-
-Source commit: `9a771767af3c7d378587a5db6dd5886776ba1f6e`.
-Mock script SHA256: `ec02d79d4078eb75f6b31c1e302efe5c449976cf2425e95d99a07b5ed25e80b5`.
-Mock CSS SHA256: `bce6dabdab9b554a142dcf9b41923a9e09a5f96ba20bd45d97f8e08ca7119468`.
-Raw measurements, log and script are preserved outside the repository under
-`resume-nov9/1235-text-size/phone-scroll-mock/` and its parent.
-Both owner questions remain pending; runtime layout remains paused.
+The pictures in this folder outside `built/` are Codex-p's draft and mock pictures. The design page cites `390x844-150-top.png`. They are kept for that history and are not the built layout.
