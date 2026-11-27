@@ -214,6 +214,7 @@
     "make-icons": "node scripts/make-icons.mjs",
     "board-look-prove": "node scripts/board-look-prove.mjs",
     "land-layout-prove": "node --import ./server/register.mjs scripts/land-layout-prove.mjs",
+    "classic-geometry-prove": "node --experimental-transform-types --import ./server/register.mjs scripts/classic-geometry-prove.mjs",
     "landing-dust-prove": "node scripts/landing-dust-prove.mjs",
     "harbor-access-prove": "node scripts/harbor-access-prove.mjs",
     "hex-variety-prove": "node scripts/hex-variety-prove.mjs",
