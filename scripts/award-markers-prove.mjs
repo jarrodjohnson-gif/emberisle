@@ -55,13 +55,14 @@ const FIXTURE = `(opts) => {
       break;
     }
   }
-  for (const id of line.edges) st.edges.find((e) => e.id === id).path = "p0";
+  const seat = opts.seat ?? "p0";
+  for (const id of line.edges) st.edges.find((e) => e.id === id).path = seat;
   const ends = [];
   for (const e of line.edges) for (const v of [st.edges.find((x) => x.id === e).va, st.edges.find((x) => x.id === e).vb]) ends.push(v);
   const corners = [...new Set(ends)].sort();
-  for (const [i, kind] of (opts.buildings ?? []).entries()) st.vertices.find((v) => v.id === corners[i * 2]).building = { playerId: "p0", kind };
-  st.longestRoad = opts.road ? "p0" : null;
-  st.largestArmy = opts.army ? "p0" : null;
+  for (const [i, kind] of (opts.buildings ?? []).entries()) st.vertices.find((v) => v.id === corners[i * 2]).building = { playerId: seat, kind };
+  st.longestRoad = opts.road ? seat : null;
+  st.largestArmy = opts.army ? seat : null;
   return { st, line, corners };
 }`;
 
@@ -236,21 +237,24 @@ try {
     await ctx.close();
   }
 
-  // Look-check sizes (builder.md): Jarrod's phone, both ways up.
+  // Look-check sizes (builder.md): Jarrod's phone, both ways up, at its pixel density, for the red seat (Ember) and the
+  // pale one (Dune, p2).
   for (const [w, h] of [[440, 956], [956, 440]]) {
-    const ctx = await browser.newContext({ viewport: { width: w, height: h } });
-    const page = await ctx.newPage();
-    await page.goto(`http://127.0.0.1:${PORT}/`);
-    await page.waitForFunction(() => window.__emberisle && window.__isle);
-    await page.evaluate(() => {
-      window.__emberisle.getState().startAi();
-      window.__emberisle.setState({ runBots: () => {} });
-    });
-    await page.waitForFunction(() => window.__emberisle.getState().state && window.__isle.lastState && !window.__isle.titleMode);
-    await push(page, { n: 5, road: true, army: true, buildings: ["stronghold"] });
-    await page.waitForTimeout(500);
-    await page.screenshot({ path: `test-results/award-markers-${w}x${h}.png` });
-    await ctx.close();
+    for (const [seat, name] of [["p0", "ember"], ["p2", "dune"]]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 2 });
+      const page = await ctx.newPage();
+      await page.goto(`http://127.0.0.1:${PORT}/`);
+      await page.waitForFunction(() => window.__emberisle && window.__isle);
+      await page.evaluate(() => {
+        window.__emberisle.getState().startAi();
+        window.__emberisle.setState({ runBots: () => {} });
+      });
+      await page.waitForFunction(() => window.__emberisle.getState().state && window.__isle.lastState && !window.__isle.titleMode);
+      await push(page, { n: 5, road: true, army: true, buildings: ["stronghold"], seat });
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `test-results/award-markers-${w}x${h}-${name}.png` });
+      await ctx.close();
+    }
   }
   const real = errors.filter((e) => !/favicon|ERR_CONNECTION_REFUSED|WebSocket/.test(e));
   assert.deepEqual(real, [], `console errors: ${real.join("\n")}`);
