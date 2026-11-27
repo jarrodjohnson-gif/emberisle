@@ -20,9 +20,64 @@ process.on("exit", () => {
 });
 const errors = [];
 const results = [];
+const clients = [];
+// Evidence only: retain the last sound lifecycle events without recording names, chat or URLs.
+function observeSounds() {
+  const events = [];
+  const record = (event) => {
+    events.push({ event, ms: Math.round(performance.now()) });
+    if (events.length > 32) events.shift();
+  };
+  window.__lobbySoundTrace = { events, record };
+  const NativeSocket = window.WebSocket;
+  window.WebSocket = new Proxy(NativeSocket, {
+    construct(target, args) {
+      const socket = Reflect.construct(target, args);
+      const send = socket.send;
+      socket.send = function (data) {
+        try { if (JSON.parse(data).type === "sound") record("send"); } catch {}
+        return send.call(this, data);
+      };
+      socket.addEventListener("message", ({ data }) => {
+        try { const msg = JSON.parse(data); if (msg.type === "chat" && msg.sound) record("arrival"); } catch {}
+      });
+      return socket;
+    },
+  });
+  let mounted = new Set();
+  new MutationObserver(() => {
+    const next = new Set(document.querySelectorAll('[data-testid="sound-bubble"]'));
+    for (const node of next) if (!mounted.has(node)) record("mount");
+    for (const node of mounted) if (!next.has(node)) record("unmount");
+    mounted = next;
+  }).observe(document, { childList: true, subtree: true });
+}
+async function soundFailure(kind, stage) {
+  const snapshots = Promise.all(clients.map(async (page, client) => {
+    try {
+      return await page.evaluate(({ client, kind, stage }) => ({
+        client, kind, stage, ms: Math.round(performance.now()),
+        events: window.__lobbySoundTrace?.events ?? [],
+        bubbles: document.querySelectorAll('[data-testid="sound-bubble"]').length,
+        soundLines: window.__emberisle?.getState().chat.filter(line => !!line.sound).length ?? 0,
+        screen: window.__emberisle?.getState().screen ?? null,
+        visible: document.visibilityState,
+      }), { client, kind, stage });
+    } catch { return { client, unavailable: true }; }
+  }));
+  let timer;
+  try {
+    const data = await Promise.race([snapshots, new Promise(resolve => {
+      timer = setTimeout(() => resolve({ unavailable: "diagnostic deadline" }), 1000);
+    })]);
+    console.error(`lobby-bubble-failure: ${JSON.stringify(data)}`);
+  } finally { clearTimeout(timer); }
+}
 async function client(name, viewport, touch) {
   const context = await browser.newContext({ viewport, hasTouch: touch, isMobile: touch, deviceScaleFactor: 1, reducedMotion: "reduce" });
   const page = await context.newPage();
+  clients.push(page);
+  await page.addInitScript(observeSounds);
   page.on("pageerror", e => errors.push(String(e)));
   page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
   await page.addInitScript(n => {
@@ -82,8 +137,11 @@ async function geometry(page, minimum) {
   return { ...data, share };
 }
 async function clearOfName(page, kind) {
+  let stage = "wait";
+  try {
   const bubble = page.locator(`[data-testid="${kind}"] > div`).first();
   await bubble.waitFor();
+  stage = "geometry";
   const bounds = await bubble.evaluate(el => {
     const seat = el.closest("li");
     const name = seat.querySelector('[data-testid="lobby-name"]');
@@ -99,6 +157,10 @@ async function clearOfName(page, kind) {
   });
   assert.ok(bounds.clearStatus, `${kind}: bubble clear of the seat status ${JSON.stringify(bounds)}`);
   assert.ok(bounds.clear && bounds.inside, `${kind}: whole bubble stays inside its seat and clear of the name`);
+  } catch (error) {
+    await soundFailure(kind, stage);
+    throw error;
+  }
 }
 async function emptySeatsFit(page, label) {
   const bad = await page.evaluate(() => [...document.querySelectorAll(".lobby-player")].filter(li => li.querySelector('[data-testid="add-bot"]')).map(li => li.querySelector('[data-testid="lobby-name"] > span')).filter(el => el.scrollWidth > el.clientWidth || el.getBoundingClientRect().width < 8).length);
