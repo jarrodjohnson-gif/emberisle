@@ -145,12 +145,12 @@ const checks = {
   async endWait(page, clean) {
     await clean();
     const got = await page.evaluate(async () => {
-      const { S, M } = window.__t;
+      const { S, M, T } = window.__t;
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       const files = () => window.__plays.map((p) => p.file);
       const out = {};
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(50);
+      T.endMusic(50);
       await wait(300);
       out.behind = files();
       window.__end("game_lose.mp3");
@@ -160,14 +160,14 @@ const checks = {
       window.__plays = [];
       await wait(400);
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(50);
+      T.endMusic(50);
       S.cancelForeground();
       await wait(300);
       out.delayed = files();
       window.__plays = [];
       await wait(400);
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(50);
+      T.endMusic(50);
       await wait(300);
       S.cancelForeground();
       window.__end("game_lose.mp3");
@@ -177,7 +177,7 @@ const checks = {
       window.__plays = [];
       await wait(400);
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(50);
+      T.endMusic(50);
       M.setCategoryMuted("music", true);
       await wait(300);
       M.setCategoryMuted("music", false);
@@ -186,7 +186,7 @@ const checks = {
       window.__plays = [];
       await wait(400);
       S.playForeground("sb_airhorn", "board");
-      S.playEndMusic(50);
+      T.endMusic(50);
       await wait(300);
       window.__end("sb_airhorn.mp3");
       await wait(200);
@@ -205,13 +205,13 @@ const checks = {
   async refusals(page, clean) {
     await clean();
     const got = await page.evaluate(async () => {
-      const { S } = window.__t;
+      const { S, T } = window.__t;
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       const out = {};
       // A refused outcome does not hold the end music back.
       window.__mode = { "game_lose.mp3": "reject" };
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(50);
+      T.endMusic(50);
       await wait(300);
       out.refused = window.__plays.map((p) => p.file);
       S.cancelForeground();
@@ -220,7 +220,7 @@ const checks = {
       // A refusal that comes after a cancel, with end music already waiting behind it, starts nothing.
       window.__mode = { "game_lose.mp3": "late" };
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(30);
+      T.endMusic(30);
       await wait(100);
       S.cancelForeground();
       for (const reject of window.__late.splice(0)) reject();
@@ -240,11 +240,11 @@ const checks = {
     await clean();
     // A soundboard clip the outcome cut off reports its end late, while the end music waits behind the outcome.
     const got = await page.evaluate(async () => {
-      const { S } = window.__t;
+      const { S, T } = window.__t;
       const wait = (ms) => new Promise((r) => setTimeout(r, ms));
       S.playForeground("sb_airhorn", "board");
       S.playForeground("game_lose", "outcome");
-      S.playEndMusic(30);
+      T.endMusic(30);
       await wait(80);
       window.__staleEnd("sb_airhorn.mp3");
       await wait(250);
@@ -415,7 +415,7 @@ const MUTANTS = [
   { check: "stale", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined || !owner) return;", why: "no token check on completion" },
   { check: "refusals", file: "/src/lib/sound.ts", from: "if (token === undefined || owner?.token !== token) return;", to: "if (token === undefined) return;", why: "no owner check on refusal" },
   { check: "silence", file: "/src/lib/sound.ts", from: "subscribeSoundMix(() => { dropSilenced(); ", to: "subscribeSoundMix(() => { ", why: "no cancel on a silenced kind" },
-  { check: "endWait", file: "/src/lib/sound.ts", from: "  scope++;\n  clearTimeout(endTimer);", to: "  scope++;", why: "no cancel of the delayed end music" },
+  { check: "endWait", file: "/src/lib/trade-sound.ts", from: "scope === foregroundScope() && afterOutcome(", to: "afterOutcome(", why: "no cancel of the delayed end music" },
   { check: "queued", file: "/src/lib/sound.ts", from: "  while (next && next[3] !== undefined && owner?.token !== next[3]) next = queue.shift();\n", to: "", why: "no token check on a queued start" },
   { check: "lateChunk", file: "/src/lib/game/store.ts", from: "scope === foregroundScope() && m?.gameEnd(", to: "m?.gameEnd(", why: "no scope check on the game-end chunk" },
   { check: "hide", file: "/src/components/game/WinScreen.tsx", from: "      cancelForeground();\n", to: "\n", why: "no cancel on hide" },
@@ -443,9 +443,9 @@ async function run(names, mutant) {
     await page.waitForFunction(() => window.__emberisle);
     await page.keyboard.press("Shift"); // the gesture that unlocks sound
     await page.evaluate(async () => {
-      const [S, M, store, board] = await Promise.all(["/src/lib/sound.ts", "/src/lib/sound-settings.ts", "/src/lib/game/store.ts", "/src/lib/game/board.ts"].map((m) => import(m)));
+      const [S, M, store, board, T] = await Promise.all(["/src/lib/sound.ts", "/src/lib/sound-settings.ts", "/src/lib/game/store.ts", "/src/lib/game/board.ts", "/src/lib/trade-sound.ts"].map((m) => import(m)));
       const game = () => ({ ...board.createGame({ humans: [{ name: "Ana" }, { name: "Ben" }], bots: 1 }), winner: null });
-      window.__t = { S, M, store, game, useGame: window.__emberisle };
+      window.__t = { S, M, T, store, game, useGame: window.__emberisle };
     });
     const clean = () => page.evaluate(async () => {
       window.__t.S.cancelForeground();

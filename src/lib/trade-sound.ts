@@ -1,6 +1,6 @@
 import type { Bag, Seat } from "@/lib/net/table";
 import type { GameState } from "@/lib/game/types";
-import { playEndMusic, playForeground, playTradePlease } from "./sound";
+import { afterOutcome, foregroundScope, playForeground, playTradePlease } from "./sound";
 
 type Play = typeof import("./sound").play;
 
@@ -25,5 +25,12 @@ export function gameEnd(before: GameState, after: GameState, me: string, mode: s
   const isaac = isDiggler(after.players.find((p) => p.id === after.winner)?.name);
   const lost = mode !== "hotseat" && me !== "" && !!after.winner && after.winner !== me;
   playForeground(isaac ? "isaac_win" : lost ? "game_lose" : "win", "outcome");
-  if (mode !== "hotseat" && me && before.phase !== "over" && after.phase === "over" && after.winner && !isaac) playEndMusic(1500);
+  if (mode !== "hotseat" && me && before.phase !== "over" && after.phase === "over" && after.winner && !isaac) endMusic(1500);
+}
+
+// End music `ms` after the outcome, or when the outcome clip ends if that is later. A cancel, or silenced music, in between
+// drops it.
+export function endMusic(ms: number) {
+  const scope = foregroundScope();
+  setTimeout(() => scope === foregroundScope() && afterOutcome(() => playForeground("end_music", "end")), ms);
 }

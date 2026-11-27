@@ -223,15 +223,15 @@ function start(name: SoundName, volume: number, category: SoundCategory, token?:
 
 // One long clip at a time (docs/design/profiles.md, "Curated media and playback"; #1044). A request below the clip that is
 // playing is dropped, never queued. A request at or above it cuts that clip off for good. Only end music waits, and only for
-// its outcome. Mute, a silenced category, hiding the results, Leave and a new game cancel all of it. Every request owns a
-// token, so a late play refusal, ended event or file import from a cancelled or replaced clip starts nothing.
-// The background loop stays separate (it ducks under these, as before).
-type Foreground ="outcome" | "start" | "match" | "board" | "end";
+// its outcome (trade-sound.ts gameEnd). Mute, a silenced category, hiding the results, Leave and a new game cancel all of it.
+// Every request owns a token, so a late play refusal, ended event or file import from a cancelled or replaced clip starts
+// nothing. The background loop stays separate (it ducks under these, as before).
+type Foreground = "outcome" | "start" | "match" | "board" | "end";
 const RANK: Record<Foreground, number> = { outcome: 4, start: 3, match: 2, board: 1, end: 0 };
-let owner: { role: Foreground; token: number; category: SoundCategory; clip?: HTMLAudioElement; then?: () => void } | null = null;
+type Owner = { role: Foreground; category: SoundCategory; token?: number; clip?: HTMLAudioElement; then?: () => void };
+let owner: Owner | null = null;
 let tokens = 0;
 let scope = 0;
-let endTimer: ReturnType<typeof setTimeout> | undefined;
 
 const audible = (category: SoundCategory) => unlocked && !muted && categoryGain(category) > 0 && (category !== "music" || bgOn);
 // A clip still loading its file counts as playing; a paused or finished one does not.
@@ -253,45 +253,38 @@ function cutOff() {
   }
 }
 
-// A foreground request goes through play()'s burst filter and pacing queue like any clip, carrying its token. It is checked
-// against that gate first, so a request the gate would drop never cuts the playing clip off.
-let handoff: number | undefined;
+// A foreground request goes through play()'s burst filter and pacing queue like any clip. It takes the channel only once
+// that gate admits it, so a request the gate drops never cuts the playing clip off.
+let handoff: Owner | undefined;
 function takeHandoff() {
-  const token = handoff;
+  const next = handoff;
   handoff = undefined;
-  return token;
+  if (!next) return;
+  cutOff();
+  owner = next;
+  return (next.token = ++tokens);
 }
-const admitted = (name: SoundName) => (UI.has(name) || Date.now() - (asked.get(name) ?? -GAP_MS) >= GAP_MS) && queue.length < MAX_QUEUE;
 
 export function playForeground(name: SoundName, role: Foreground, volume = 1, category = soundCategory(name)) {
-  if (typeof Audio === "undefined" || !audible(category) || !admitted(name) || (playing() && RANK[owner!.role] > RANK[role])) return;
-  cutOff();
-  owner = { role, token: ++tokens, category };
-  handoff = owner.token;
+  if (!audible(category) || (playing() && RANK[owner!.role] > RANK[role])) return;
+  handoff = { role, category };
   play(name, volume, category);
-  // play() refused it after all: the request is over, and nothing waits on it.
-  finish(takeHandoff());
+  handoff = undefined;
 }
 
-// End music, `ms` after the outcome starts, or when the outcome clip ends if that is later.
-export function playEndMusic(ms: number) {
-  clearTimeout(endTimer);
-  endTimer = setTimeout(() => {
-    endTimer = undefined;
-    const music = () => playForeground("end_music", "end");
-    if (playing() && owner!.role === "outcome") owner!.then = music;
-    else music();
-  }, ms);
+// Run `then` when the outcome clip ends, or at once when no outcome clip plays (end music waits behind its outcome).
+export function afterOutcome(then: () => void) {
+  if (playing() && owner!.role === "outcome") owner!.then = then;
+  else then();
 }
 
 export function cancelForeground() {
   scope++;
-  clearTimeout(endTimer);
-  endTimer = undefined;
   cutOff();
 }
 
-// Async callers (a lazy chunk) check this did not change before they start a clip: a cancel in between means the table moved on.
+// Async callers (a lazy chunk, a timer) check this did not change before they start a clip: a cancel in between means the
+// table moved on.
 export const foregroundScope = () => scope;
 
 export function play(name: SoundName, volume = 1, category = soundCategory(name)) {
@@ -457,13 +450,11 @@ function syncVolumes() {
     clip.volume = muted || (category === "music" && !bgOn) ? 0 : volume * categoryGain(category);
   }
 }
-// A silenced category ends its long clip for good (and a waiting end music), so turning it back up never resumes a tail.
+// A silenced category ends its long clip for good, and silenced music drops a waiting end music, so turning it back up
+// never resumes a tail.
 function dropSilenced() {
   if (owner && !audible(owner.category)) cutOff();
-  if (endTimer && !audible("music")) {
-    clearTimeout(endTimer);
-    endTimer = undefined;
-  }
+  if (!audible("music")) scope++;
 }
 subscribeSoundMix(() => { dropSilenced(); syncVolumes(); syncMusic(); syncAmbience(); });
 
