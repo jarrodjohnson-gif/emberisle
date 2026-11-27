@@ -199,6 +199,7 @@
     "first-game-coach-prove": "node scripts/first-game-coach-prove.mjs",
     "render-recovery-prove": "node scripts/render-recovery-prove.mjs",
     "webgl-recovery-prove": "node scripts/webgl-recovery-prove.mjs",
+    "health-clock-prove": "node scripts/health-clock-prove.mjs",
     "connection-health-prove": "node scripts/connection-health-prove.mjs",
     "profiles-client-prove": "node scripts/profiles-client-prove.mjs",
     "profiles-ui-prove": "node scripts/profiles-ui-prove.mjs",
