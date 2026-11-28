@@ -40,7 +40,10 @@ const CEILINGS = [
   // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
   // start from the Play page; index measured 127,203 B.
   // #1044, 2026-11-27: raised from 128,000 B to 128,250 B by the owner (q1892-size-limit A): one long clip at a time.
-  { name: "index", gzipBytes: 128250 },
+  // #1893, 2026-11-28: raised from 128,250 B to 128,500 B under the owner's standing delegation (DECISIONS 2026-11-28,
+  // Opus sets size numbers): roadWitness replaces roadLength's search in rules.ts so the board and the award agree on one
+  // trail. Main measured 128,140 B; with #1893 128,310 B (+170 B, inside the 400 B allowance).
+  { name: "index", gzipBytes: 128500 },
   { name: "IslandCanvas", gzipBytes: 205500 }, // #1877, 2026-11-24: raised from 204,500 B to 205,500 B (was #1857, 2026-11-22)
   // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
   { name: "classic-board", gzipBytes: 19500 },
@@ -142,6 +145,9 @@ const CEILINGS = [
   // #1593, 2026-11-17: the dock-mark atlas (painted-board white symbols/pips and lite planks), shared by harbor-jelly and the
   // lite board; measured 1,090 B gzip. Desk set this 1,200 B ceiling on 2026-11-17 under q-size-standing A.
   { name: "dock-marks", gzipBytes: 1200 },
+  // #743 (#642), 2026-11-27: the board's path banner and army flag, loaded the first time a game has a holder; measured
+  // 1,964 B gzip. New chunk only; proposed, the desk sets this ceiling.
+  { name: "award-markers", gzipBytes: 2100 },
 ];
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.

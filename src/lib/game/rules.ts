@@ -178,9 +178,11 @@ export function stealTargets(state: GameState, hexId: string, pid: string): stri
 
 // Longest real trail: walk corner to corner, entering each segment at one end and leaving at the other.
 // An opponent's building ends a trail at that corner (it may still start there).
-export function roadLength(state: GameState, pid: string): number {
-  const mine = state.edges.filter((e) => e.path === pid);
-  if (!mine.length) return 0;
+// The longest legal trail of pid's paths, as ordered edge and vertex ids (one more vertex than edge, or both empty). It may
+// start on an opponent's building but stops on arriving at one; no edge twice; corners may repeat. Equal lengths: the
+// smaller edge-id list, then the smaller vertex-id list, in raw string order. The board's banner draws it (#743).
+export function roadWitness(state: GameState, pid: string): { edgeIds: string[]; vertexIds: string[] } {
+  const mine = state.edges.filter((e) => e.path === pid).sort((a, b) => order(a.id, b.id));
   const byCorner = new Map<string, typeof mine>();
   for (const e of mine) {
     for (const v of [e.va, e.vb]) {
@@ -192,22 +194,39 @@ export function roadLength(state: GameState, pid: string): number {
     const b = vertex(state, vid)?.building;
     return Boolean(b && b.playerId !== pid);
   };
-  const used = new Set<string>();
-  const walk = (corner: string): number => {
-    if (used.size > 0 && blocked(corner)) return 0;
-    let best = 0;
-    for (const e of byCorner.get(corner) ?? []) {
-      if (used.has(e.id)) continue;
-      used.add(e.id);
-      best = Math.max(best, 1 + walk(e.va === corner ? e.vb : e.va));
-      used.delete(e.id);
+  const edgeIds: string[] = [];
+  const vertexIds: string[] = [];
+  let best = { edgeIds: [] as string[], vertexIds: [] as string[] };
+  const walk = (corner: string) => {
+    vertexIds.push(corner);
+    const n = edgeIds.length;
+    if (n && (n > best.edgeIds.length || (n === best.edgeIds.length && (listOrder(edgeIds, best.edgeIds) || listOrder(vertexIds, best.vertexIds)) < 0))) {
+      best = { edgeIds: [...edgeIds], vertexIds: [...vertexIds] };
     }
-    return best;
+    if (!n || !blocked(corner)) {
+      for (const e of byCorner.get(corner) ?? []) {
+        if (edgeIds.includes(e.id)) continue;
+        edgeIds.push(e.id);
+        walk(e.va === corner ? e.vb : e.va);
+        edgeIds.pop();
+      }
+    }
+    vertexIds.pop();
   };
-  let best = 0;
-  for (const corner of byCorner.keys()) best = Math.max(best, walk(corner));
+  for (const corner of [...byCorner.keys()].sort(order)) walk(corner);
   return best;
 }
+
+export function roadLength(state: GameState, pid: string): number {
+  return roadWitness(state, pid).edgeIds.length;
+}
+
+const order = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+// Two equal-length id lists: the first differing entry decides.
+const listOrder = (a: string[], b: string[]) => {
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return order(a[i]!, b[i]!);
+  return 0;
+};
 
 // Official rules: 5+ to hold it; ties keep the holder; a tie with no holder gives it to nobody.
 function updateLongest(state: GameState) {
