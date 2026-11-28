@@ -21,7 +21,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function host(name, development = false) {
   const proc = spawn(process.execPath, ["--import", "./register.mjs", "host.mjs"], {
     cwd: new URL("../server/", import.meta.url),
-    env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(dir, name, "rooms"), PROFILES_DIR: path.join(dir, name, "profiles"), PROFILES_DEV: development ? "1" : "", SAVE_MS: "20" },
+    env: { ...process.env, PORT: "0", ROOMS_DIR: path.join(dir, name, "rooms"), PROFILES_DIR: path.join(dir, name, "profiles"), PROFILES_DEV: development ? "1" : "", SAVE_MS: "20", OPEN_IP_CAP: "20" },
     stdio: ["ignore", "pipe", "pipe"],
   });
   const item = { proc, log: "" }; hosts.push(item);
@@ -281,6 +281,31 @@ try {
   await page.waitForFunction(() => window.recovery.getSnapshot().status === "offline");
   assert.equal(await page.evaluate(async () => (await window.recovery.resume()).profileId), owner.profileId);
   ok("login and remembered resume succeed on the first call after socket loss");
+
+  // #1929: a signed-in player whose profile socket dropped must still be seated by their profile when they Host or Join.
+  await page.evaluate(() => window.__profileSockets.at(-1).close());
+  await page.waitForFunction(() => window.recovery.getSnapshot().status === "offline");
+  assert.equal(await page.evaluate(() => window.recovery.getSnapshot().profile?.login), "ember-user", "the profile survives the socket drop");
+  await page.evaluate(() => {
+    window.dropped = { seats: null, welcome: null, joined: null };
+    window.droppedHost = window.table.connectTable(window.A, { welcome: (m) => window.dropped.welcome = m, seats: (m) => window.dropped.seats = m.seats });
+    window.droppedHost.open({ name: "DropHost", profile: window.recovery });
+  });
+  await page.waitForFunction(() => window.dropped.welcome && window.dropped.seats);
+  assert.equal(await page.evaluate(() => window.dropped.seats[0].profile?.profileId), owner.profileId, "Host after a profile socket drop seats the player by profile");
+  await page.evaluate(() => {
+    window.droppedTable = window.table.connectTable(window.A, { welcome: (m) => window.dropped.table = m });
+    window.droppedTable.open({ name: "DropTable" });
+  });
+  await page.waitForFunction(() => window.dropped.table);
+  await page.evaluate(() => {
+    window.droppedJoin = window.table.connectTable(window.A, { seats: (m) => window.dropped.joined = m.seats });
+    window.droppedJoin.join(window.dropped.table.code, { name: "DropJoin", profile: window.recovery });
+  });
+  await page.waitForFunction(() => window.dropped.joined?.length === 2); 
+  assert.equal(await page.evaluate(() => window.dropped.joined.find((s) => s.name === "DropJoin")?.profile?.profileId), owner.profileId, "Join after a profile socket drop seats the player by profile");
+  await page.evaluate(() => { window.droppedHost.close(); window.droppedTable.close(); window.droppedJoin.close(); });
+  ok("Host and Join after a dropped profile socket still seat the signed-in player by profile");
   const timedOut = await page.evaluate(async () => {
     window.__dropLogout = true;
     let code;
