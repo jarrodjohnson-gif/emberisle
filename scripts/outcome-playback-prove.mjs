@@ -331,7 +331,7 @@ const checks = {
 const MUTANTS = [
   { check: "chosen", file: "/src/lib/game/store.ts", from: "m?.gameEnd(before, after, me, mode, songOf(outcome))", to: "m?.gameEnd(before, after, me, mode)", why: "the outcome is not passed to the game-end chunk" },
   { check: "fallback", file: "/src/lib/trade-sound.ts", from: "const isaac = !song && isDiggler(", to: "const isaac = !!song && isDiggler(", why: "no Isaac fallback" },
-  { check: "fallback", file: "/src/lib/game/store.ts", from: "Object.hasOwn(SONG_SOUNDS, v.song as string) ? SONG_SOUNDS[v.song as string] : undefined", to: "\"isaac_win\"", why: "the song is not checked against the catalogue" },
+  { check: "fallback", file: "/src/lib/game/store.ts", from: "Object.hasOwn(SONG_SOUNDS, song!) ? SONG_SOUNDS[song!] : undefined", to: "\"isaac_win\"", why: "the song is not checked against the catalogue" },
   { check: "chosen", file: "/src/lib/trade-sound.ts", from: "&& after.winner && !isaac) endMusic(1500)", to: "&& after.winner && !isaac && !song) endMusic(1500)", why: "no end music after the chosen song" },
 ];
 

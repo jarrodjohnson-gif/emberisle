@@ -114,8 +114,8 @@ function clearKnocks() {
 // The host's playback projection (#1045): `{ gameId, song }` on the final state frame. Only a shared catalogue ID names a
 // clip; anything else (a removed or unknown song, a malformed frame, none at all) is no pick, so the old cues play.
 const songOf = (o: unknown) => {
-  const v = o as { gameId?: unknown; song?: unknown } | null;
-  return typeof v?.gameId === "string" && Object.hasOwn(SONG_SOUNDS, v.song as string) ? SONG_SOUNDS[v.song as string] : undefined;
+  const { gameId, song } = (o ?? {}) as { gameId?: unknown; song?: string };
+  return typeof gameId == "string" && Object.hasOwn(SONG_SOUNDS, song!) ? SONG_SOUNDS[song!] : undefined;
 };
 
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
