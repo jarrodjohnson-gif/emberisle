@@ -5,7 +5,7 @@
 //   Win screen: the win button reads exactly "GG! 🔊", is at least 44x44, inside the screen with no sideways scroll, sends
 //         sb_win_reaction once per click, rests for 3 s (disabled) and then works again; a watcher has no such button.
 //   Reactions: an emoji and a sound reach the other seat once and are echoed in the log; a watcher's tray sends nothing.
-//   Stress: 320 px width; enlarged text (root font size 125%); a 24-sticker fixture; a 60-character sound label; rotation with the
+//   Stress: 320 px width; enlarged text (root font size 150%, 125% at 320 px); a 24-sticker fixture; a 60-character sound label; rotation with the
 //         panel open; camera re-measure with the panel open (the island hole, `__isle.insets()`, does not move); IME and typing
 //         are excluded from the 1-6 keys, which still send with the focus off a field.
 // At 440x956 and 956x440. Run: npm run quick-react-integration-prove. Screenshots go to test-results/quick-react-integration-*.jpg.
@@ -219,12 +219,13 @@ for (const size of SIZES) {
   await whole(a, `${size.label}, 24 stickers`);
 }
 
-// Enlarged text: the root font size at 125% (the browser's text-size setting scales rem the same way). 150% and 200% fail today:
-// the 320 px emoji are 42 px wide at 150%, and at 200% on 440 px the Sounds & stickers tab overlaps Mute players (see the PR).
-for (const size of [{ label: "440x956", width: 440, height: 956 }, { label: "320x640", width: 320, height: 640 }]) {
+// Enlarged text: the root font size (the browser's text-size setting scales rem the same way). 440x956 and 956x440 pass at 150%;
+// 320x640 passes at 125% only. Known failing and left out until the layout is fixed: 320x640 at 150% (the six emoji are 42x66,
+// under 44 wide) and 440x956 at 200% (the Sounds & stickers tab overlaps Mute players). See the PR.
+for (const size of [{ label: "440x956", width: 440, height: 956, pct: "150" }, { label: "956x440", width: 956, height: 440, pct: "150" }, { label: "320x640", width: 320, height: 640, pct: "125" }]) {
   await a.page.setViewportSize({ width: size.width, height: size.height });
-  await get(a, (pct) => { document.documentElement.style.fontSize = pct + "%"; }, "125");
-  await whole(a, `${size.label}, enlarged text, 24 stickers`);
+  await get(a, (pct) => { document.documentElement.style.fontSize = pct + "%"; }, size.pct);
+  await whole(a, `${size.label}, text at ${size.pct}%, 24 stickers`);
   await get(a, () => { document.documentElement.style.fontSize = ""; });
 }
 
