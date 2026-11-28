@@ -960,4 +960,85 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   );
 }
 
+// The five README lines #83 left without a check (#71).
+{
+  const pipsOf = (g) => g.hexes.map((h) => h.pip).join();
+  const ring = (g, d) => g.hexes.filter((h) => Math.max(Math.abs(h.q), Math.abs(h.r), Math.abs(h.q + h.r)) === d).sort((a, b) => Math.atan2(a.r * 0.866, a.q + a.r / 2) - Math.atan2(b.r * 0.866, b.q + b.r / 2) || 0);
+  const near = (a, b) => AXIAL_DIRS.some(([dq, dr]) => a.q + dq === b.q && a.r + dr === b.r);
+  const OFFICIAL = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
+  // Every way to walk the spiral: any outer corner hex, either way round, then the inner ring from the hex beside the last outer one, then the middle.
+  const walks = (g) => {
+    const outer = ring(g, 2);
+    const inner = ring(g, 1);
+    const corners = outer.filter((h) => [h.q, h.r, -h.q - h.r].includes(0));
+    const out = [];
+    for (const c of corners) for (const dir of [1, -1]) {
+      const i = outer.indexOf(c);
+      const o = outer.map((_, k) => outer[(i + dir * k + 12) % 12]);
+      for (const [j, idir] of inner.flatMap((h, k) => (near(h, o[11]) ? [[k, 1], [k, -1]] : []))) out.push({ corner: c.id, hexes: [...o, ...inner.map((_, k) => inner[(j + idir * k + 6) % 6]), g.hexes.find((h) => h.q === 0 && h.r === 0)] });
+    }
+    return out;
+  };
+  const spiralOf = (g) => walks(g).find((w) => w.hexes.filter((h) => h.terrain !== "waste").map((h) => h.pip).join() === OFFICIAL.join())?.corner;
+  const starts = new Set();
+  for (let seed = 1; seed <= 60; seed++) {
+    const g = createGame({ humans: [{ name: "A" }], bots: 2, seed });
+    const corner = spiralOf(g);
+    if (!corner) fail("README new boards place the tokens in the official spiral order", { seed, pips: pipsOf(g) });
+    starts.add(corner);
+    if (pipsOf(createGame({ humans: [{ name: "A" }], bots: 2, seed })) !== pipsOf(g)) fail("README the spiral is seeded", seed);
+  }
+  ok("new boards place the tokens in the official spiral order, skipping the wastes, from a seeded corner", starts.size > 1, [...starts]);
+  const sorted = (g) => g.hexes.map((h) => h.pip).filter((p) => p !== null).sort((a, b) => a - b).join();
+  let apart = true;
+  let differs = false;
+  for (let seed = 1; seed <= 300; seed++) {
+    const g = createGame({ humans: [{ name: "A" }], bots: 2, seed, numberTokens: "random" });
+    const red = g.hexes.filter((h) => h.pip === 6 || h.pip === 8);
+    if (red.some((a) => red.some((b) => near(a, b))) || sorted(g) !== OFFICIAL.slice().sort((a, b) => a - b).join()) apart = false;
+    if (!spiralOf(g)) differs = true;
+  }
+  ok("the generator also supports a random deal that keeps 6 and 8 apart", apart && differs);
+
+  const p = fresh();
+  p.players[0].hidden.plenty = 1;
+  p.bank.ore = 0;
+  p.bank.grain = 1;
+  const r = applyAction(p, "p0", { type: "playPlenty", resources: ["grain", "ore"] });
+  ok("a plenty can name only cards the bank still has", r.error === "The bank has no stone." && r.state.players[0].hidden.plenty === 1, r.error);
+
+  const target = (v) => createGame({ humans: [{ name: "A" }], bots: 2, seed: 3, ...(v === undefined ? {} : { victoryTarget: v }) });
+  const strongholdWin = (g) => {
+    const g2 = Object.assign(g, { phase: "main", current: "p0" });
+    const v = g2.vertices[0];
+    v.building = { playerId: "p0", kind: "outpost" };
+    g2.players[0].hidden.vp = 5;
+    giveCards(g2.players[0], { ore: 2, grain: 3 });
+    return applyAction(g2, "p0", { type: "buildStronghold", vertexId: v.id }).state;
+  };
+  ok(
+    "a lobby host can set the win line to 7 or 10 points; the default is 10",
+    target().victoryTarget === 10 && target(10).victoryTarget === 10 && target(7).victoryTarget === 7 && strongholdWin(target(7)).winner === "p0" && strongholdWin(target(10)).phase !== "over",
+  );
+
+  const w = Object.assign(createGame({ humans: [{ name: "A" }], bots: 2, seed: 4, wayfarerMode: "off" }), { phase: "roll", current: "p0" });
+  const home = w.robberHex;
+  const seven = rollTo(w, 7);
+  ok("in Wayfarer Off, a rolled 7 goes straight to main and the wayfarer stays", seven.phase === "main" && seven.robberHex === home && seven.hexes.every((h) => !h.blocked), seven.phase);
+  const land = w.hexes.find((h) => h.id !== home && h.terrain !== "waste").id;
+  const forced = Object.assign(structuredClone(w), { phase: "robber" });
+  const move = applyAction(forced, "p0", { type: "moveRobber", hexId: land, stealFrom: null });
+  ok("in Wayfarer Off, moveRobber is refused and the wayfarer stays", move.error === "The wayfarer is off at this table." && forced.robberHex === home && move.state.robberHex === home, move.error);
+  const muster = Object.assign(structuredClone(w), { phase: "main" });
+  muster.players[0].hidden.knight = 1;
+  const named = applyAction(muster, "p0", { type: "playKnight", hexId: land, stealFrom: null });
+  ok("in Wayfarer Off, a Muster that names land is refused", named.error === "Muster needs no land or target." && named.state.players[0].hidden.knight === 1, named.error);
+  const played = applyAction(muster, "p0", { type: "playKnight", hexId: "", stealFrom: null });
+  ok(
+    "in Wayfarer Off, a Muster with no land succeeds and nothing moves",
+    !played.error && played.state.robberHex === home && played.state.hexes.every((h) => !h.blocked) && played.state.players[0].knightsPlayed === 1,
+    played.error,
+  );
+}
+
 console.log("rules prove ok");
