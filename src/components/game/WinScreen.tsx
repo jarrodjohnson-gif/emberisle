@@ -8,6 +8,7 @@ import { useViewport } from "@/lib/viewport";
 import { LazyBoundary } from "@/lib/lazy";
 import { Award, DiceStrip, playAgain, resultsStory, WantAgain, WantCount, WinList, winList } from "@/components/game/chunks";
 import { useFocusTrap } from "@/lib/focus-trap";
+import { cancelForeground } from "@/lib/sound";
 import type { PlayerState } from "@/lib/game/types";
 import type { Seat } from "@/lib/net/table";
 import "./win-screen.css";
@@ -106,6 +107,8 @@ function Panel({ wait }: { wait: Wait }) {
   useFocusTrap(dialog, !hidden, '[data-testid="win-menu"]');
   useEffect(() => {
     if (hidden) {
+      // Hiding the results ends the outcome sting and the end music for good (docs/design/profiles.md, #1044).
+      cancelForeground();
       chip.current?.querySelector<HTMLElement>('[data-testid="win-show"]')?.focus();
       return;
     }

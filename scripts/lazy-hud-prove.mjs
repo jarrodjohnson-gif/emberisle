@@ -442,7 +442,7 @@ try {
   const stealFailedAlert = stealFailPage.getByTestId("losses-failed");
   await stealFailedAlert.waitFor({ state: "visible", timeout: STEP_MS });
   const stealAlertText = await stealFailedAlert.innerText();
-  check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("could not load") && stealAlertText.includes("Try again"), stealAlertText);
+  check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("Could not load") && stealAlertText.includes("Try again"), stealAlertText);
   await stealFailPage.screenshot({ path: "docs/proofs/1285/losses-failed-steal.png" });
 
   // Unblock losses chunk and tap Try again to recover steal picker:

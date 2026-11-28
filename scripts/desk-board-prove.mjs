@@ -1,6 +1,6 @@
 // #1180: classification, stale-head suppression, once-per-head delivery, and workflow boundaries.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { classify, reviewOf, routeFor, notifications, wakeLine, mergeLine, watchdog, watchLine, WATCH, MISSING, DAILY_LIMIT, tableFor, updateBody, sweep } from './desk-board.mjs';
 const A = 'a'.repeat(40), B = 'b'.repeat(40);
 const now = new Date('2026-10-28T03:00:00Z');
@@ -182,11 +182,6 @@ const alerts = () => watchSweep.inbox.filter(c => c.body.startsWith(WATCH)).leng
 await sweep(watchSweep.api, { now });
 eq(alerts(), 1);
 eq(fixture().body().includes('watchdog'), false);
-const workflow = readFileSync('.github/workflows/desk-board.yml', 'utf8');
-for (const required of ['workflows: [CI]', 'types: [completed]', 'types: [ready_for_review]', "cron: '17 0,8,16 * * *'", 'group: desk-board', 'cancel-in-progress: true', 'ref: ${{ github.event.repository.default_branch }}', 'persist-credentials: false', 'sparse-checkout: scripts/desk-board.mjs', 'sparse-checkout-cone-mode: false', 'issues: write']) {
-  eq(workflow.includes(required), true);
-}
-// #1215: /issues/699/comments targets the inbox PR, so its token needs PR write.
-eq(/^  pull-requests: write$/m.test(workflow), true);
-eq(/pull_request:\s|secrets\.|npm (?:ci|install)|download-artifact/.test(workflow), false);
+// #1862: the workflow that ran the sweep is retired; nothing may bring it back unreviewed.
+eq(existsSync('.github/workflows/desk-board.yml'), false);
 console.log(`desk-board-prove: ${assertions} assertions passed; classification, routes, pagination, head races, deduplication, daily cap, body preservation, workflow trust`);

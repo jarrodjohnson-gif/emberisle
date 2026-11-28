@@ -79,7 +79,7 @@ function armedCopy(mode: BuildMode, roadPicks: number): [string, string] | null 
     case "outpost":
       return ["Place an outpost", "Outpost"];
     case "stronghold":
-      return ["Pick a home to upgrade", "Upgrade"];
+      return ["Pick an outpost to upgrade", "Upgrade"];
     // #423: both fortunes are armed from the tray, and the My fortunes button stays pressed until the pick is made or cancelled.
     case "knight":
       return ["Move the wayfarer", "Play fortune"];
@@ -528,7 +528,7 @@ export function Hud() {
                 retryKey={String(lossesRetry)}
                 failed={
                   <LossesFailed
-                    message="Victim choices could not load."
+                    message="Could not load who to take from."
                     onRetry={() => setLossesRetry((r) => r + 1)}
                   />
                 }

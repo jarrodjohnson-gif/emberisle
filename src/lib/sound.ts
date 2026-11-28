@@ -122,7 +122,7 @@ export function isMuted() {
 
 export function setMuted(v: boolean) {
   muted = v;
-  if (v) stop("end_music");
+  if (v) cancelForeground();
   syncVolumes();
   syncMusic();
   syncAmbience();
@@ -156,11 +156,13 @@ const GAP_MS = 150;
 const MAX_QUEUE = 8;
 const UI: ReadonlySet<SoundName> = new Set<SoundName>(["ui_click", "ui_back", "ui_error"]);
 const asked = new Map<SoundName, number>();
-const queue: [SoundName, number, SoundCategory][] = [];
+const queue: [SoundName, number, SoundCategory, number?][] = [];
 let pacing = false;
 
 function pump() {
-  const next = queue.shift();
+  let next = queue.shift();
+  // A foreground request cancelled or cut off while it waited here starts nothing and takes no slot.
+  while (next && next[3] !== undefined && owner?.token !== next[3]) next = queue.shift();
   if (!next) {
     pacing = false;
     return;
@@ -172,21 +174,25 @@ function pump() {
 
 let extraFiles: Partial<Record<ExtraSoundName, string>> | null = null;
 const pendingExtra = new Set<SoundName>();
-function start(name: SoundName, volume: number, category: SoundCategory) {
+// `token` marks a foreground request: it starts only while it still owns the channel, and its end or refusal is reported.
+function start(name: SoundName, volume: number, category: SoundCategory, token?: number) {
   const gain = volume * categoryGain(category);
   // Music off (the saved switch) silences the stings too, not only the track.
-  if (muted || !gain || (category === "music" && !bgOn)) return;
+  if (muted || !gain || (category === "music" && !bgOn)) return void finish(token);
   const file = FILES[name as keyof typeof FILES] ?? extraFiles?.[name as ExtraSoundName];
   if (!file) {
-    if (extraFiles) return;
+    if (extraFiles) return void finish(token);
     pendingExtra.add(name);
     void import("./sound-extra").then(
       ({ EXTRA_FILES }) => {
         extraFiles = EXTRA_FILES;
-        if (pendingExtra.delete(name)) start(name, volume, category);
+        // A cancelled or replaced foreground request starts nothing, and leaves the wait for a newer request of the same clip.
+        if ((token === undefined || owner?.token === token) && pendingExtra.delete(name)) start(name, volume, category, token);
+        else finish(token);
       },
       () => {
         pendingExtra.delete(name);
+        finish(token);
       },
     );
     return;
@@ -204,11 +210,73 @@ function start(name: SoundName, volume: number, category: SoundCategory) {
     gains.set(clip, [volume, category]);
     clip.currentTime = 0;
     clip.volume = gain;
-    clip.play()?.catch(() => {});
+    if (token !== undefined) {
+      owner!.clip = clip;
+      clip.addEventListener("ended", () => finish(token), { once: true });
+    }
+    clip.play()?.catch(() => finish(token));
   } catch {
     // a blocked or unsupported file stays quiet
+    finish(token);
   }
 }
+
+// One long clip at a time (docs/design/profiles.md, "Curated media and playback"; #1044). A request below the clip that is
+// playing is dropped, never queued. A request at or above it cuts that clip off for good. Only end music waits, and only for
+// its outcome (trade-sound.ts gameEnd). Mute, a silenced category, hiding the results, Leave and a new game cancel all of it.
+// Every request owns a token, so a late play refusal, ended event or file import from a cancelled or replaced clip starts
+// nothing. The background loop stays separate (it ducks under these, as before).
+type Foreground = "outcome" | "start" | "match" | "board" | "end";
+const RANK: Record<Foreground, number> = { outcome: 4, start: 3, match: 2, board: 1, end: 0 };
+type Owner = { role: Foreground; category: SoundCategory; token?: number; clip?: HTMLAudioElement; then?: () => void };
+let owner: Owner | null = null;
+let tokens = 0;
+
+const audible = (category: SoundCategory) => unlocked && !muted && categoryGain(category) > 0 && (category !== "music" || bgOn);
+// A clip still loading its file counts as playing; a paused or finished one does not.
+const playing = () => !!owner && (!owner.clip || (!owner.clip.paused && !owner.clip.ended));
+
+function finish(token?: number) {
+  if (token === undefined || owner?.token !== token) return;
+  const then = owner.then;
+  owner = null;
+  then?.();
+}
+
+function cutOff() {
+  const clip = owner?.clip;
+  owner = null;
+  if (clip) {
+    clip.pause();
+    clip.currentTime = 0;
+  }
+}
+
+// A foreground request goes through play()'s burst filter and pacing queue like any clip. It takes the channel only once
+// that gate admits it, so a request the gate drops never cuts the playing clip off.
+let handoff: Owner | undefined;
+
+export function playForeground(name: SoundName, role: Foreground, volume = 1, category = soundCategory(name)) {
+  if (!audible(category) || (playing() && RANK[owner!.role] > RANK[role])) return;
+  handoff = { role, category };
+  play(name, volume, category);
+  handoff = undefined;
+}
+
+// Run `then` when the outcome clip ends, or at once when no outcome clip plays (end music waits behind its outcome).
+export function afterOutcome(then: () => void) {
+  if (playing() && owner!.role === "outcome") owner!.then = then;
+  else then();
+}
+
+export function cancelForeground() {
+  foregroundScope++;
+  cutOff();
+}
+
+// Async callers (a lazy chunk, a timer) check this did not change before they start a clip: a cancel in between means the
+// table moved on. A live binding, read without a call.
+export let foregroundScope = 0;
 
 export function play(name: SoundName, volume = 1, category = soundCategory(name)) {
   if (!unlocked || muted || !categoryGain(category) || typeof Audio === "undefined") return;
@@ -218,7 +286,12 @@ export function play(name: SoundName, volume = 1, category = soundCategory(name)
   const now = Date.now();
   if ((!UI.has(name) && now - (asked.get(name) ?? -GAP_MS) < GAP_MS) || queue.length >= MAX_QUEUE) return;
   asked.set(name, now);
-  queue.push([name, volume, category]);
+  if (handoff) {
+    cutOff();
+    owner = handoff;
+    handoff.token = ++tokens;
+  }
+  queue.push([name, volume, category, handoff?.token]);
   if (!pacing) pump();
 }
 
@@ -261,7 +334,7 @@ export function stop(name: SoundName) {
   const wait = later.get(name);
   if (wait) clearTimeout(wait);
   later.delete(name);
-  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) queue.splice(i, 1);
+  for (let i = queue.length - 1; i >= 0; i--) if (queue[i]![0] === name) finish(queue.splice(i, 1)[0]![3]);
   for (const [key, clip] of clips) if (key === name || key.startsWith(`${name}:`)) {
     clip.pause();
     clip.currentTime = 0;
@@ -312,6 +385,7 @@ export function setMusicOn(v: boolean) {
   } catch {
     // storage can be blocked; the toggle still holds for this page
   }
+  if (!v) dropSilenced();
   syncVolumes();
   syncMusic();
   syncAmbience();
@@ -372,7 +446,13 @@ function syncVolumes() {
     clip.volume = muted || (category === "music" && !bgOn) ? 0 : volume * categoryGain(category);
   }
 }
-subscribeSoundMix(() => { syncVolumes(); syncMusic(); syncAmbience(); });
+// A silenced category ends its long clip for good, and silenced music drops a waiting end music, so turning it back up
+// never resumes a tail.
+function dropSilenced() {
+  if (owner && !audible(owner.category)) cutOff();
+  if (!audible("music")) foregroundScope++;
+}
+subscribeSoundMix(() => { dropSilenced(); syncVolumes(); syncMusic(); syncAmbience(); });
 
 // #662: the sea-and-wind ambience at AMB_VOLUME under the Music and ambience level and the Sea sounds volume (#1163),
 // after the first gesture, while the Sea sounds switch is on, unless muted or Music is off. ambience.ts pauses it on a

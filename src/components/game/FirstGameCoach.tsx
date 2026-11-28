@@ -100,7 +100,7 @@ export function FirstGameCoach({ className, hidden }: { className?: string; hidd
     step = 2;
     text = "You gain goods when your numbers roll";
   } else if (!progress.seven && state.phase === "robber" && state.wayfarerMode !== "off" && state.dice?.reduce((a, b) => a + b, 0) === 7) {
-    text = pendingSteal ? "Pick a victim to take a good from." : "Move the wayfarer to a new hex, then pick a victim if available";
+    text = pendingSteal ? "Pick who to take from." : "Move the wayfarer, then pick who to take from.";
   } else if (state.phase === "main" && !progress.outpost) {
     text = !progress.path && ready("path") ? "Build a path first. Costs are in the menu."
       : progress.path && ready("outpost") ? "Now place an outpost at a connected corner. Costs are in the menu."

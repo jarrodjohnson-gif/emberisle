@@ -53,7 +53,7 @@ A draft PR gets no signal.
 
 - **One chat, one issue.** Never run a builder chat for days ([LANES.md](LANES.md), "Sub-agents and usage limits").
 - **No always-on chat subscribes to anything.** A builder subscribes only to its own PR, and unsubscribes when the PR is done or blocked.
-- **One work chat at a time** while Jarrod's weekly usage limit shows a warning ([`flow/dispatcher.md`](flow/dispatcher.md), step 6).
+- **Three work chats at a time** at most ([`flow/dispatcher.md`](flow/dispatcher.md), step 6).
 - **No token thresholds.** A chat ends because its work is done. The only size rule is the dispatcher's.
 - **Reviewers rely on CI** and don't rerun the suite ([REVIEWING.md](REVIEWING.md)).
 - **Each role reads only its own file** in `docs/flow/`, plus AGENTS.md.

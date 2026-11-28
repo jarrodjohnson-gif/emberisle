@@ -2,14 +2,14 @@
 // In a practice game across four viewports (320x568, 390x844, 844x390, 1280x720):
 // 1. When upgrade mode is on with eligible homes:
 //    - Every eligible home glows with the PR #848 legal-spot glow (ring, outline, disc resting on the piece base).
-//    - The turn banner shows a clear line: "Pick a home to upgrade to a stronghold".
+//    - The turn banner shows a clear line: "Pick an outpost to upgrade to a stronghold".
 //    - Shows a clear way out ("Esc cancels" on desktop; #1539: the tray's Cancel button on a phone).
 //    - Saves docs/proofs/1155/upgrade-mode-eligible-{w}x{h}.png.
 // 2. When upgrade mode is on with no eligible homes:
-//    - The turn banner shows: "No homes to upgrade".
-//    - #1539: the Build list's Stronghold row says "No homes to upgrade." (not "No spot"), and "None left." with none left.
+//    - The turn banner shows: "No outposts to upgrade".
+//    - #1539: the Build list's Stronghold row says "No outposts to upgrade." (not "No spot"), and "None left." with none left.
 //    - Clicking says why on the row and through refuseQuietly instead of doing nothing.
-//    - No homes glow (0 marks).
+//    - No outposts glow (0 marks).
 //    - Shows a clear way out ("Esc cancels" on desktop; #1539: the tray's Cancel button on a phone).
 //    - Saves docs/proofs/1155/upgrade-mode-none-{w}x{h}.png.
 // 3. Disarming via Esc or the Cancel button cleanly returns to "none" with normal turn banner.
@@ -159,8 +159,8 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   );
 
   check(
-    `${tag}: instruction clearly says "Pick a home to upgrade"`,
-    bannerText.includes("Pick a home to upgrade"),
+    `${tag}: instruction clearly says "Pick an outpost to upgrade"`,
+    bannerText.includes("Pick an outpost to upgrade"),
     bannerText,
   );
 
@@ -168,7 +168,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   const cancelShown = await page.getByTestId("build-cancel").isVisible();
   check(
     `${tag}: instruction provides clear way out (${expectedCancelWay})`,
-    isMobile || hasTouch ? bannerText === "Pick a home to upgrade" && cancelShown : bannerText.includes(expectedCancelWay) && cancelShown,
+    isMobile || hasTouch ? bannerText === "Pick an outpost to upgrade" && cancelShown : bannerText.includes(expectedCancelWay) && cancelShown,
     { bannerText, cancelShown },
   );
 
@@ -204,12 +204,12 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   });
   await drawn(page, 2);
 
-  // Check the button subtitle says "No homes"
+  // Check the button subtitle says "No outposts"
   await openList();
   const btnSubtitle = await upgradeBtn.innerText();
   check(
-    `${tag}: stronghold button subtitle displays "No homes"`,
-    btnSubtitle.includes("No homes"),
+    `${tag}: stronghold button subtitle displays "No outposts"`,
+    btnSubtitle.includes("No outposts"),
     btnSubtitle,
   );
 
@@ -228,7 +228,7 @@ for (const { w, h, isMobile, hasTouch } of VIEWPORTS) {
   const hintText = await page.getByTestId("build-why-stronghold").innerText({ timeout: 5000 }).catch(() => "");
   check(
     `${tag}: clicking button with none eligible says why in hint tooltip`,
-    hintText.includes("No homes to upgrade"),
+    hintText.includes("No outposts to upgrade"),
     { hintText },
   );
 

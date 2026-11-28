@@ -138,7 +138,7 @@ try {
         await page.keyboard.press("Escape");
         await list.waitFor({ state: "detached" });
       };
-      const BLOCKED = { "None left": { path: "None left.", outpost: "None left.", stronghold: "None left.", card: "The deck is empty." }, "No spot": { path: "No free spot.", outpost: "No free spot. Build a path first.", stronghold: "No homes to upgrade." } };
+      const BLOCKED = { "None left": { path: "None left.", outpost: "None left.", stronghold: "None left.", card: "The deck is empty." }, "No spot": { path: "No free spot.", outpost: "No free spot. Build a path first.", stronghold: "No outposts to upgrade." } };
       const readRow = () =>
         page.evaluate((KINDS) =>
           Object.fromEntries(
