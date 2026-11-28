@@ -21,6 +21,7 @@ import { fingerprint, openProfiles, ProfileError, redactOutcome, redactRows, red
 import { advanceRoomNeeds, restoredNeed, validNeeds } from "./needs.mjs";
 import { getOpenTables, maybeReleaseOpenSlot, registerOpenTable, unregisterOpenTable } from "./open-table.mjs";
 import { OUTCOME_V, isTime, openJournal, validOutcome, writeDurable } from "./result-journal.mjs";
+import { playbackOf, readPlayback } from "./outcome-playback.mjs";
 import { extensionBudget, turnExtensions } from "./turn-extension.mjs";
 import { closeTtt, resendTtt, tictactoe, TTT_CAP, TTT_RATE, TTT_TYPES } from "./tictactoe.mjs";
 
@@ -1091,6 +1092,7 @@ function pushState(room) {
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
   const turnDeadline = soonest?.turnDeadline ?? null;
   const result = resultOf(room);
+  const outcome = playbackOf(room);
   save(room);
   // The one terminal gate (#889): every route to the win (a move, a timer, a bot, takeover, rejoin) publishes through here,
   // and a finished tracked game goes out only once its final room and its pending outcome are both durable.
@@ -1111,10 +1113,11 @@ function pushState(room) {
       turnPlayer: soonest?.pid ?? null,
       serverNow: Date.now(),
       result,
+      outcome,
     });
   }
   if (!room.watchers.size) return;
-  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result });
+  const raw = JSON.stringify({ type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline, turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result, outcome });
   for (const ws of room.watchers) if (ws.readyState === ws.OPEN) ws.send(raw);
 }
 
@@ -1125,6 +1128,9 @@ function pushState(room) {
 async function settle(room) {
   const id = room.roster.gameId;
   if (room.settling === id) return;
+  // The playback projection (#1045) is read once, here, at the first settle of this game; a later profile edit or a retry
+  // below does not change it.
+  if (room.playback?.gameId !== id) room.playback = readPlayback(room.roster, room.game.winner, profiles);
   if (room.outcome?.gameId !== id) {
     // A validation error never goes away by retrying: leave this game untracked and publish it, as for a legacy room.
     try {
@@ -1580,7 +1586,7 @@ function watch(ws, msg) {
   // A finished game still being saved reaches this watcher with everyone else, through the terminal gate (#889).
   if (unsettled(room)) return;
   const soonest = room.seats.reduce((d, s) => (s.turnDeadline && (!d || s.turnDeadline < d.turnDeadline) ? s : d), null);
-  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room) });
+  send(ws, { type: "state", you: null, game: watchView(room.game), legal: legalFor(room.game, null), turnExtension: extensions(room).state(), turnDeadline: deadlineOf(room), turnPlayer: soonest?.pid ?? null, serverNow: Date.now(), result: resultOf(room), outcome: playbackOf(room) });
 }
 
 // The durable start write (#889, profiles.md "Exactly-once recording"): the new game, its UUID, start time and frozen
@@ -1615,6 +1621,7 @@ async function durableStart(ws, room, order, game, unchanged, variant = room.var
   room.game = game;
   room.roster = roster;
   room.outcome = null;
+  room.playback = null;
   room.settled = null;
   room.assisted = [];
   room.botDeclined = {};

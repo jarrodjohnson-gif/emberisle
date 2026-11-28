@@ -77,6 +77,7 @@
     "audio-recovery-prove": "node scripts/audio-recovery-prove.mjs",
     "sound-mixer-prove": "node scripts/sound-mixer-prove.mjs",
     "foreground-clip-prove": "node scripts/foreground-clip-prove.mjs",
+    "outcome-playback-prove": "node --import ./server/register.mjs scripts/outcome-playback-prove.mjs",
     "sound-lifecycle-prove": "node scripts/sound-lifecycle-prove.mjs",
     "sound-sheet-prove": "node scripts/sound-sheet-prove.mjs",
     "audio-level-prove": "node scripts/audio-level-prove.mjs",
