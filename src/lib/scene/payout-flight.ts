@@ -34,8 +34,15 @@ export const FLIGHT = {
   centreGap: 8,
 } as const;
 
-// The hand's colours (styles.css --timber … --ore), the ones the target card lights up in.
-const COLOUR: Record<Resource, string> = { timber: "#2f6a4f", clay: "#b8533d", wool: "#b2ce80", grain: "#e3c462", ore: "#63748a" };
+// The hand's colours (styles.css --timber … --ore), the ones the target card lights up in, and each good's side colour
+// (--timber-side … --ore-side), which its faces turn toward as they turn from the light.
+const COLOUR: Record<Resource, [string, string]> = {
+  timber: ["#2f6a4f", "#173d35"],
+  clay: ["#b8533d", "#74372b"],
+  wool: ["#b2ce80", "#617744"],
+  grain: ["#e3c462", "#8c722d"],
+  ore: ["#63748a", "#414d5b"],
+};
 
 export type FlightRecord = { hex: string; res: Resource; n: number; x: number; y: number; z: number; dx: number; dz: number; aimed: boolean };
 
@@ -90,13 +97,17 @@ export function pose(e: number): { lift: number; k: number; size: number } | nul
   return { lift, k: easeInOut(t / travel), size: s };
 }
 
-// One merged, unlit shape per good, about one unit across. The faces are baked lighter or darker by how they face a light
-// from the upper left, so the silhouette reads as a solid little piece without lights in the overlay.
+// One merged, unlit shape per good, about one unit across. Each face is baked between the good's colour and its side
+// colour (in linear space) by how it faces a light from the upper left, so the piece reads as solid with no lights, outline
+// or rim. A part marked `side` (the sheaf's tie) is the side colour all over.
 function shapes(): Record<Resource, THREE.BufferGeometry> {
-  const part = (g: THREE.BufferGeometry, x = 0, y = 0, z = 0, rx = 0, rz = 0, s: [number, number, number] = [1, 1, 1]) =>
-    (g.index ? g.toNonIndexed() : g).scale(...s).rotateX(rx).rotateZ(rz).translate(x, y, z).deleteAttribute("uv");
+  type Part = { g: THREE.BufferGeometry; side?: boolean };
+  const part = (g: THREE.BufferGeometry, x = 0, y = 0, z = 0, rx = 0, rz = 0, s: [number, number, number] = [1, 1, 1], side = false): Part => ({
+    g: (g.index ? g.toNonIndexed() : g).scale(...s).rotateX(rx).rotateZ(rz).translate(x, y, z).deleteAttribute("uv"),
+    side,
+  });
   const log = (z: number) => part(new THREE.CylinderGeometry(0.23, 0.23, 1, 8), 0, 0, z, 0, Math.PI / 2);
-  const geos: Record<Resource, THREE.BufferGeometry[]> = {
+  const parts: Record<Resource, Part[]> = {
     timber: [log(-0.24), log(0.24), part(new THREE.CylinderGeometry(0.21, 0.21, 0.9, 8), 0, 0.36, 0, 0, Math.PI / 2)],
     clay: [part(new THREE.BoxGeometry(0.95, 0.45, 0.55))],
     wool: [
@@ -104,23 +115,32 @@ function shapes(): Record<Resource, THREE.BufferGeometry> {
       part(new THREE.IcosahedronGeometry(0.36, 1), 0.2, -0.05, 0.05),
       part(new THREE.IcosahedronGeometry(0.34, 1), 0, 0.22, -0.05),
     ],
+    // A sheaf: the spread ears, the tie, and the stalks splaying below it.
     grain: [
-      part(new THREE.CylinderGeometry(0.34, 0.14, 0.62, 9), 0, 0.2, 0),
-      part(new THREE.CylinderGeometry(0.14, 0.24, 0.34, 9), 0, -0.28, 0),
+      part(new THREE.CylinderGeometry(0.46, 0.17, 0.5, 9), 0, 0.2, 0),
+      part(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 9), 0, -0.1, 0, 0, 0, [1, 1, 1], true),
+      part(new THREE.CylinderGeometry(0.17, 0.36, 0.34, 9), 0, -0.33, 0),
     ],
     ore: [part(new THREE.OctahedronGeometry(0.5, 0), 0, 0, 0, 0, 0, [1, 0.8, 0.85])],
   };
   const light = new THREE.Vector3(-0.5, 0.8, 0.6).normalize();
   const n = new THREE.Vector3();
+  const c = new THREE.Color();
   return Object.fromEntries(
     RESOURCES.map((r) => {
-      const g = mergeGeometries(geos[r])!;
-      geos[r].forEach((x) => x.dispose());
-      g.computeVertexNormals();
-      const normals = g.getAttribute("normal");
-      const shade = new Float32Array(normals.count * 3);
-      for (let i = 0; i < normals.count; i++) shade.fill(0.62 + 0.38 * Math.max(0, n.fromBufferAttribute(normals, i).dot(light)), i * 3, i * 3 + 3);
-      g.setAttribute("color", new THREE.BufferAttribute(shade, 3));
+      const fill = new THREE.Color(COLOUR[r][0]), side = new THREE.Color(COLOUR[r][1]);
+      for (const { g, side: tie } of parts[r]) {
+        g.computeVertexNormals();
+        const normals = g.getAttribute("normal");
+        const rgb = new Float32Array(normals.count * 3);
+        for (let i = 0; i < normals.count; i++) {
+          c.copy(fill).lerp(side, tie ? 1 : 1 - Math.max(0, n.fromBufferAttribute(normals, i).dot(light)));
+          rgb.set([c.r, c.g, c.b], i * 3);
+        }
+        g.setAttribute("color", new THREE.BufferAttribute(rgb, 3));
+      }
+      const g = mergeGeometries(parts[r].map((x) => x.g))!;
+      parts[r].forEach((x) => x.g.dispose());
       return [r, g];
     }),
   ) as Record<Resource, THREE.BufferGeometry>;
@@ -134,7 +154,7 @@ export class PayoutFlights {
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.OrthographicCamera(0, 1, 0, -1, -100, 100);
   private geos = shapes();
-  private mats = Object.fromEntries(RESOURCES.map((r) => [r, new THREE.MeshBasicMaterial({ color: COLOUR[r], vertexColors: true, toneMapped: false })])) as Record<Resource, THREE.MeshBasicMaterial>;
+  private mats = Object.fromEntries(RESOURCES.map((r) => [r, new THREE.MeshBasicMaterial({ vertexColors: true, toneMapped: false })])) as Record<Resource, THREE.MeshBasicMaterial>;
   private pool: THREE.Mesh[] = [];
   batch: Batch | null = null;
   // Proofs read these: what was admitted, and how each batch ended.

@@ -261,22 +261,23 @@ try {
     }));
   });
 
-  // Freeze the page's clock `ms` after admission, draw, and screenshot with the goods and without them.
+  // Freeze the page's clock `ms` after admission and draw one frame with the goods, then the same frame without them (the
+  // overlay hidden), and screenshot each. The draw is called directly, so neither shot waits on the loop's frame pacing.
   const stills = async (page, tag, list) => {
     for (const ms of list) {
-      await page.evaluate((ms) => {
-        const fl = window.__isle.flights;
+      const shown = await page.evaluate((ms) => {
+        const i = window.__isle, fl = i.flights;
         window.__realNow ??= performance.now.bind(performance);
         const at = fl.batch.t0 + ms;
         performance.now = () => at;
-        window.__isle.wake();
+        i.draw();
+        return fl.scene.children.filter((m) => m.visible).length;
       }, ms);
-      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
       await page.screenshot({ path: join(OUT, `${tag}-after-${ms}ms.png`) });
-      await page.evaluate(() => { window.__isle.flights.scene.visible = false; window.__isle.wake(); });
-      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r)))));
+      await page.evaluate(() => { const i = window.__isle; i.flights.scene.visible = false; i.draw(); });
       await page.screenshot({ path: join(OUT, `${tag}-before-${ms}ms.png`) });
       await page.evaluate(() => { window.__isle.flights.scene.visible = true; });
+      console.log(`still ${tag} ${ms} ms: ${shown} goods drawn`);
     }
     await page.evaluate(() => { performance.now = window.__realNow; delete window.__realNow; window.__isle.wake(); });
   };
@@ -328,6 +329,21 @@ try {
         await page.evaluate(async (st) => { const x = structuredClone(st); x.rolls += 2; x.seq += 2; window.__push(x); await window.__skip(); }, f.rolled);
         await page.waitForFunction(() => window.__isle.flights.batch?.t0 !== undefined, null, { timeout: STEP_MS });
         await stills(page, `${test.width}x${test.height}`, [60, 330, 420]);
+        await page.waitForFunction(() => !window.__isle.flights.batch, null, { timeout: STEP_MS });
+        // All five goods, each from the hex of its own terrain lowest on screen, so their paths cross the sea to the hand.
+        const five = await page.evaluate(() => {
+          const i = window.__isle, s = window.__emberisle.getState().state;
+          const lastProduction = ["timber", "clay", "wool", "grain", "ore"].map((res) => {
+            const [low] = s.hexes.filter((h) => h.terrain === res).sort((a, b) => i.screenOf(b.id).y - i.screenOf(a.id).y);
+            return { hex: low.id, player: "p0", res, n: 1 };
+          });
+          i.flights.capture({ ...s, lastProduction }, "p0");
+          return lastProduction;
+        });
+        await page.waitForFunction(() => window.__isle.flights.batch?.t0 !== undefined || !window.__isle.flights.batch, null, { timeout: STEP_MS });
+        const slots = await page.evaluate(() => window.__isle.flights.batch?.slots.map((x) => x.res) ?? []);
+        check(`${tag}: all five goods admitted for the stills`, slots.length === 5, { five, slots });
+        if (slots.length) await stills(page, `${test.width}x${test.height}-five`, [60, 200, 330, 420]);
       }
       if (test.full) await lifecycle(page, tag);
     } finally {
@@ -484,7 +500,7 @@ try {
       const after = { batch: !!fl.batch, t0: fl.batch?.t0, why: fl.log.at(-1) };
       await window.__until(() => !fl.batch);
       const visible = fl.scene.children.filter((m) => m.visible).length;
-      const last = Math.max(...window.__rec.frames.filter((f) => f.t0 === t0).map((f) => f.t));
+      const last = Math.max(...window.__rec.frames.filter((f) => f.t0 === t0 && f.objs.some((o) => o.vis)).map((f) => f.t));
       return { ...after, sameT0: after.t0 === t0, end: fl.log.at(-1), visible, lastFrame: last - t0 };
     }, { fn, arg });
 
