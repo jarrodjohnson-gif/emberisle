@@ -9,13 +9,18 @@ import type { GameState } from "@/lib/game/types";
 // A player has 15 paths; a larger network is malformed, and the banner is left off rather than searched.
 export const MAX_STRIPS = 15;
 const STRIP_SPAN = 0.6; // of the edge's length
-const STRIP_W = 0.055;
+// #1893, owner answer B: about 1.5 times the #743 width, so the face reads at phone size.
+const STRIP_W = 0.085;
 export const STRIP_LIFT = 0.045; // above the resting path's top
-export const POLE_H = 0.12;
-export const PENNANT_W = 0.1;
-// The pieces' rim pair (RIM in palette.ts): a dark outer edge and a light seam, so pale and dark seats both read.
+// #1893, owner answer B: the flag is about 1.5 times the #743 size.
+export const POLE_H = 0.18;
+export const PENNANT_W = 0.15;
+const PENNANT_H = 0.09;
+// #1893, owner answer B: a cream face for every seat, so the banner never matches the path under it. The seat shows in a
+// band around the face, inside the pieces' dark rim (RIM in palette.ts), so pale and dark seats both read.
 const EDGE = "#1c1916";
-const SEAM = "#fff6e8";
+export const FACE = "#fff6e8";
+const BAND = 0.005;
 
 export type AwardThree = Pick<
   typeof THREE,
@@ -95,7 +100,9 @@ export function buildAwards(plan: AwardPlan, anchors: AwardAnchors, material: TH
     group.add(mesh);
   };
   if (plan.road) {
-    const face = plan.road.color;
+    const seat = plan.road.color;
+    const c = new T.Color(seat);
+    const face = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b > 0.5 ? EDGE : FACE;
     for (const s of plan.road.segs) {
       const a = anchors.at(s.from);
       const b = anchors.at(s.to);
@@ -105,8 +112,8 @@ export function buildAwards(plan: AwardPlan, anchors: AwardAnchors, material: TH
       const fork = STRIP_W * 0.6;
       const geo = flat([
         { tris: strip(len, STRIP_W, fork), color: EDGE, z: 0 },
-        { tris: strip(len - 0.012, STRIP_W - 0.012, fork), color: face, z: 0.001 },
-        { tris: strip(len - fork * 2 - 0.02, 0.008, 0), color: SEAM, z: 0.002 },
+        { tris: strip(len - 0.006, STRIP_W - 0.006, fork), color: seat, z: 0.001 },
+        { tris: strip(len - 0.006 - BAND * 2, STRIP_W - 0.006 - BAND * 2, fork), color: face, z: 0.002 },
       ]);
       // Laid flat: the shape's +Y runs along the edge, its face up.
       geo.rotateX(-Math.PI / 2);
@@ -120,19 +127,19 @@ export function buildAwards(plan: AwardPlan, anchors: AwardAnchors, material: TH
     const v = anchors.at(plan.army.vertex);
     const roof = anchors.top(`v:${plan.army.vertex}`);
     if (v && roof !== undefined) {
-      const pole = new T.CylinderGeometry(0.007, 0.007, POLE_H, 6);
+      const pole = new T.CylinderGeometry(0.009, 0.009, POLE_H, 6);
       pole.translate(0, POLE_H / 2, 0);
       const pc = pole.getAttribute("position").count;
       const dark = new T.Color(EDGE);
       pole.setAttribute("color", new T.Float32BufferAttribute(Array.from({ length: pc }, () => [dark.r, dark.g, dark.b]).flat(), 3));
-      // The pennant stands in the XY plane, flying toward +x: a dark edge, the seat's face and a light seam on each side.
-      const tri = (inset: number): P[] => [[inset, POLE_H - inset], [inset, POLE_H - 0.06 + inset], [PENNANT_W - inset * 2, POLE_H - 0.03]];
-      const seam: P[] = [[0.012, POLE_H - 0.0315], [0.012, POLE_H - 0.0285], [0.07, POLE_H - 0.03]];
+      // The pennant stands in the XY plane, flying toward +x: a dark edge, a cream band and the seat's face, on each side, so
+      // it shows whose it is and still parts from a stronghold of the same colour.
+      const tri = (inset: number): P[] => [[inset, POLE_H - inset], [inset, POLE_H - PENNANT_H + inset], [PENNANT_W - inset * 2, POLE_H - PENNANT_H / 2]];
       const seat = plan.army.color;
       const pennant = flat([
         { tris: [tri(0)], color: EDGE, z: 0 },
-        ...[0.001, -0.001].map((z) => ({ tris: [tri(0.006)], color: seat, z })),
-        ...[0.0015, -0.0015].map((z) => ({ tris: [seam], color: SEAM, z })),
+        ...[0.001, -0.001].map((z) => ({ tris: [tri(0.005)], color: FACE, z })),
+        ...[0.0015, -0.0015].map((z) => ({ tris: [tri(0.005 + BAND * 2)], color: seat, z })),
       ]);
       for (const g of [pole, pennant]) {
         const m = new T.Mesh(g, material);

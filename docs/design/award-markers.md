@@ -97,13 +97,13 @@ Draw one narrow cloth strip on each edge in the chosen witness.
 Together these strips form the banner along the route, including legal turns and loops.
 Leave gaps at vertices so junctions, buildings and legal corner rings remain readable.
 Use each edge midpoint, `edgeTop`, and the current path's orientation.
-Each strip spans 60% of its edge length and measures at most 0.055 world units across.
+Each strip spans 60% of its edge length and measures at most 0.085 world units across (#1893, owner answer B: 0.055 did not read at phone size).
 Place its face 0.045 world units above the resting path's upper surface.
 Resolve that surface from current piece geometry bounds during construction.
 Store the resulting scalar height, never the piece mesh.
 
-Use the holder's seat colour for the face.
-Add a dark outer edge and a light inner seam so pale and dark seats remain distinguishable.
+The face contrasts with the path under it (#1893, owner answer B): cream for a dark seat, dark for a pale seat such as Dune.
+The holder's seat colour shows as a band around the face, inside a dark outer edge.
 Use a forked end silhouette; colour alone must not identify the decoration.
 Use opaque materials with depth testing enabled and no shadows.
 Do not use glow, pulsing, cloth simulation, billboarding or always-on-top rendering.
@@ -134,8 +134,8 @@ If the new holder lacks a stronghold, only the old flag disappears.
 Use one short pole and one pennant above the selected stronghold's resting roof.
 Resolve the roof from the current stronghold geometry bounds.
 Place the pole at the vertex centre, starting at the roof's upper surface.
-Limit pole height to 0.12 world units and pennant width to 0.10.
-Use a triangular pennant, seat-coloured face, dark edge and light seam.
+Limit pole height to 0.18 world units and pennant width to 0.15 (#1893, owner answer B: about 1.5 times the first size).
+Use a triangular pennant: seat-coloured face, a cream band around it and a dark edge.
 Orient it along world positive X, independent of camera and wind.
 Suppress the flag while that stronghold lands, using `v:<id>`.
 Suppress it while its corner has an active legal or pending-placement cue.
