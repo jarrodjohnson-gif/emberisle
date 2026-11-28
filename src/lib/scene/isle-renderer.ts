@@ -518,7 +518,9 @@ export class IsleRenderer {
   private async attachSsao() {
     const { makeSsao } = await import("./ssao-attach.ts");
     if (this.stopped) return;
-    const ssao = makeSsao(this.scene, this.cam());
+    // As on main: built on the perspective camera (its near and far), then pointed at the current view's camera, as setView does.
+    const ssao = makeSsao(this.scene, this.camera);
+    ssao.camera = this.cam();
     ssao.enabled = !this.titleMode && !this.play();
     this.composer.insertPass(ssao, 1);
     this.ssao = ssao;
