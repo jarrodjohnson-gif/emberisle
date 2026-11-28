@@ -1024,8 +1024,21 @@ const total = (g, r) => g.bank[r] + g.players.reduce((n, p) => n + p.resources[r
   const w = Object.assign(createGame({ humans: [{ name: "A" }], bots: 2, seed: 4, wayfarerMode: "off" }), { phase: "roll", current: "p0" });
   const home = w.robberHex;
   const seven = rollTo(w, 7);
-  const move = applyAction(seven, "p0", { type: "moveRobber", hexId: w.hexes.find((h) => h.id !== home && h.terrain !== "waste").id, stealFrom: null });
-  ok("in Wayfarer Off, no wayfarer moves", seven.phase === "main" && seven.robberHex === home && seven.hexes.every((h) => !h.blocked) && Boolean(move.error), { phase: seven.phase, error: move.error });
+  ok("in Wayfarer Off, a rolled 7 goes straight to main and the wayfarer stays", seven.phase === "main" && seven.robberHex === home && seven.hexes.every((h) => !h.blocked), seven.phase);
+  const land = w.hexes.find((h) => h.id !== home && h.terrain !== "waste").id;
+  const forced = Object.assign(structuredClone(w), { phase: "robber" });
+  const move = applyAction(forced, "p0", { type: "moveRobber", hexId: land, stealFrom: null });
+  ok("in Wayfarer Off, moveRobber is refused and the wayfarer stays", move.error === "The wayfarer is off at this table." && forced.robberHex === home && move.state.robberHex === home, move.error);
+  const muster = Object.assign(structuredClone(w), { phase: "main" });
+  muster.players[0].hidden.knight = 1;
+  const named = applyAction(muster, "p0", { type: "playKnight", hexId: land, stealFrom: null });
+  ok("in Wayfarer Off, a Muster that names land is refused", named.error === "Muster needs no land or target." && named.state.players[0].hidden.knight === 1, named.error);
+  const played = applyAction(muster, "p0", { type: "playKnight", hexId: "", stealFrom: null });
+  ok(
+    "in Wayfarer Off, a Muster with no land succeeds and nothing moves",
+    !played.error && played.state.robberHex === home && played.state.hexes.every((h) => !h.blocked) && played.state.players[0].knightsPlayed === 1,
+    played.error,
+  );
 }
 
 console.log("rules prove ok");
