@@ -11,7 +11,7 @@ The issue column lists numbers named in each script's opening comment.
 | `capture-crops.mjs` | `node scripts/capture-crops.mjs` | Captures pile crops under `test-results/issue-1158/` and `docs/proofs/1158/`. | No | None |
 | `capture-phone-board.mjs` | `node scripts/capture-phone-board.mjs [before\|after]` | Captures phone boards under `docs/proofs/1158/`; defaults to `after`. | No | None |
 | `design-shots.mjs` | `node scripts/design-shots.mjs` | Writes screenshots and `metrics.json` under `SHOTS_OUT`, defaulting to `test-results/design/`; needs the app on port 8080. | No | None |
-| `desk-board.mjs` | `node scripts/desk-board.mjs [--dry-run]` | Updates the #916 board and posts bounded #699 notifications; requires the workflow environment. | Yes: `desk-board.yml` | #1180 |
+| `desk-board.mjs` | `node scripts/desk-board.mjs [--dry-run]` | Updates the #916 board and posts bounded #699 notifications; requires the workflow environment. | No: its workflow was retired in #1862; `classify`, `reviewOf` and `rest` now live in `pr-signal.mjs` | #1180 |
 | `desk-gate.mjs` | `node scripts/desk-gate.mjs` | Posts the head's `desk-gate` status from review footers; requires the workflow environment. | Yes: `desk-gate.yml` | None |
 | `dock-piles-audit.mjs` | `node scripts/dock-piles-audit.mjs` | Prints visibility measurements across seeds and token modes; writes no files. | No | #1158 |
 | `emberisle-up.sh` | `bash scripts/emberisle-up.sh` | Updates main, starts the host and tunnel, and writes state and logs under `~/.emberisle-up/`. | No | None |
@@ -38,7 +38,7 @@ The issue column lists numbers named in each script's opening comment.
 | `seat-tray-prove.mjs` | `npm run seat-tray-prove` | Verifies one-tray seats without boxes, 44px targets, and contrast across viewports. | Yes: `ci.yml` (`npm run seat-tray-prove`) | #1544 |
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
 | `stale-pr-sweeper.mjs` | `node scripts/stale-pr-sweeper.mjs` | Records activity and closes stale PRs when `STALE_PR_SWEEPER=on`; otherwise prints `disabled`. | Yes: `stale-pr-sweeper.yml` | None |
-| `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `trade-map.yml`, `ci.yml` (`npm run trade-map-test`) | #536 |
+| `trade-map.test.mjs` | `npm run trade-map-test` | Checks trade previews and settlement, writing `test-results/trade-map-*.png`. | Yes: `ci.yml` (`npm run trade-map-test`) | #536 |
 | `trade-sheet-prove.mjs` | `npm run trade-sheet-prove` | Verifies one-tray trade sheet tokens, sentence wording, need dots, and bank trade states. | Yes: `ci.yml` (`npm run trade-sheet-prove`) | #1537 |
 | `tray-prove.mjs` | `npm run tray-prove` | Verifies one-tray HUD three parts, BuildList sheet, armed actions, and insets across viewports. | Yes: `ci.yml` (`npm run tray-prove`) | #1539 |
 | `tunnel-reconnect-prove.mjs` | `npm run tunnel-reconnect-prove` | Simulates phone-lock and Wi-Fi switch reconnect flows against real host rules. | Yes: `ci.yml` (`npm run tunnel-reconnect-prove`) | #197 |

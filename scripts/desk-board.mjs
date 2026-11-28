@@ -1,65 +1,16 @@
 #!/usr/bin/env node
 // #1180: API-only desk sweep. Never executes a PR's code or makes a merge decision.
-import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
+import { SHA, classify, reviewOf, routeFor, rest, trusted } from './pr-signal.mjs';
+export { classify, reviewOf, routeFor, rest };
 
-const SHA = /^[0-9a-f]{40}$/;
-const TRUSTED = ['OWNER', 'MEMBER', 'COLLABORATOR'];
 const START = '<!-- desk-board:start -->';
 const END = '<!-- desk-board:end -->';
 export const DAILY_LIMIT = 24; // Strictly fewer than 25 board notifications per UTC day.
 export const MISSING = 'To desk: desk-board found review comments without a valid Head: footer or clean marker; please add full head SHAs.';
-const trusted = c => TRUSTED.includes(c.author_association);
-const reviewHeading = body => /^(?:#+\s*)?re(?:-?re)?view\b/i.test(body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, ''));
-const text = c => String(c.body ?? '').replace(/```[^]*?```|~~~[^]*?~~~/g, '').replace(/^>.*$/gm, '');
 
-export function reviewOf(comments) {
-  const latest = comments.filter(trusted).filter(c => {
-    const body = text(c);
-    return /<!--\s*review-desk(?:\s*-->|:\s*clean\s)/.test(body)
-      && (/\bHead:\s*[0-9a-f]{40}(?![0-9a-f])/.test(body)
-        || /<!--\s*review-desk:\s*clean\s+[0-9a-f]{40}\s*-->/.test(body) || reviewHeading(body));
-  })
-    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id - b.id).at(-1);
-  if (!latest) return { sha: null, clean: false, missing: false, visual: false };
-  const body = text(latest);
-  const marker = [...body.matchAll(/<!--\s*review-desk:\s*clean\s+([0-9a-f]{40})\s*-->/g)].at(-1)?.[1];
-  const footer = [...body.matchAll(/\bHead:\s*([0-9a-f]{40})(?![0-9a-f])/g)].at(-1)?.[1];
-  const sha = footer ?? marker;
-  const conflict = marker && footer && marker !== footer;
-  // Legacy prose verdicts are accepted only in the review heading, never arbitrary mentions of "clean".
-  const heading = body.replace(/<!--[\s\S]*?-->/g, '').trim().split('\n')[0].replace(/\*\*/g, '');
-  // DESK.md's own format: the first line after the marker is exactly "Clean.".
-  const clean = !conflict && (marker === sha || /^clean[.!]?$/i.test(heading.trim()) || (/\bre-?review\b|\breview\b/i.test(heading)
-    && /(?:\(clean\)(?:\s*[.!](?:\s|$)|\s*$)|:\s*clean(?:\s*[.!](?:\s|$)|\s*$))/i.test(heading) && !/\bnot clean\b/i.test(heading)));
-  const visual = /(?:Jarrod|owner)[^\n.]{0,100}(?:must see|sign.off|approval|accept)|(?:waiting|pending|needs?)[^\n.]{0,60}(?:Jarrod|owner)|(?:visual|pictures?|audio)[^\n.]{0,80}(?:first|pending|approval|sign.off)/i.test(body) || /(?:[Jj]arrod|[Oo]wner)[^\n.]{0,100}\bOK\b/.test(body);
-  return { sha: conflict ? null : sha ?? null, clean: Boolean(clean), missing: !sha || Boolean(conflict), visual };
-}
 
-export function routeFor(files) {
-  const paths = files.flatMap(f => [f.filename, f.previous_filename].filter(Boolean));
-  if (!paths.length || paths.some(p => /^(server|scripts|\.github)\//i.test(p) || /(^|\/)(proto(?:col)?|wire)([./-]|$)/i.test(p))) return 'Opus';
-  return paths.every(p => /\.(md|mdx|rst|txt)$/i.test(p) || (/^docs\//.test(p) && /\.(png|jpe?g|webp|svg|pdf)$/i.test(p))) ? 'Haiku' : 'Sonnet';
-}
 
-export function classify({ pr, files, checks, comments, current = pr }) {
-  const sha = pr.head?.sha;
-  const review = reviewOf(comments);
-  const row = { number: pr.number, sha, route: routeFor(files), reviewed: review.sha, missing: review.missing,
-    bucket: 'Red / waiting', reason: '', checks: 'waiting' };
-  const no = reason => ({ ...row, reason });
-  if (!SHA.test(sha ?? '') || current.head?.sha !== sha || current.state !== 'open' || current.draft) return no('head moved or PR not ready');
-  if (!files.length || files.length !== pr.changed_files) return no('incomplete diff paths');
-  const runs = checks.filter(c => c.name === 'checks' && c.app?.id === 15368);
-  if (!runs.length) return no('no checks on head');
-  row.checks = runs.every(c => c.head_sha === sha && c.status === 'completed' && c.conclusion === 'success') ? 'green' : 'red / pending';
-  if (row.checks !== 'green') return no('checks not green on exact head');
-  if (review.missing) return no('review footer missing');
-  if (review.sha !== sha) return { ...row, bucket: 'Ready for desk', reason: 'unreviewed head' };
-  if (!review.clean) return no('desk findings or unrecognized verdict');
-  if (review.visual) return { ...row, bucket: 'Ready for Jarrod', reason: 'visual / audio sign-off pending' };
-  return { ...row, bucket: 'Ready to merge', reason: 'clean review at head; checks green' };
-}
 
 // Watchdog: the desk rotates itself daily (DESK.md rule 6). A dead or stale desk can't
 // report its own death, so this script, which needs no session tools, checks the ledger.
@@ -114,16 +65,6 @@ export function updateBody(body, table) {
   return body.slice(0, start) + table + body.slice(end + END.length);
 }
 
-// gh api provides REST transport locally and in Actions, using the configured credential normally.
-export function rest(repo) {
-  if (!/^[\w.-]+\/[\w.-]+$/.test(repo ?? '')) throw new Error('invalid GITHUB_REPOSITORY');
-  return async (path, method = 'GET', body) => {
-    if (!path.startsWith('/')) throw new Error('invalid API path');
-    const args = ['api', `repos/${repo}${path}`, '-X', method];
-    if (body) args.push('--input', '-');
-    return JSON.parse(execFileSync('gh', args, { input: body ? JSON.stringify(body) : undefined, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }));
-  };
-}
 export async function sweep(api, { now = new Date(), dryRun = false, only } = {}) {
   const all = async (path, key) => {
     const out = [];
