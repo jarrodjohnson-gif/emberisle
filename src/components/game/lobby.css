@@ -428,3 +428,16 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-he
 @container style(--lobby-big: 1) {
   html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules > .lobby-rule-status { flex: 1 0 auto; }
 }
+/* #1709, look decision C (PR #1905, 2026-11-28): on a short landscape screen the tab row can't hold "Wayfarer on" beside a
+   one-line "Play games", so the caption takes its own line under the tabs, uncut, on both tabs. At 100% text only; above it
+   #1750's wrap already does this. Portrait and desktop are untouched. */
+@media (max-height: 600px) and (orientation: landscape) {
+  @container not style(--lobby-big: 1) {
+    html .lobby-layout .lobby-layout-cover > .lobby-rules { flex-wrap: wrap; height: auto; min-height: 44px; row-gap: 4px; }
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status { flex: 1 0 100%; height: auto; min-height: 0; padding-left: 0; }
+    html .lobby-layout .lm button:last-child { width: auto; white-space: nowrap; }
+    html .lobby-layout .lm button:last-child span { max-width: none; }
+  }
+  /* Play games keeps today's fixed rows except this one, so the caption line has room there too. */
+  html .lobby-layout .lobby-layout-cover:has(> .ly) { grid-template-rows: 44px max-content minmax(0, 1fr) 44px; }
+}

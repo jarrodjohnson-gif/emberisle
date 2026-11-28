@@ -1,5 +1,6 @@
-// #1709: pictures of the lobby's left column today, and mock pictures of the options for the Question on the PR.
-// Not a proof: it asserts nothing. It runs a real host and the Vite dev server, seats Jarrod (host), Josh and two bots,
+// #1709: pictures of the lobby's left column. `node docs/proofs/1709/capture.mjs` on main took the today-* pictures and the
+// option mocks for the Question on PR #1905; `node docs/proofs/1709/capture.mjs after` on this branch takes the built after-*
+// pictures (option C, the look decision), with no mock. Not a proof: it asserts nothing. It runs a real host and the Vite dev server, seats Jarrod (host), Josh and two bots,
 // and captures the Table tab and the Sandwich Stacker wait box. A mock is one extra stylesheet laid over today's CSS;
 // no game file changes. Run from the repository root: node docs/proofs/1709/capture.mjs
 import { spawn } from "node:child_process";
@@ -11,6 +12,7 @@ import { chromium } from "../../../scripts/proof-browser.mjs";
 import { hostPort as waitForHostPort } from "../../../scripts/proof-host-port.mjs";
 
 const out = "docs/proofs/1709";
+const after = process.argv[2] === "after";
 // The mocks touch only short landscape screens, where #1709 was seen; portrait and desktop stay as they are.
 const LAND = "@media (max-height: 600px) and (orientation: landscape)";
 const ONE_LINE_TAB = `html .lobby-layout .lm button:last-child { width: auto !important; white-space: nowrap !important; }
@@ -62,7 +64,9 @@ async function measure(page) {
     const lines = (el) => { const r = document.createRange(); r.selectNodeContents(el); return new Set([...r.getClientRects()].map((x) => Math.round(x.top))).size; };
     const shown = [...document.querySelectorAll('[data-testid="lobby-caption"], .lobby-head-rule')].find((el) => el.getBoundingClientRect().width > 0);
     const tabs = [...document.querySelectorAll('.lobby-rules [role="tab"], .lobby-rules > button')].map((el) => ({ name: el.textContent.trim(), height: Math.round(el.getBoundingClientRect().height), lines: lines(el) }));
-    return { caption: shown ? { text: shown.textContent, cut: shown.scrollWidth > shown.clientWidth + 0.5 } : "hidden", tabs };
+    const style = shown && getComputedStyle(shown), card = document.querySelector(".lobby-cover");
+    const left = shown && Math.round(shown.getBoundingClientRect().left - document.querySelector(".lobby-rules").getBoundingClientRect().left);
+    return { caption: shown ? { text: shown.textContent, cut: shown.scrollWidth > shown.clientWidth + 0.5, font: `${style.fontSize}/${style.lineHeight} ${style.fontWeight} ${style.color}`, left } : "hidden", tabs, cardScrolls: card.scrollHeight > card.clientHeight + 1 };
   });
 }
 
@@ -89,8 +93,10 @@ async function shoot(name, viewport, mock) {
 }
 
 const sizes = [[844, 390], [667, 375], [440, 956], [956, 440], [1280, 720]];
-for (const [width, height] of sizes) await shoot(`today-${width}x${height}`, { width, height });
-for (const mock of Object.keys(MOCKS)) for (const [width, height] of sizes) await shoot(`${mock}-${width}x${height}`, { width, height }, mock);
+const pre = after ? "after" : "today";
+const mocks = after ? [] : Object.keys(MOCKS);
+for (const [width, height] of sizes) await shoot(`${pre}-${width}x${height}`, { width, height });
+for (const mock of mocks) for (const [width, height] of sizes) await shoot(`${mock}-${width}x${height}`, { width, height }, mock);
 
 // The wait box: Play games, then Sandwich Stacker.
 await host1.setViewportSize({ width: 844, height: 390 });
@@ -98,9 +104,9 @@ await host1.getByRole("tab", { name: "Play games" }).click();
 await host1.locator(".lt button").click();
 await host1.getByTestId("lobby-wait").waitFor();
 await host1.waitForFunction(() => !/Loading/.test(document.querySelector('[data-testid="lobby-wait-status"]')?.textContent ?? "Loading"), null, { timeout: 25000 });
-for (const [width, height] of sizes.slice(0, 2)) {
-  await shoot(`today-${width}x${height}-wait`, { width, height });
-  for (const mock of Object.keys(MOCKS)) await shoot(`${mock}-${width}x${height}-wait`, { width, height }, mock);
+for (const [width, height] of after ? [sizes[0], sizes[1], sizes[3]] : sizes.slice(0, 2)) {
+  await shoot(`${pre}-${width}x${height}-wait`, { width, height });
+  for (const mock of mocks) await shoot(`${mock}-${width}x${height}-wait`, { width, height }, mock);
 }
 
 await browser.close();
