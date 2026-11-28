@@ -38,7 +38,7 @@ const VIEWS = [
 const KINDS = Object.keys(COST);
 const NONE = { timber: 0, clay: 0, wool: 0, grain: 0, ore: 0 };
 const RICH = { timber: 5, clay: 5, wool: 5, grain: 5, ore: 5 };
-const NO_SPOT = { path: "No free spot.", outpost: "No free spot. Build a path first.", stronghold: "No homes to upgrade." };
+const NO_SPOT = { path: "No free spot.", outpost: "No free spot. Build a path first.", stronghold: "No outposts to upgrade." };
 
 // A practice game past setup, in `main` for the person (p0). `spot` grows p0's paths until an outpost has a legal corner.
 function game({ hand = NONE, spot = false, held = 0, phase = "main", current = "p0", patch } = {}) {

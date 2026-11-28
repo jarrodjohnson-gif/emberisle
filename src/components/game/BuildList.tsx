@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const NO_SPOT: Record<Price, string> = {
   path: "No free spot.",
   outpost: "No free spot. Build a path first.",
-  stronghold: "No homes to upgrade.",
+  stronghold: "No outposts to upgrade.",
   card: "",
 };
 

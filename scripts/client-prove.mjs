@@ -826,7 +826,7 @@ try {
   const empty = await buildRow();
   // #606: a build with no legal spot reads No spot before it reads Need.
   console.log("build row, empty hand:", JSON.stringify(empty));
-  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (You need|No free spot|No homes to upgrade)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
+  for (const [n, p] of Object.entries(price)) if (!empty[n].disabled || empty[n].native || empty[n].cursor !== "not-allowed" || empty[n].title !== p || !new RegExp(`^${p} · (You need|No free spot|No outposts to upgrade)`).test(empty[n].desc)) throw new Error(`empty hand ${n}: ${JSON.stringify(empty[n])}`);
   // #302: an unaffordable button is still in the Tab order, reports aria-disabled and its price, and a click neither arms nor buys.
   await page.evaluate(() => document.activeElement?.blur());
   let tabbedTo = null;

@@ -211,7 +211,7 @@ try {
   const ARMED = {
     Path: "Place a path · Esc cancels",
     Outpost: "Place an outpost · Esc cancels",
-    Stronghold: "Pick a home to upgrade · Esc cancels",
+    Stronghold: "Pick an outpost to upgrade · Esc cancels",
   };
   const arm = async (name, heading) => {
     // #1539: the builds are rows in the Build list, opened from the tray's Build button.
