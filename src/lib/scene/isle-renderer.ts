@@ -32,7 +32,7 @@ import { readViewport } from "../viewport";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
-import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
+import type { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { worldOfHex } from "@/lib/game/board";
@@ -213,7 +213,8 @@ export class IsleRenderer {
   private living = new THREE.Group();
   private pickables: THREE.Object3D[] = [];
   private composer!: EffectComposer;
-  private ssao!: SSAOPass;
+  // #1857: null until the lazy ssao-attach chunk arrives, a moment after the first frame.
+  private ssao: SSAOPass | null = null;
   private renderPass!: RenderPass;
   private wayfarer: THREE.Group;
   // The wayfarer's figure (bruno.ts): his idle peeking and his scurry.
@@ -494,15 +495,11 @@ export class IsleRenderer {
     this.composer = new EffectComposer(this.renderer);
     this.renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(this.renderPass);
-    this.ssao = new SSAOPass(this.scene, this.camera, 1, 1);
-    this.ssao.kernelRadius = 10;
-    this.ssao.minDistance = 0.001;
-    this.ssao.maxDistance = 0.08;
-    this.composer.addPass(this.ssao);
     this.composer.addPass(new OutputPass());
-    // addPass sizes SSAO to the full composer. Resize again so the first frame uses the free-view half size (#330).
     this.resize();
     this.renderer.setAnimationLoop(this.tick);
+    // #1857: the soft shadows join the composer after the first frame (owner, 2026-11-28, A).
+    this.afterDraw.push(() => void this.attachSsao());
     } catch (err) {
       this.dispose();
       // In dev, forceContextLoss followed by a new WebGLRenderer on the same canvas throws
@@ -514,13 +511,26 @@ export class IsleRenderer {
     }
   }
 
+  // #1857: build the soft shadows in their own chunk and slot them between the scene pass and the output pass.
+  // addPass-style sizing: setSize below gives them the free-view half size (#330) before their first frame.
+  private async attachSsao() {
+    const { makeSsao } = await import("./ssao-attach.ts");
+    if (this.stopped) return;
+    const ssao = makeSsao(this.scene, this.cam());
+    ssao.enabled = !this.titleMode && !this.play();
+    this.composer.insertPass(ssao, 1);
+    this.ssao = ssao;
+    this.resize();
+    this.wake();
+  }
+
   // Off the table (title and lobby) the island is a backdrop under a card: the slow orbit, no SSAO, 30 frames a second.
   // In play it is the board fitted to the HUD hole, which the player may orbit and zoom and snap home again.
   setTitleMode(v: boolean) {
     if (v !== this.titleMode) this.onCameraChange();
     this.titleMode = v;
     if (v) this.clearPayers();
-    this.ssao.enabled = !v && !this.play();
+    if (this.ssao) this.ssao.enabled = !v && !this.play();
     this.setView(v ? "free" : this.playView());
   }
 
@@ -595,10 +605,12 @@ export class IsleRenderer {
     this.orbit.object = view === "diorama" ? this.persp : this.ortho;
     // The diorama's dolly limits (applyPose) would clamp the overhead eye's orbit radius; overhead zooms by the frustum.
     if (view !== "diorama") [this.orbit.minDistance, this.orbit.maxDistance] = [0, Infinity];
-    this.ssao.enabled = !play && !this.titleMode;
     const cam = this.cam();
     this.renderPass.camera = cam;
-    this.ssao.camera = cam;
+    if (this.ssao) {
+      this.ssao.enabled = !play && !this.titleMode;
+      this.ssao.camera = cam;
+    }
     // Each entry to the table starts from home.
     this.fit = null;
     this.glide = null;

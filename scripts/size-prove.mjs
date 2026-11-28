@@ -42,6 +42,12 @@ const CEILINGS = [
   // #1044, 2026-11-27: raised from 128,000 B to 128,250 B by the owner (q1892-size-limit A): one long clip at a time.
   { name: "index", gzipBytes: 128250 },
   { name: "IslandCanvas", gzipBytes: 205500 }, // #1877, 2026-11-24: raised from 204,500 B to 205,500 B (was #1857, 2026-11-22)
+  // #1857, 2026-11-28: the soft shadows (SSAOPass, SimplexNoise, SSAOShader) load after the first frame; measured 5,078 B gzip.
+  // New chunk only; ceiling is measured plus about 10%. Owner chose A (shadows may arrive a moment later) on #1857.
+  { name: "ssao-attach", gzipBytes: 5600 },
+  // #1857, 2026-11-28: three.js, split out of IslandCanvas because ssao-attach shares it; measured 69,569 B gzip and preloaded
+  // beside the island. New chunk only; ceiling is measured plus about 10%. Island plus three.core is no bigger in raw bytes.
+  { name: "three.core", gzipBytes: 76500 },
   // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
   { name: "classic-board", gzipBytes: 19500 },
   // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)

@@ -22,10 +22,13 @@ function preloadChunks(): Plugin {
         const file = (name: string) => Object.keys(ctx.bundle ?? {}).find((f) => new RegExp(`^assets/${name}-[\\w-]+\\.js$`).test(f));
         const island = file("IslandCanvas");
         const online = file("online");
+        // #1857: three.js sits in its own chunk now that the lazy soft-shadow chunk shares it; fetch it beside the island, not after it.
+        const three = file("three.core");
         const loading = file("LoadingScreen");
         if (!island || !online || !loading) throw new Error("emberisle-preload-chunks: the IslandCanvas, online or LoadingScreen chunk is missing from the build");
         return [
           { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${island}` }, injectTo: "head" },
+          ...(three ? [{ tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${three}` }, injectTo: "head" as const }] : []),
           // #1281: the loading screen is the first thing a fresh visit shows.
           { tag: "link", attrs: { rel: "modulepreload", crossorigin: true, href: `${base}${loading}` }, injectTo: "head" },
           {
