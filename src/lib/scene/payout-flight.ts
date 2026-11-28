@@ -115,11 +115,12 @@ function shapes(): Record<Resource, THREE.BufferGeometry> {
       part(new THREE.IcosahedronGeometry(0.36, 1), 0.2, -0.05, 0.05),
       part(new THREE.IcosahedronGeometry(0.34, 1), 0, 0.22, -0.05),
     ],
-    // A sheaf: the spread ears, the tie, and the stalks splaying below it.
+    // A sheaf: the ears' pointed tips, the ears, the tie, and the stalks splaying below it.
     grain: [
-      part(new THREE.CylinderGeometry(0.46, 0.17, 0.5, 9), 0, 0.2, 0),
-      part(new THREE.CylinderGeometry(0.19, 0.19, 0.12, 9), 0, -0.1, 0, 0, 0, [1, 1, 1], true),
-      part(new THREE.CylinderGeometry(0.17, 0.36, 0.34, 9), 0, -0.33, 0),
+      part(new THREE.CylinderGeometry(0, 0.34, 0.3, 9), 0, 0.45, 0),
+      part(new THREE.CylinderGeometry(0.34, 0.16, 0.22, 9), 0, 0.19, 0),
+      part(new THREE.CylinderGeometry(0.18, 0.18, 0.1, 9), 0, 0.03, 0, 0, 0, [1, 1, 1], true),
+      part(new THREE.CylinderGeometry(0.16, 0.4, 0.48, 9), 0, -0.26, 0),
     ],
     ore: [part(new THREE.OctahedronGeometry(0.5, 0), 0, 0, 0, 0, 0, [1, 0.8, 0.85])],
   };

@@ -343,7 +343,7 @@ try {
         await page.waitForFunction(() => window.__isle.flights.batch?.t0 !== undefined || !window.__isle.flights.batch, null, { timeout: STEP_MS });
         const slots = await page.evaluate(() => window.__isle.flights.batch?.slots.map((x) => x.res) ?? []);
         check(`${tag}: all five goods admitted for the stills`, slots.length === 5, { five, slots });
-        if (slots.length) await stills(page, `${test.width}x${test.height}-five`, [60, 200, 330, 420]);
+        if (slots.length) await stills(page, `${test.width}x${test.height}-five`, [60, 200, 330, 420, 500]);
       }
       if (test.full) await lifecycle(page, tag);
     } finally {
