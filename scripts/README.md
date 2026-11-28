@@ -8,12 +8,9 @@ The issue column lists numbers named in each script's opening comment.
 | Script | Command | What it writes or does | CI | Header issues |
 |---|---|---|---|---|
 | `auto-merge-eligible.mjs` | `node scripts/auto-merge-eligible.mjs` | Writes eligibility to `GITHUB_OUTPUT`; requires workflow environment variables. | Yes: `auto-merge.yml` | #923 |
-| `capture-crops.mjs` | `node scripts/capture-crops.mjs` | Captures pile crops under `test-results/issue-1158/` and `docs/proofs/1158/`. | No | None |
-| `capture-phone-board.mjs` | `node scripts/capture-phone-board.mjs [before\|after]` | Captures phone boards under `docs/proofs/1158/`; defaults to `after`. | No | None |
 | `design-shots.mjs` | `node scripts/design-shots.mjs` | Writes screenshots and `metrics.json` under `SHOTS_OUT`, defaulting to `test-results/design/`; needs the app on port 8080. | No | None |
 | `desk-board.mjs` | `node scripts/desk-board.mjs [--dry-run]` | Updates the #916 board and posts bounded #699 notifications; requires the workflow environment. | No: its workflow was retired in #1862; `classify`, `reviewOf` and `rest` now live in `pr-signal.mjs` | #1180 |
 | `desk-gate.mjs` | `node scripts/desk-gate.mjs` | Posts the head's `desk-gate` status from review footers; requires the workflow environment. | Yes: `desk-gate.yml` | None |
-| `dock-piles-audit.mjs` | `node scripts/dock-piles-audit.mjs` | Prints visibility measurements across seeds and token modes; writes no files. | No | #1158 |
 | `emberisle-up.sh` | `bash scripts/emberisle-up.sh` | Updates main, starts the host and tunnel, and writes state and logs under `~/.emberisle-up/`. | No | None |
 | `emote.mjs` | `node scripts/emote.mjs <input image> <name>   ->   src/assets/emotes/<name>.webp` | Crops a reaction image and writes a transparent, square 128px WebP. | No | #120 |
 | `flake-rerun.mjs` | `node scripts/flake-rerun.mjs` | Requests one failed-job rerun when every failure matches the allowlist; requires workflow variables. | Yes: `flake-rerun.yml` | None |
@@ -33,7 +30,6 @@ The issue column lists numbers named in each script's opening comment.
 | `night.mjs` | `node scripts/night.mjs` | Builds `dist/`, starts the rules host, and prints the join line. | Yes: `night-prove` (`npm run night-prove`) | #87, #321 |
 | `orphan-check.mjs` | `npm run orphan-check` | Terminates two proofs and checks for leftover host processes; writes no report. | No, deliberately | #242 |
 | `proof-host-port-prove.mjs` | `npm run proof-host-port-prove` | Tests that host startup failures reject cleanly before browser launch. | Yes: `ci.yml` (`npm run proof-host-port-prove`) | #1556 |
-| `robber-pictures.mjs` | `node --import ./server/register.mjs scripts/robber-pictures.mjs` | Writes blocked-terrain comparisons and crops under `docs/proofs/826/`. | No | #826 |
 | `seat-gains-pictures.mjs` | `OUT=<dir> node --import ./server/register.mjs scripts/seat-gains-pictures.mjs` | Writes real-board pictures of public goods cues under `OUT`. | No | #827 |
 | `seat-tray-prove.mjs` | `npm run seat-tray-prove` | Verifies one-tray seats without boxes, 44px targets, and contrast across viewports. | Yes: `ci.yml` (`npm run seat-tray-prove`) | #1544 |
 | `shots.mjs` | `node scripts/shots.mjs` | Writes screen captures under `test-results/shots/` and prints rendering measurements. | No | #125, #310 |
