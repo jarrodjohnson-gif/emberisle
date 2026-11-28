@@ -2,12 +2,12 @@
 
 The map is [`../DESK.md`](../DESK.md).
 
-Builders are only as good as the issues they are handed. The old desk wrote the issues, and since 2026-11-21 nobody has. The planner is a short Opus 5.5 subagent that the dispatch thread starts when the ready list runs low ([`dispatcher.md`](dispatcher.md), "The planner"). It writes issues and stops. It never builds, reviews or merges.
+Builders are only as good as the issues they are handed. The old desk wrote the issues, and since 2026-11-21 nobody has. The planner is a short Opus 5.5 subagent. The dispatch thread starts it when the ready list runs low ([`dispatcher.md`](dispatcher.md), "The planner"). It writes issues and stops. It never builds, reviews or merges.
 
 **Where the work comes from, in this order:**
 
 1. **Jarrod's answers.**
-   - Every open issue labelled `answered`: he has answered its card. Read the `Owner answer (Desk page, ...)` comment (the prefix is historical), rewrite the issue as ready work that does exactly what he said, set `status:todo`, and remove `answered` and `needs-owner`.
+   - Every open issue labelled `answered`: he has answered its card. The prefix of its `Owner answer (Desk page, ...)` comment is historical. Read that comment, rewrite the issue as ready work that does exactly what he said, set `status:todo`, and remove `answered` and `needs-owner`.
    - The answers the dispatch thread names in your prompt. An answer that calls for building, with no issue or PR that already carries it, becomes an issue.
 2. **Backlog that is now ready.** A `status:backlog` issue moves to `status:todo` only when all of these hold: its `Depends on` issues are closed; it has a clear scope and a completion test; it carries no `needs-owner`, no `/paused` and no unanswered `Question:`; and it is not a new feature, screen, flow, layout, rule, or art or sound direction that Jarrod has not already decided.
 3. **Loose ends on merged work.** Non-blocking review notes and follow-ups named in PRs merged in the last 7 days.

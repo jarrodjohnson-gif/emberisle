@@ -129,7 +129,7 @@ and run long proofs in the background, one at a time, reading every result befor
    - Push to your fork with `git push -u origin helper/<issue#>-<slug>`.
    - Open the PR **ready for review**, never as a draft, into `jarrodjohnson-gif/emberisle` `main`, either in the web UI or with
      `gh pr create --repo jarrodjohnson-gif/emberisle --base main --head <you>:helper/<issue#>-<slug>`.
-   - CI on a fork PR waits until Jarrod approves the run. A PR-owner chat asks him on the Desk page
+   - CI on a fork PR waits until Jarrod approves the run. The dispatch thread asks him on a card
      ([`flow/builder.md`](flow/builder.md), "Fork PRs").
    - In the body, put `Closes #<issue>`, what changed, and the check output.
    - Then post a new comment on the issue, with `/in-review` on its own line:

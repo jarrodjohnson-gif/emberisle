@@ -78,7 +78,7 @@ The thread owns each PR from the builder's report to the merge.
 
 ## Questions for Jarrod
 
-A builder asks with `needs-owner` and one `Blocked:` or `Question:` comment, on the PR or on the issue ([`builder.md`](builder.md), "When you need Jarrod").
+A builder asks with `needs-owner` and one `Blocked:` or `Question:` comment ([`builder.md`](builder.md), "When you need Jarrod"). It asks on the PR, or on the issue when there is no PR.
 
 1. List open PRs and issues with `needs-owner`. Take each one with none of `on-desk`, `answered` and `no-pictures`.
 2. Read its newest `Blocked:` or `Question:` comment.
@@ -96,7 +96,7 @@ When Jarrod taps a card, carry his answer at once.
 1. Post one comment on the PR or issue. It starts `Owner answer (Desk page, project card <date time UTC>):`. Then give his option, then his note word for word. His note wins over the option.
 2. Add the marker his answer calls for, for the PR's exact head SHA:
    - `<!-- owner-merge: <SHA> -->`, then the `owner-merge` label, when he says to merge a rule-file PR;
-   - `<!-- owner-ok: <SHA> -->`, then the `owner-ok` label, when he approves a PR that carries `needs-owner`, with no note and no other open card on it;
+   - `<!-- owner-ok: <SHA> -->`, then the `owner-ok` label, when he approves a `needs-owner` PR. His note must be empty, and no other card on it open;
    - an `owner-replaced` marker, when he approves replaced test lines (the 2026-11-28 `owner-replaced` row in [`../DECISIONS.md`](../DECISIONS.md), from #1916).
 3. If the head moved since the card, add no marker. Make a fresh card for the new head.
 4. Remove `on-desk`. If a builder must still act on his answer, add `answered`.
@@ -105,7 +105,8 @@ When Jarrod taps a card, carry his answer at once.
 
 **Log his standing rules.** A standing rule outlasts the one PR or issue it was asked on. Examples are a new limit, or a design choice for a whole screen. A merge, a close or a look on one PR is not one.
 
-- Add one row per rule at the top of the table in [`../DECISIONS.md`](../DECISIONS.md): the date, the rule in one bold sentence, his words in quotes, and the card.
+- Add one row per rule at the top of the table in [`../DECISIONS.md`](../DECISIONS.md).
+- A row has the date, the rule in one bold sentence, his words in quotes, and the card.
 - Put the rows in one PR from the branch `clerk/decisions-log`. The branch keeps its old name, because [`../REVIEWING.md`](../REVIEWING.md) and [`builder.md`](builder.md) name it.
 - Add to that PR while it is open. It merges like any governance PR.
 
