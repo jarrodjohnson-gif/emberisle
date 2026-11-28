@@ -75,6 +75,9 @@ export default function IslandCanvas() {
       // The GPU probe waits for a settled client: the title with nothing dialling, or play with its first state.
       renderer.setSettled(!s.restoring && ((s.screen === "title" && !s.net) || (s.screen === "play" && !!s.state)));
       renderer.setTitleMode(s.screen !== "play");
+      // #1923: the seat whose hand the HUD shows, and the key whose change ends any payout goods under way.
+      const seat = s.screen === "play" && s.state && !s.spectator && s.state.phase !== "over" ? (s.mode === "hotseat" ? s.state.current : s.localId) : null;
+      renderer.setFlightSeat(seat, `${s.synced}|${s.mode}|${s.screen}|${seat}`);
       // The chat dock and the trade sheet change the hole the HUD leaves without the game moving; chromeSeq counts the
       // commits that land one of them from a chunk that was still loading when its flag flipped (#488).
       const nextChrome = `${s.chatOpen}|${s.tradeOpen}|${s.offer?.tradeId ?? ""}|${s.declined.join(",")}|${s.tradeOutcome}|${s.chromeSeq}`;

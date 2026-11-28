@@ -46,6 +46,7 @@ import { PAINT, RIM } from "@/lib/scene/palette";
 import { BLOCK_H, ROBBER_HEX_DIM, robberHexDim, setRobberHexDim, TILE_Y } from "@/lib/scene/jelly-dims";
 export { ROBBER_HEX_DIM, robberHexDim };
 import type { JellyBoard, JellyStats } from "@/lib/scene/jelly-board";
+import type { PayoutFlights } from "@/lib/scene/payout-flight";
 import type { LandAppearance, LandHex, LandLook, LandStatus } from "@/lib/scene/land-appearance";
 import type { AppearanceHost } from "@/lib/scene/appearance-controller";
 import type { Dock, Shore } from "@/lib/scene/harbor-jelly";
@@ -280,6 +281,11 @@ export class IsleRenderer {
   private payingPieces: { key: string; owner: string; age: number; delay: number; sounded: boolean }[] = [];
   private payerSeat: string | true | undefined;
   private flashes: { mat: { emissiveIntensity: number }; id: string; age: number }[] = [];
+  // #1923: the payout goods (payout-flight.ts), loaded once a seat's hand can take them; the seat and its session key.
+  flights: PayoutFlights | null = null;
+  private flightSeat: string | null = null;
+  private flightGen = "";
+  private flightsLoad: Promise<unknown> | null = null;
   private clock = new THREE.Timer();
   private water = makeWater();
   // The crystal sea, or the simple shader when the GPU cannot render to a float target, the one-time probe finds it slow, or
@@ -747,6 +753,18 @@ export class IsleRenderer {
     return h ? { kind: "hex", ...worldOfHex(h), y: topOf(h.terrain) } : null;
   };
 
+  // #1923: the seat whose hand is on screen (null for none), and a key that changes with the session, the seat or the screen,
+  // which ends any goods under way. The first seat loads the flights' chunk.
+  setFlightSeat(seat: string | null, gen: string) {
+    if (gen !== this.flightGen) this.flights?.cancel(gen);
+    this.flightGen = gen;
+    this.flightSeat = seat;
+    if (!seat || this.flightsLoad) return;
+    this.flightsLoad = import("./payout-flight.ts")
+      .then(({ PayoutFlights }) => { if (!this.stopped) this.flights = new PayoutFlights(this.renderer.domElement, () => this.cam()); })
+      .catch(() => (this.flightsLoad = null));
+  }
+
   setBoard(state: GameState, highlights: Highlights, interactive: boolean, payerSeat?: string | true) {
     this.payerSeat = payerSeat;
     // Only a roll seen live flashes: the same island and exactly one more dice roll than last time. Landing on a state that
@@ -783,7 +801,8 @@ export class IsleRenderer {
     if (rolled) {
       this.flashHexes(payingHexes(state));
       this.pulsePayers(state);
-    }
+      if (this.flightSeat && !this.calm()) this.flights?.capture(state, this.flightSeat);
+    } else if (landChanged || (state.rolls ?? 0) !== (prev?.rolls ?? 0)) this.flights?.cancel("baseline");
     // #826: blacken the blocked hex and its token; skip the Wastes.
     const rh = state.hexes.find((h) => h.id === state.robberHex);
     this.shadeRobber(rh);
@@ -939,6 +958,7 @@ export class IsleRenderer {
     this.cues.dispose();
     this.cancelPlop();
     this.clearPayers();
+    this.flights?.dispose();
     this.stopped = true;
     this.renderer?.domElement?.removeEventListener("webglcontextlost", this.onContextLost);
     this.dropFence();
@@ -1549,7 +1569,7 @@ export class IsleRenderer {
       this.walk = null;
       this.startWalk();
     }
-    const busy = now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.appearance?.busy() || this.dust.active;
+    const busy = !!this.flights?.poll(now, calm) || now < this.busyUntil || this.flashes.length > 0 || this.payingPieces.length > 0 || !!this.appearance?.busy() || this.dust.active;
     const gap = calm ? (busy ? 0 : Infinity) : this.titleMode ? (boot.lift ? 0 : 1000 / 30) : this.walk || pulsing || busy ? 0 : 1000 / 12;
     if (now - this.lastFrame < gap - 2) return;
     // Camera constraints and glides are input state: process them even when the next draw waits on the GPU.
@@ -1780,6 +1800,7 @@ export class IsleRenderer {
     try {
       this.fps?.begin(t0);
       this.composer.render();
+      this.flights?.render(this.renderer);
       this.fenceFrame();
       this.fps?.end(this.jelly?.stats() ?? null, this.lite);
     } finally {

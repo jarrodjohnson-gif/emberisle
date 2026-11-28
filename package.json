@@ -92,6 +92,7 @@
     "classic-switch-prove": "node scripts/classic-switch-prove.mjs",
     "legal-edge-prove": "node scripts/legal-edge-prove.mjs",
     "bot-cues-prove": "node scripts/bot-cues-prove.mjs",
+    "payout-flight-prove": "node scripts/payout-flight-prove.mjs",
     "classic-builder-prove": "node scripts/classic-builder-prove.mjs",
     "watch-ui-prove": "node --import ./server/register.mjs scripts/watch-ui-prove.mjs",
     "win-action-prove": "node --import ./server/register.mjs scripts/win-action-prove.mjs",
