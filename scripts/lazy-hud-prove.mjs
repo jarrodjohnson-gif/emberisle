@@ -445,6 +445,17 @@ try {
   check("failed steal chunk load shows error message and Try again button", stealAlertText.includes("Could not load") && stealAlertText.includes("Try again"), stealAlertText);
   await stealFailPage.screenshot({ path: "docs/proofs/1285/losses-failed-steal.png" });
 
+  // #1915: on a phone "Try again" stays on one line and keeps a 44 px touch height.
+  await stealFailPage.setViewportSize({ width: 390, height: 844 });
+  const tryAgainBox = await stealFailedAlert.getByRole("button", { name: "Try again" }).evaluate((el) => {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    return { height: el.getBoundingClientRect().height, lines: range.getClientRects().length };
+  });
+  check("failed steal picker: Try again is one line and at least 44 px tall at 390x844", tryAgainBox.height >= 44 && tryAgainBox.lines === 1, tryAgainBox);
+  await stealFailPage.screenshot({ path: "docs/proofs/1915/after-390x844.png" });
+  await stealFailPage.setViewportSize({ width: 1280, height: 720 });
+
   // Unblock losses chunk and tap Try again to recover steal picker:
   failStealLosses = false;
   await stealFailedAlert.getByRole("button", { name: "Try again" }).click();
