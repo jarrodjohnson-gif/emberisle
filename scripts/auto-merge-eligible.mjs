@@ -152,7 +152,8 @@ export function ownerReplaced(comments, sha) {
 
 // What the base's copy of loosen-prove reported in one `loosen` job log, as [{ file, line }], or null. It is null unless
 // that copy failed by itself, every reason is an edited check line in a proof, and its count of proofs matches. The job
-// runs the PR's own copy only after the base's passed, so a log that holds that step's line is refused.
+// runs the PR's own copy only after the base's passed, so a log that holds that step's line is refused. A log with two
+// run lines or two summaries is refused too: only one block is ever read, so a second one could hide the real report.
 const LOG_STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z ?/;
 const BASE_RUN = /^Running the base's loosen-prove from [0-9a-f]{40}\.$/;
 const PR_RUN = "Testing the PR's guard copy in the same advisory job.";
@@ -161,8 +162,8 @@ const LOOSE_SUM = /^([1-9][0-9]*) proof\(s\) loosened, or owner-only file\(s\) c
 export function loosenedLines(log) {
   if (typeof log !== "string") return null;
   const lines = log.split("\n").map((l) => l.replace(/\r$/, "").replace(LOG_STAMP, ""));
+  if (lines.includes(PR_RUN) || lines.filter((l) => BASE_RUN.test(l)).length !== 1 || lines.filter((l) => LOOSE_SUM.test(l)).length !== 1) return null;
   const start = lines.findIndex((l) => BASE_RUN.test(l));
-  if (lines.includes(PR_RUN) || start < 0) return null;
   const out = [];
   for (let i = start + 1; i < lines.length; i++) {
     if (lines[i].startsWith("ok   self-test: ")) continue;
@@ -267,7 +268,9 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
     if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success")) {
       // #1914: a red `loosen` counts as met only for check lines the owner named for this head, read from that run's log.
       const [r] = runs;
-      const red = name === "loosen" && runs.length === 1 && r.head_sha === sha && r.status === "completed" && r.conclusion === "failure";
+      // A PR that changes .github/ runs its own ci.yml, which can print a fake report into the job log, so it never qualifies.
+      const ownCi = files.some((f) => [f.filename, f.previous_filename].some((p) => String(p ?? "").toLowerCase().startsWith(".github/")));
+      const red = !ownCi && name === "loosen" && runs.length === 1 && r.head_sha === sha && r.status === "completed" && r.conclusion === "failure";
       const reported = red && loosenLog && Number.isInteger(r.id) && loosenLog.id === r.id ? loosenedLines(loosenLog.text) : null;
       const markers = reported ? ownerReplaced(comments, sha) : [];
       const uncovered = markers.length ? uncoveredLines(reported, markers) : null;

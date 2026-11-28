@@ -34,6 +34,10 @@ The workflow reads the red `loosen` job's own log for the head. `loosen` counts 
 - the head has one `loosen` run, and it completed as a failure;
 - the base's copy of `loosen-prove` failed by itself, so the PR's own copy never ran;
 - every reason it gave is `removed or edited check line` in a proof file. A lower check count, a new `.skip`, an added `process.exit(0)` or a deleted proof still refuses;
+- the log holds one run line and one summary, so a second report can't hide the real one;
+- the PR changes no file under `.github/`, old paths of renamed files included. A `pull_request` run uses the PR's own `ci.yml`, which could print a fake report into that log;
 - the markers cover every reported line in its own file.
+
+So a PR that replaces check lines and also registers a proof in `ci.yml` has to be split. Land the `ci.yml` change in its own PR first. In the same PR, the marker never counts, even with `owner-merge`, and only Jarrod can merge it on GitHub.
 
 It lifts nothing else. The review, `checks`, the head pin and the governance rule still apply, so a change to `scripts/size-prove.mjs` also needs `owner-merge`. Any push makes the marker stale, because it names one head.
