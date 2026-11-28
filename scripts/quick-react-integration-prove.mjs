@@ -13,6 +13,7 @@ import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createServer } from "vite";
 import { chromium } from "./proof-browser.mjs";
@@ -117,10 +118,65 @@ await b.page.getByPlaceholder(/code/i).fill(code);
 await b.page.getByRole("button", { name: "Join" }).click();
 await b.page.getByTestId("table-code").waitFor();
 await a.page.getByTestId("add-bot").first().click();
+
+// #738 (the rest): the lobby panel, with the table not yet ready and the lobby scrolled to its bottom.
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const SOUND_LABELS = ["Fah", "Wololo", "GG!", "Airhorn", "Quit touchin' me", "Wood please", "Plump sheep", "Nice sheep", "Sheep please", "Grain please", "Brick please", "Perfect", "Real badman", "Gong", "Bong"];
+const EMOJI_LABELS = ["angry", "happy", "clap", "laugh", "fire", "sheep"];
+const REPO_STICKERS = readdirSync(new URL("../src/assets/emotes/", import.meta.url)).map((f) => f.replace(/\.\w+$/, "")).sort();
+const readyOf = (t) => get(t, () => window.__emberisle.getState().seats.map((s) => `${s.id}:${s.ready}`).join());
+const plainOf = (t) => get(t, () => window.__emberisle.getState().chat.filter((l) => !l.sound).length);
+const readyBefore = await readyOf(b);
+const plainBefore = await plainOf(b);
+const lobbyEmoji = await get(b, () => window.__emberisle.getState().reactions.length);
+const lobbySound = await lines(b, { field: "sound", value: "sb_airhorn" });
+for (const t of [a, b]) {
+  const panel = t.page.getByTestId("lobby-chat");
+  await panel.getByRole("tab", { name: "Chat", exact: true }).click();
+  check((await panel.getByRole("button", { name: /^React / }).count()) === 6, `lobby ${t.name}: the Chat tab has the six emoji`);
+}
+await a.page.getByTestId("lobby-chat").getByRole("button", { name: "React clap" }).click();
+await until(async () => (await get(b, () => window.__emberisle.getState().reactions.length)) > lobbyEmoji, "Moss receives the lobby emoji");
+await a.page.getByTestId("lobby-chat").getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await a.page.getByTestId("lobby-chat").getByRole("button", { name: "Play sound Airhorn" }).click();
+await until(async () => (await lines(b, { field: "sound", value: "sb_airhorn" })) === lobbySound + 1, "Moss receives the lobby Airhorn");
+check((await readyOf(b)) === readyBefore && (await readyOf(a)) === readyBefore && (await plainOf(b)) === plainBefore, `lobby: an emoji and a sound change no seat's readiness and add no chat line of text ${readyBefore}`);
+for (const t of [a, b]) {
+  const panel = t.page.getByTestId("lobby-chat");
+  await panel.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+  await until(async () => (await t.page.getByTestId("stickers").getByRole("button").count()) === (t === a ? 24 : 15), `${t.name}: lobby stickers`);
+  const m = await get(t, () => {
+    const scroller = document.querySelector('[data-testid="lobby-card"] > div');
+    scroller.scrollTop = scroller.scrollHeight;
+    const scrolled = scroller.scrollTop;
+    const box = document.querySelector('[data-testid="lobby-chat"]');
+    const card = document.querySelector('[data-testid="lobby-card"]').getBoundingClientRect();
+    const small = [];
+    const outside = [];
+    for (const el of box.querySelectorAll("button, input, [role=tab]")) {
+      el.scrollIntoView({ block: "nearest" });
+      const r = el.getBoundingClientRect();
+      if (!r.width) continue;
+      const what = el.getAttribute("aria-label") || el.textContent.trim().slice(0, 20);
+      if (r.width < 43.5 || r.height < 43.5) small.push(`${what} ${Math.round(r.width)}x${Math.round(r.height)}`);
+      if (r.left < card.left - 0.5 || r.right > card.right + 0.5 || r.top < -0.5 || r.bottom > innerHeight + 0.5) outside.push(what);
+    }
+    return { scrolled: scrolled > 0, small, outside, sideways: box.scrollWidth > box.clientWidth + 1, page: document.documentElement.scrollWidth > innerWidth };
+  });
+  check(m.scrolled && !m.small.length && !m.outside.length && !m.sideways && !m.page, `lobby ${t.name}: scrolled to the bottom, every panel control is at least 44x44, reachable inside the card and the screen, no sideways scroll ${JSON.stringify(m)}`);
+  await get(t, () => { document.querySelector('[data-testid="lobby-card"] > div').scrollTop = 0; });
+}
 for (const t of [a, b]) await t.page.getByRole("button", { name: "Ready", exact: true }).click();
 await a.page.getByRole("button", { name: "Start", exact: true }).and(a.page.locator(":enabled")).waitFor();
 await a.page.getByRole("button", { name: "Start", exact: true }).click();
 for (const t of [a, b]) await t.page.getByRole("button", { name: "Open chat" }).waitFor();
+// Start transition: the lobby's panel is remounted as the game's. The remembered tab carries over and the panel starts closed.
+for (const t of [a, b]) {
+  check(!(await panelOpen(t)), `start: ${t.name}'s game panel starts closed`);
+  await openPanel(t);
+  check((await t.page.getByRole("tab", { name: "Sounds & stickers", exact: true, selected: true }).count()) === 1, `start: ${t.name}'s panel opens on the tab the lobby left (Sounds & stickers)`);
+  await closePanel(t);
+}
 // The watcher joins after the start.
 const w = await tab("Reader", SIZES[0]);
 await w.page.getByPlaceholder(/code/i).fill(code);
@@ -300,6 +356,203 @@ await b.page.keyboard.press("Escape");
 await b.page.locator('section[aria-label="Table chat"]').waitFor({ state: "detached" });
 await until(() => get(b, () => /^Open chat/.test(document.activeElement?.getAttribute("aria-label") ?? "")), "Escape: the Open chat trigger takes the focus back", 3000);
 check(true, "escape: closes the panel and the focus returns to the Open chat trigger");
+
+// #738 (the rest), in the game, with two seats and the late watcher: order and exact catalogue, no Chat pickers, independent
+// waits, reopen, focus order, Escape, echo-only sound, the three mutes, and readiness and chat left alone.
+const FIXTURE_STICKERS = Array.from({ length: 24 }, (_, i) => `fixture-${String(i + 1).padStart(2, "0")}`);
+const inOrder = (t, selectors) => get(t, (sels) => {
+  const els = sels.map((s) => document.querySelector(s));
+  const missing = sels.filter((_, i) => !els[i]);
+  return missing.length ? `missing ${missing}` : els.every((el, i) => i === 0 || els[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) ? "ok" : "out of order";
+}, selectors);
+const labelsOf = (t, selector) => get(t, (s) => [...document.querySelectorAll(s)].map((el) => el.getAttribute("aria-label") ?? el.textContent.trim()), selector);
+const PANEL = 'section[aria-label="Table chat"]';
+for (const size of SIZES) {
+  for (const t of [a, b]) {
+    await t.page.setViewportSize({ width: size.width, height: size.height });
+    await openPanel(t);
+    await t.page.getByRole("tab", { name: "Chat", exact: true }).click();
+    const where = `${size.label} ${t.name}`;
+    check((await inOrder(t, [`${PANEL} [role=tablist]`, '[data-testid="chat-log"]', '[data-testid="emoji-row"]', "#chat-input"])) === "ok", `${where}: the Chat tab runs tabs, log, emoji, input in that order`);
+    check(JSON.stringify(await labelsOf(t, '[data-testid="emoji-row"] button')) === JSON.stringify(EMOJI_LABELS.map((l) => `React ${l}`)) && (await get(t, () => [...document.querySelectorAll('[data-testid="emoji-row"] button')].map((el) => el.textContent).join(""))) === "😠😊👏😂🔥🐑", `${where}: the Chat tab has exactly the six emoji, in order`);
+    check((await get(t, (p) => document.querySelectorAll(`${p} button[aria-label="Soundboard"], ${p} button[aria-label="Emotes"], ${p} button[aria-label="Quick reactions"], ${p} [data-testid="soundboard"], ${p} [data-testid="stickers"], ${p} [data-testid="presets"]`).length, PANEL)) === 0 && (await t.page.getByRole("button", { name: /Quick reactions|^Soundboard$|^Emotes$/ }).count()) === 0, `${where}: the Chat tab has no speaker, smile or sound or sticker picker, and the page no quick-reaction button`);
+    await t.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+    await t.page.getByTestId("soundboard").waitFor();
+    await until(async () => (await t.page.getByTestId("stickers").getByRole("button").count()) === (t === a ? 24 : 15), `${where}: stickers`);
+    check((await inOrder(t, [`${PANEL} [role=tablist]`, '[data-testid="soundboard"]', '[data-testid="presets"]', '[data-testid="stickers"]'])) === "ok", `${where}: the Sounds & stickers tab runs tabs, sounds, quick lines, stickers in that order`);
+    const ids = (await labelsOf(t, '[data-testid="stickers"] button')).map((l) => l.replace(/^React /, ""));
+    const catalogue = await get(t, async () => Object.keys(await (await import("/src/components/game/talk.tsx")).loadEmotes()));
+    const want = t === a ? FIXTURE_STICKERS : REPO_STICKERS;
+    check(JSON.stringify(ids) === JSON.stringify(catalogue) && JSON.stringify([...ids].sort()) === JSON.stringify(want) && new Set(ids).size === ids.length, `${where}: the stickers are exactly the catalogue by id, each once, in catalogue order (${ids.length}: ${ids.slice(0, 3)}...)`);
+    check(JSON.stringify(await labelsOf(t, '[data-testid="soundboard"] button')) === JSON.stringify(SOUND_LABELS.map((l) => `Play sound ${l}`)), `${where}: the sounds are exactly the 15 chips, in order`);
+    check(JSON.stringify(await labelsOf(t, '[data-testid="presets"] button')) === JSON.stringify(["gg", "nice roll", "your turn", "one sec", "ty"]) && (await t.page.getByTestId("emoji-row").count()) === 0, `${where}: the quick lines are exactly the five, and the six emoji are not repeated here`);
+    await t.page.getByRole("tab", { name: "Chat", exact: true }).click();
+    await closePanel(t);
+  }
+}
+
+// Focus: a pointer opens the panel (focus goes to the input), then Tab and Shift+Tab walk the panel's own controls in page
+// order and both leave it, so there is no trap. Only the selected tab is in the order.
+for (const t of [a, b]) await get(t, () => { window.__nameOf = (el) => (el ? el.getAttribute("aria-label") || el.id || el.textContent.trim().slice(0, 20) || el.tagName : ""); });
+const here = (t) => get(t, () => ({ inPanel: Boolean(document.activeElement?.closest('section[aria-label="Table chat"]')), name: window.__nameOf(document.activeElement) }));
+const tabOrder = (t) => get(t, () => [...document.querySelector('section[aria-label="Table chat"]').querySelectorAll("button, input, [tabindex]")].filter((el) => !el.disabled && el.tabIndex === 0 && el.getBoundingClientRect().width).map(window.__nameOf));
+async function walk(t, key) {
+  const forward = [];
+  const backward = [];
+  for (const [list, press] of [[forward, "Tab"], [backward, "Shift+Tab"]]) {
+    await t.page.locator(`${PANEL} ${key}`).first().focus();
+    for (let i = 0; i < 60; i++) {
+      await t.page.keyboard.press(press);
+      const at = await here(t);
+      if (!at.inPanel) break;
+      list.push(at.name);
+    }
+  }
+  return { forward, backward, start: await get(t, (k) => window.__nameOf(document.querySelector(`section[aria-label="Table chat"] ${k}`)), key) };
+}
+await b.page.setViewportSize({ width: 440, height: 956 });
+await closePanel(b);
+await b.page.getByRole("button", { name: /^Open chat/ }).click();
+await b.page.locator(PANEL).waitFor();
+await until(() => get(b, () => document.activeElement?.id === "chat-input"), "a pointer open puts the focus in the input", 3000);
+for (const [label, tabName, key] of [["Chat", "Chat", "#chat-input"], ["Sounds & stickers", "Sounds & stickers", '[role=tab][aria-selected="true"]']]) {
+  await b.page.getByRole("tab", { name: tabName, exact: true }).click();
+  const order = await tabOrder(b);
+  const w2 = await walk(b, key);
+  const seen = [...w2.backward.reverse(), w2.start, ...w2.forward];
+  check(JSON.stringify(seen) === JSON.stringify(order) && w2.forward.length < 60 && w2.backward.length < 60 && (await b.page.getByRole("tab", { selected: false }).evaluate((el) => el.tabIndex)) === -1, `focus: on the ${label} tab Tab and Shift+Tab visit exactly the panel's controls in page order and leave it both ways, with only the selected tab in the order ${JSON.stringify(order.length)} stops`);
+}
+// A tap on the backdrop closes the sheet without taking the focus to Open chat.
+await b.page.getByTestId("chat-backdrop").click({ position: { x: 5, y: 5 } });
+await b.page.locator(PANEL).waitFor({ state: "detached" });
+check(!(await get(b, () => /^Open chat/.test(document.activeElement?.getAttribute("aria-label") ?? ""))), "focus: a backdrop tap closes the sheet and does not move the focus to Open chat");
+
+// Escape from a sound chip or a sticker closes the panel only: the armed build stays armed and a second Escape disarms it.
+await a.page.setViewportSize({ width: 956, height: 440 });
+for (const which of ["soundboard", "stickers"]) {
+  await get(a, () => window.__emberisle.getState().setBuildMode("path"));
+  check((await get(a, () => window.__emberisle.getState().buildMode)) === "path", `escape from a ${which} button: Path is armed`);
+  await a.page.getByRole("button", { name: /^Open chat/ }).click();
+  await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+  await a.page.getByTestId(which).getByRole("button").first().focus();
+  await a.page.keyboard.press("Escape");
+  await a.page.locator(PANEL).waitFor({ state: "detached" });
+  check((await get(a, () => window.__emberisle.getState().buildMode)) === "path" && (await get(a, () => /^Open chat/.test(document.activeElement?.getAttribute("aria-label") ?? ""))), `escape from a ${which} button: the panel closes, Path stays armed and Open chat has the focus`);
+  await a.page.keyboard.press("Escape");
+  check((await get(a, () => window.__emberisle.getState().buildMode)) === "none", `escape from a ${which} button: a second Escape disarms Path`);
+}
+
+// The two waits are independent: 1 s for an emoji or sticker, 3 s for a sound, each ignoring the other, and both survive a reopen.
+await a.page.setViewportSize({ width: 440, height: 956 });
+await get(a, () => { window.__heard = []; HTMLMediaElement.prototype.play = function () { window.__heard.push(new URL(this.src).pathname.split("/").pop()); return Promise.resolve(); }; });
+await get(b, () => { window.__heard = []; HTMLMediaElement.prototype.play = function () { window.__heard.push(new URL(this.src).pathname.split("/").pop()); return Promise.resolve(); }; });
+const heard = (t, re) => get(t, (s) => window.__heard.filter((f) => new RegExp(s).test(f)).length, re);
+const allDisabled = (t, selector) => get(t, (s) => { const els = [...document.querySelectorAll(s)]; return els.length > 0 && els.every((el) => el.disabled); }, selector);
+const allEnabled = (t, selector) => get(t, (s) => { const els = [...document.querySelectorAll(s)]; return els.length > 0 && els.every((el) => !el.disabled); }, selector);
+await openPanel(a);
+await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await a.page.getByRole("button", { name: "React fire" }).click();
+const tEmoji = Date.now();
+await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await a.page.getByTestId("stickers").waitFor();
+check((await allDisabled(a, '[data-testid="stickers"] button')) && (await allEnabled(a, '[data-testid="soundboard"] button')), "waits: just after an emoji the stickers rest and the sound chips do not");
+await a.page.getByRole("button", { name: "Play sound Gong" }).click();
+const tSound = Date.now();
+check(await allDisabled(a, '[data-testid="soundboard"] button'), "waits: a sound rests all the sound chips");
+await until(() => allEnabled(a, '[data-testid="stickers"] button'), "the sticker wait ends", 3000);
+const emojiWait = Date.now() - tEmoji;
+check(emojiWait >= 900 && emojiWait <= 1900 && (await allDisabled(a, '[data-testid="soundboard"] button')), `waits: the emoji and sticker wait ends after about 1 s (${emojiWait} ms) while the sound chips still rest`);
+await closePanel(a);
+await openPanel(a);
+await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+check(await allDisabled(a, '[data-testid="soundboard"] button'), "reopen: the sound wait survives closing and reopening the panel");
+check(await allEnabled(a, '[data-testid="stickers"] button'), "waits: a sticker can be sent while the sound still rests");
+await until(() => allEnabled(a, '[data-testid="soundboard"] button'), "the sound wait ends", 4500);
+const soundWait = Date.now() - tSound;
+check(soundWait >= 2800 && soundWait <= 4300, `waits: the sound wait ends after about 3 s (${soundWait} ms)`);
+
+// Echo-only: the tap itself plays nothing; the host's echo plays the clip once on the sender and once on the other seat.
+await get(a, () => (window.__heard = []));
+await get(b, () => (window.__heard = []));
+const tapped = await get(a, () => {
+  [...document.querySelectorAll('[data-testid="soundboard"] button')].find((el) => el.getAttribute("aria-label") === "Play sound Perfect").click();
+  return window.__heard.length;
+});
+check(tapped === 0, "echo only: the tap plays nothing on the sender before the host answers");
+await until(async () => (await heard(a, "sb_perfect")) === 1 && (await heard(b, "sb_perfect")) === 1, "both seats hear Perfect");
+await sleep(500);
+check((await heard(a, "sb_perfect")) === 1 && (await heard(b, "sb_perfect")) === 1 && (await get(a, () => { const s = window.__emberisle.getState(); return s.chat.filter((l) => l.sound === "sb_perfect" && l.seat === s.seatId).length; })) === 1, "echo only: the sender and the other seat each hear Perfect exactly once, from one echoed line");
+await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await closePanel(a);
+
+// Mute: master volume, a category and a player each silence the sound for this listener only. The line still arrives, and the
+// sender still hears it. Each step restores before the next, and the last proves the sound plays again.
+let lastSound = Date.now() - 600;
+const soundFrom = async (id) => {
+  const wait = lastSound + 3500 - Date.now();
+  if (wait > 0) await sleep(wait);
+  lastSound = Date.now();
+  await get(b, () => (window.__heard = []));
+  await get(a, () => (window.__heard = []));
+  const before = await lines(b, { field: "sound", value: id });
+  await get(a, (i) => window.__emberisle.getState().sendSound(i), id);
+  await until(async () => (await lines(b, { field: "sound", value: id })) === before + 1, `${id} reaches Moss`);
+  await sleep(500);
+};
+const mix = (t, op, ...args) => get(t, async ([o, rest]) => (await import("/src/lib/sound-settings.ts"))[o](...rest), [op, args]);
+const aSeat = await get(a, () => window.__emberisle.getState().seatId);
+await soundFrom("sb_gong");
+check((await heard(b, "sb_gong")) === 1 && (await heard(a, "sb_gong")) === 1, "mute: with nothing muted both seats hear Gong once");
+await mix(b, "setMasterVolume", 0);
+await soundFrom("sb_airhorn");
+check((await heard(b, "sb_airhorn")) === 0 && (await heard(a, "sb_airhorn")) === 1, "mute: master volume 0 silences the sound here only, the line still arrives");
+await mix(b, "setMasterVolume", 1);
+await mix(b, "setCategoryMuted", "memes", true);
+await soundFrom("sb_wololo");
+check((await heard(b, "sb_wololo")) === 0 && (await heard(a, "sb_wololo")) === 1, "mute: the memes category muted silences the sound here only, the line still arrives");
+await mix(b, "setCategoryMuted", "memes", false);
+await openPanel(b);
+await b.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await b.page.getByRole("button", { name: "Mute players", exact: true }).click();
+await b.page.getByTestId(`chat-mute-seat-${aSeat}`).click();
+await b.page.getByRole("button", { name: "Mute players", exact: true }).click();
+await soundFrom("sb_plump_sheep");
+check((await heard(b, "sb_plump_sheep")) === 0 && (await heard(a, "sb_plump_sheep")) === 1 && (await b.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Plump sheep" }).count()) === 0, "mute: a muted player's sound is silent and hidden here, and the sender still hears it");
+await b.page.getByRole("button", { name: "Mute players", exact: true }).click();
+await b.page.getByTestId(`chat-mute-seat-${aSeat}`).click();
+await b.page.getByRole("button", { name: "Mute players", exact: true }).click();
+await soundFrom("sb_nice_sheep");
+check((await heard(b, "sb_nice_sheep")) === 1 && (await b.page.getByTestId("chat-log").getByTestId("sound-line").filter({ hasText: "Nice sheep" }).count()) === 1, "mute: unmuting the player, the master and the category brings the sound and its line back");
+
+// Readiness and chat are left alone: emoji and stickers add no chat line and change no readiness; a quick line is one plain
+// chat line at the other seat.
+const snap = (t) => get(t, () => { const s = window.__emberisle.getState(); return { plain: s.chat.filter((l) => !l.sound).length, sounds: s.chat.filter((l) => l.sound).length, ready: s.seats.map((x) => `${x.id}:${x.ready}`).join() }; });
+await closePanel(b);
+await openPanel(a);
+await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await sleep(1100);
+const snapBefore = await snap(w);
+const reacts2 = await get(w, () => window.__emberisle.getState().reactions.length);
+await a.page.getByRole("button", { name: "React sheep" }).click();
+await until(async () => (await get(w, () => window.__emberisle.getState().reactions.length)) > reacts2, "the watcher sees the emoji");
+await openPanel(b);
+await b.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await b.page.getByTestId("stickers").waitFor();
+const reacts3 = await get(w, () => window.__emberisle.getState().reactions.length);
+await b.page.getByTestId("stickers").getByRole("button").nth(2).click();
+await until(async () => (await get(w, () => window.__emberisle.getState().reactions.length)) > reacts3, "the watcher sees the sticker");
+await sleep(500);
+const snapAfter = await snap(w);
+check(JSON.stringify(snapBefore) === JSON.stringify(snapAfter), `readiness and chat: an emoji and a sticker add no chat line and change no seat's readiness ${JSON.stringify(snapAfter)}`);
+await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await a.page.getByTestId("presets").getByRole("button", { name: "gg", exact: true }).click();
+await until(async () => (await snap(w)).plain === snapBefore.plain + 1, "the quick line reaches the watcher");
+await sleep(400);
+const snapLine = await snap(w);
+check(snapLine.plain === snapBefore.plain + 1 && snapLine.sounds === snapBefore.sounds && snapLine.ready === snapBefore.ready && (await get(w, () => window.__emberisle.getState().chat.at(-1).text)) === "gg", `readiness and chat: a quick line is one plain chat line "gg" at the watcher ${JSON.stringify(snapLine)}`);
+await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await closePanel(a);
+await closePanel(b);
 await b.page.setViewportSize({ width: 956, height: 440 });
 
 // Wait out the 3 s sound rest before the win button is used.
@@ -338,6 +591,22 @@ await new Promise((r) => setTimeout(r, 1200));
 check((await lines(b, { field: "sound", value: "sb_win_reaction" })) === before + 1 && (await a.page.getByTestId("win-react").isDisabled()), "win button: one click sends sb_win_reaction exactly once and it still rests after 1.2 s");
 await until(async () => await a.page.getByTestId("win-react").isEnabled(), "the win button rests, then works again", 4000);
 check(true, "win button: enabled again after the 3 s rest");
+
+
+// Cleanup: the two waits and the reaction log belong to the table. Changing the table's code clears them, so a new table starts
+// fresh with nothing left to carry over from the old one.
+const cleaned = await get(a, async () => {
+  const talk = await import("/src/components/game/talk.tsx");
+  const store = window.__emberisle;
+  const code = store.getState().code;
+  talk.useTalk.setState({ cooling: true, resting: true, reactLog: [{ id: 9999, seat: "x", name: "x", color: "red", emote: "🔥", at: Date.now() }] });
+  const held = talk.useTalk.getState();
+  store.setState({ code: "ZZZZ" });
+  const after = talk.useTalk.getState();
+  store.setState({ code });
+  return { held: held.cooling && held.resting && held.reactLog.length === 1, cooling: after.cooling, resting: after.resting, log: after.reactLog.length };
+});
+check(cleaned.held && !cleaned.cooling && !cleaned.resting && cleaned.log === 0, `cleanup: a new table code clears both waits and the reaction log ${JSON.stringify(cleaned)}`);
 
 check(errors.length === 0, `no console errors${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();
