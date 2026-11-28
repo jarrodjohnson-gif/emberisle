@@ -78,9 +78,9 @@ try {
     await page.getByTestId("build-cancel").click(); await prompt("Your turn");
     const strongBtn = page.getByTestId("build-stronghold");
     await page.getByTestId("build-open").click(); await strongBtn.click();
-    await page.waitForFunction(() => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith("Pick a home to upgrade"));
+    await page.waitForFunction(() => document.querySelector('[data-testid="turn-banner"]')?.textContent.startsWith("Pick an outpost to upgrade"));
     assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick\b/);
-    assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick a home to upgrade$|Esc cancels/);
+    assert.match(await page.getByTestId("turn-banner").textContent(), /^Pick an outpost to upgrade$|Esc cancels/);
     await page.getByTestId("build-cancel").click(); await prompt("Your turn");
     await page.evaluate(() => {
       const g=window.__emberisle, st=structuredClone(g.getState().state);

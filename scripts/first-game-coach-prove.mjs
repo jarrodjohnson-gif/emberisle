@@ -262,7 +262,7 @@ try {
   await page.evaluate(() => { const g = window.__emberisle; const s = structuredClone(g.getState().state); s.phase = "discard"; s.dice = [3, 4]; s.discardNeeded = { [s.current]: 1 }; g.setState({ state: s, banner: null }); });
   assert.equal(await coach.count(), 0, "no wayfarer instruction during discards");
   await page.evaluate(() => { const g = window.__emberisle; const s = structuredClone(g.getState().state); s.phase = "robber"; s.discardNeeded = {}; g.setState({ state: s }); });
-  await step(3, /Move the wayfarer to a new hex, then pick a victim if available/);
+  await step(3, /Move the wayfarer, then pick who to take from\./);
   const robberFixture = await page.evaluate(() => structuredClone(window.__emberisle.getState().state));
   await page.evaluate(() => { const g = window.__emberisle; const s = structuredClone(g.getState().state); s.wayfarerMode = "off"; g.setState({ state: s }); });
   assert.equal(await coach.count(), 0);
