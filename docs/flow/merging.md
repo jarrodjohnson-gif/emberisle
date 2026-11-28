@@ -18,3 +18,22 @@ Two repo variables switch it off. `AUTO_MERGE` is `on` today; anything else stop
 **The workflow can't merge a PR that changes `ci.yml`.** GitHub refuses that to a workflow's own token, and every PR that registers a proof changes `ci.yml`. Only for that refusal, the workflow reads the head again. If it has not moved, the workflow posts `<!-- merge-by-chat: <head SHA> -->` and labels the PR `merge-by-chat`, and the dispatcher merges it at its next tick. A merge made with the workflow token starts no CI run on `main`, so the workflow starts one itself. `pr-signal` removes that label as soon as the PR is no longer green. If Jarrod adds a repo secret `AUTO_MERGE_TOKEN` (a token with the workflows permission), the workflow merges these itself and the label is never used.
 
 Red on `main` after a merge is `prio:p0`. The dispatcher starts a builder for it first.
+
+## A red `loosen` the owner approved
+
+A PR that replaces check lines under the 2026-10-25 rule in [`../DECISIONS.md`](../DECISIONS.md) keeps `loosen` red, and so does a new size ceiling in `scripts/size-prove.mjs`. Such a PR merges only when Jarrod's `Owner answer` comment names every line `loosen` reported, for the PR's exact head. Each proof file gets one marker on a line of its own:
+
+```
+<!-- owner-replaced: {"head":"<head SHA>","file":"scripts/table-menu-prove.mjs","lines":["<old line>"]} -->
+```
+
+Each old line is copied exactly from the `loosen` job log, everything after `removed or edited check line: `. A line reported twice is named twice. The marker needs no label. It counts only in a comment that starts `Owner answer (Desk page`, from a trusted account, and only the newest such comment with an `owner-replaced` marker is read. Posting the comment re-checks the PR.
+
+The workflow reads the red `loosen` job's own log for the head. `loosen` counts as met only when all of these hold:
+
+- the head has one `loosen` run, and it completed as a failure;
+- the base's copy of `loosen-prove` failed by itself, so the PR's own copy never ran;
+- every reason it gave is `removed or edited check line` in a proof file. A lower check count, a new `.skip`, an added `process.exit(0)` or a deleted proof still refuses;
+- the markers cover every reported line in its own file.
+
+It lifts nothing else. The review, `checks`, the head pin and the governance rule still apply, so a change to `scripts/size-prove.mjs` also needs `owner-merge`. Any push makes the marker stale, because it names one head.

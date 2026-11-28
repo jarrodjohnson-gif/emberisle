@@ -12,6 +12,8 @@
 //                `Owner answer (Desk page`, for this exact head. It lifts `needs-owner` and a review's ask for the owner.
 //   owner-merge  counts only with <!-- owner-merge: <head SHA> --> in the same kind of comment, for this exact head. It
 //                lifts the governance refusals in a code PR. It never lifts an unsafe path, the review, the checks or the head pin.
+// One marker needs no label: <!-- owner-replaced: {...} --> in the same kind of comment (#1914, at ownerReplaced below)
+// lets a red `loosen` count only when it covers every check line the base's loosen-prove reported for this head.
 // Every rule fails closed: an excluded path wins over the allow list, and any API error or missing field means no merge.
 import { randomUUID } from "node:crypto";
 import { appendFileSync } from "node:fs";
@@ -126,6 +128,68 @@ function ownerHead(comments, marker) {
 export const ownerMergeHead = (comments) => ownerHead(comments, OWNER_MERGE);
 export const ownerOkHead = (comments) => ownerHead(comments, OWNER_OK);
 
+// #1914: the owner's yes to check lines replaced under the 2026-10-25 rule, one proof file per marker, each on its own line:
+//   <!-- owner-replaced: {"head":"<head SHA>","file":"scripts/x-prove.mjs","lines":["<old line>", ...]} -->
+// Each line is exactly what loosen-prove prints after "removed or edited check line: ". Only the newest trusted
+// `Owner answer` comment that carries one counts, and only its markers for this exact head.
+const OWNER_REPLACED = /^<!-- owner-replaced: (.*) -->\r?$/gm;
+export function ownerReplaced(comments, sha) {
+  for (const c of (comments ?? []).toReversed()) {
+    const body = String(c.body ?? "");
+    if (!TRUSTED.includes(c.author_association) || !body.startsWith(OWNER_ANSWER)) continue;
+    const found = [...body.matchAll(OWNER_REPLACED)];
+    if (!found.length) continue;
+    return found.flatMap(([, json]) => {
+      let m;
+      try { m = JSON.parse(json); } catch { return []; }
+      const ok = typeof m?.head === "string" && m.head.toLowerCase() === sha && typeof m.file === "string"
+        && Array.isArray(m.lines) && m.lines.every((l) => typeof l === "string");
+      return ok ? [{ file: m.file, lines: m.lines }] : [];
+    });
+  }
+  return [];
+}
+
+// What the base's copy of loosen-prove reported in one `loosen` job log, as [{ file, line }], or null. It is null unless
+// that copy failed by itself, every reason is an edited check line in a proof, and its count of proofs matches. The job
+// runs the PR's own copy only after the base's passed, so a log that holds that step's line is refused.
+const LOG_STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z ?/;
+const BASE_RUN = /^Running the base's loosen-prove from [0-9a-f]{40}\.$/;
+const PR_RUN = "Testing the PR's guard copy in the same advisory job.";
+const EDITED = /^FAIL ((?:scripts|server)\/[A-Za-z0-9._-]+-prove\.mjs): removed or edited check line: (.+)$/;
+const LOOSE_SUM = /^([1-9][0-9]*) proof\(s\) loosened, or owner-only file\(s\) changed, against [0-9a-f]{12}\. /;
+export function loosenedLines(log) {
+  if (typeof log !== "string") return null;
+  const lines = log.split("\n").map((l) => l.replace(/\r$/, "").replace(LOG_STAMP, ""));
+  const start = lines.findIndex((l) => BASE_RUN.test(l));
+  if (lines.includes(PR_RUN) || start < 0) return null;
+  const out = [];
+  for (let i = start + 1; i < lines.length; i++) {
+    if (lines[i].startsWith("ok   self-test: ")) continue;
+    const m = lines[i].match(EDITED);
+    if (m) {
+      out.push({ file: m[1], line: m[2] });
+      continue;
+    }
+    const sum = lines[i].match(LOOSE_SUM);
+    if (!sum || !out.length || Number(sum[1]) !== new Set(out.map((r) => r.file)).size) return null;
+    if (!lines[i + 1]?.startsWith("To retire a proof") || lines[i + 2] !== "##[error]Process completed with exit code 1.") return null;
+    return out;
+  }
+  return null;
+}
+
+// The reported lines no marker covers. Each marker line covers one report of that exact line in that exact file.
+export function uncoveredLines(reported, markers) {
+  const left = new Map();
+  for (const { file, lines } of markers) for (const l of lines) left.set(`${file}\n${l}`, (left.get(`${file}\n${l}`) ?? 0) + 1);
+  return reported.filter(({ file, line }) => {
+    const n = left.get(`${file}\n${line}`) ?? 0;
+    if (n) left.set(`${file}\n${line}`, n - 1);
+    return !n;
+  });
+}
+
 // Why a path can't auto-merge, or null if it can. Excludes are checked first, case-insensitively.
 export function pathRefusal(path) {
   if (typeof path !== "string" || !path) return "no path";
@@ -146,7 +210,8 @@ export function pathRefusal(path) {
 // pr: the PR from the API. headAfter: its head SHA read again after everything else, so a push mid-check is caught.
 // files: every page of the PR files API. checkRuns: the head SHA's check runs named `checks`. comments: its issue comments.
 // code: false when the repo variable AUTO_MERGE_CODE is "off"; the workflow passes "on" otherwise.
-export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranch, code = false }) {
+// loosenLog: { id, text }, the log of the head's red `loosen` job, read only when an owner-replaced marker is for this head.
+export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranch, code = false, loosenLog = null }) {
   const no = (reason) => ({ merge: false, reason });
   const sha = pr?.head?.sha;
   if (!SHA.test(sha ?? "")) return no("no head SHA");
@@ -193,13 +258,23 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   }
   if (lines >= MAX_CHANGED_LINES) return no(`${lines} changed lines, the limit is under ${MAX_CHANGED_LINES}`);
 
+  let replaced = 0;
   for (const name of REQUIRED_RUNS) {
     // A skipped run checked nothing, so it neither passes nor fails the PR: CI skips `checks` on some events (a draft's
     // first run), and that run stays beside the real one at the same head. Every other run must be green.
     const runs = (checkRuns ?? []).filter((r) => r.name === name && r.app?.id === ACTIONS_APP_ID && r.conclusion !== "skipped");
     if (!runs.length) return no(`no \`${name}\` run on the head SHA`);
-    if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success"))
-      return no(`\`${name}\` is not green on the head SHA`);
+    if (runs.some((r) => r.head_sha !== sha || r.status !== "completed" || r.conclusion !== "success")) {
+      // #1914: a red `loosen` counts as met only for check lines the owner named for this head, read from that run's log.
+      const [r] = runs;
+      const red = name === "loosen" && runs.length === 1 && r.head_sha === sha && r.status === "completed" && r.conclusion === "failure";
+      const reported = red && loosenLog && Number.isInteger(r.id) && loosenLog.id === r.id ? loosenedLines(loosenLog.text) : null;
+      const markers = reported ? ownerReplaced(comments, sha) : [];
+      const uncovered = markers.length ? uncoveredLines(reported, markers) : null;
+      if (!uncovered || uncovered.length)
+        return no(`\`${name}\` is not green on the head SHA${uncovered ? `, and no owner-replaced marker covers ${uncovered[0].file}: ${uncovered[0].line}` : ""}`);
+      replaced = reported.length;
+    }
   }
 
   // Only the newest review counts, so a later review with findings is never outweighed by an older clean marker. A
@@ -210,8 +285,9 @@ export function decide({ pr, headAfter, files, checkRuns, comments, defaultBranc
   const marked = [...String(latest?.body ?? "").matchAll(MARKER)].some((m) => m[1] === sha);
   if (!marked) return no(`the newest review has no clean marker for ${sha}`);
 
-  if (asCode) return { merge: true, reason: `${files.length} files, checks green, different-model review clean at ${sha}`, sha };
-  return { merge: true, reason: `${files.length} docs files, ${lines} lines, checks green, desk clean at ${sha}`, sha };
+  const loose = replaced ? `, \`loosen\` red only for ${replaced} owner-replaced line(s)` : "";
+  if (asCode) return { merge: true, reason: `${files.length} files, checks green${loose}, different-model review clean at ${sha}`, sha };
+  return { merge: true, reason: `${files.length} docs files, ${lines} lines, checks green${loose}, desk clean at ${sha}`, sha };
 }
 
 async function main() {
@@ -250,9 +326,17 @@ async function main() {
   const checkRuns = [];
   for (const name of sha ? REQUIRED_RUNS : []) checkRuns.push(...(await get(`/commits/${sha}/check-runs?check_name=${name}&filter=latest&per_page=100`)).check_runs);
   const comments = await all(`/issues/${number}/comments`);
+  // The red `loosen` job's own log, only when an owner-replaced marker names this head. A check run's id is its job's id.
+  const red = checkRuns.filter((r) => r.name === "loosen" && r.app?.id === ACTIONS_APP_ID && r.conclusion === "failure");
+  let loosenLog = null;
+  if (sha && red.length === 1 && Number.isInteger(red[0].id) && ownerReplaced(comments, sha).length) {
+    const res = await fetch(`${api}/actions/jobs/${red[0].id}/logs`, { headers });
+    if (!res.ok) throw new Error(`GET the loosen job log ${red[0].id}: ${res.status}`);
+    loosenLog = { id: red[0].id, text: await res.text() };
+  }
   const headAfter = (await get(`/pulls/${number}`)).head?.sha;
 
-  const decision = decide({ pr, headAfter, files, checkRuns, comments, defaultBranch: DEFAULT_BRANCH, code: AUTO_MERGE_CODE === "on" });
+  const decision = decide({ pr, headAfter, files, checkRuns, comments, defaultBranch: DEFAULT_BRANCH, code: AUTO_MERGE_CODE === "on", loosenLog });
   console.log(`PR #${number}: ${decision.merge ? "merge" : "no merge"}, ${decision.reason}`);
   if (decision.merge) appendFileSync(GITHUB_OUTPUT, `merge=true\nnumber=${number}\nsha=${decision.sha}\n`);
 }
