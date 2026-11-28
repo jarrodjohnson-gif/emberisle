@@ -293,6 +293,14 @@ await b.page.keyboard.press("3");
 await until(async () => (await get(w, () => window.__emberisle.getState().reactions.length)) === reactsBefore + 1, "the 3 key sends a reaction from off a field");
 check(true, "typing and IME: with the focus off a field, the 3 key sends one reaction");
 await closePanel(b);
+
+// Escape: with the focus on a tab, it closes the panel and the Open chat trigger takes the focus back.
+await openPanel(b);
+await b.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).focus();
+await b.page.keyboard.press("Escape");
+await b.page.locator('section[aria-label="Table chat"]').waitFor({ state: "detached" });
+await until(() => get(b, () => /^Open chat/.test(document.activeElement?.getAttribute("aria-label") ?? "")), "Escape: the Open chat trigger takes the focus back", 3000);
+check(true, "escape: closes the panel and the focus returns to the Open chat trigger");
 await b.page.setViewportSize({ width: 956, height: 440 });
 
 // Wait out the 3 s sound rest before the win button is used.
