@@ -271,7 +271,10 @@ export function TableMenu() {
                     ))}
                   </span>
                   {name === "Board" && boardFail && (
-                    <Button variant="ghost" className="col-span-3" onClick={boardFail.retry}>{boardFail.text}. Retry</Button>
+                    <>
+                      <span role="alert" className="col-span-2 mt-2 text-caption text-danger">{boardFail.text}</span>
+                      <Button size="sm" variant="ghost" className="mt-2 min-w-11 px-1.5" onClick={boardFail.retry}>Retry</Button>
+                    </>
                   )}
                 </div>
               ))}

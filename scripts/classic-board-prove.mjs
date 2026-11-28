@@ -194,22 +194,32 @@ try {
   }
 
   // Failure and Retry.
-  {
-    const page = await open({ width: 440, height: 956 });
+  for (const [width, height] of [[320, 568], [390, 844]]) {
+    const page = await open({ width, height });
     await page.evaluate(() => window.__emberisle.getState().startHotseat(3));
     await settled(page, "jelly");
     await page.route("**/src/lib/scene/classic-board.ts*", (route) => route.abort());
     const menu = await openMenu(page);
     await menu.getByRole("group", { name: "Board" }).getByRole("button", { name: "Classic" }).click();
-    const message = menu.getByRole("button", { name: /^Classic could not load\. Retry$/ });
+    const message = menu.getByRole("alert");
     await message.waitFor({ timeout: 60_000 });
-    check(await message.isVisible(), "a failed Classic import says so in the menu row, with Retry");
+    check((await message.textContent()) === "Classic could not load", "a failed Classic import says so in the menu row");
+    const retry = menu.getByRole("button", { name: "Retry" });
+    const box = await menu.evaluate((el) => {
+      const r = (e) => e.getBoundingClientRect();
+      const row = el.querySelector("[role=group][aria-label=Board]");
+      const [jelly, classic] = [...row.querySelectorAll("button")];
+      const alert = row.querySelector("[role=alert]"), retry = [...row.querySelectorAll("button")].find((b) => b.textContent === "Retry");
+      return { gap: r(alert).top - r(classic).bottom, retryGap: r(retry).top - r(classic).bottom, retryH: r(retry).height, retryW: r(retry).width, retryLeft: r(retry).left - r(classic).left, alertLeft: r(alert).left - r(row.firstElementChild).left, color: getComputedStyle(alert).color, danger: (() => { const t = document.createElement("i"); t.className = "text-danger"; el.append(t); const c = getComputedStyle(t).color; t.remove(); return c; })(), panelRight: r(el).right - r(retry).right };
+    });
+    check(box.gap >= 8 && box.retryGap >= 8 && box.retryH >= 44 && box.retryW >= 44 && Math.abs(box.retryLeft) < 1 && Math.abs(box.alertLeft) < 1 && box.color === box.danger && box.panelRight >= -1, "the error line sits 8 px under the choices, left-aligned, in the danger colour, with a 44 px Retry in the Classic column", box);
+    if (process.env.SHOTS) await retry.scrollIntoViewIfNeeded(), await page.screenshot({ path: path.join(process.env.SHOTS, `failure-${width}x${height}.png`) });
     const s = await status(page);
     check(s.displayed === "jelly" && s.requested === "classic" && s.store === "classic", "Jelly stays visible and the stored choice is kept", s);
     await page.unroute("**/src/lib/scene/classic-board.ts*");
-    await message.click();
+    await retry.click();
     await settled(page, "classic");
-    check(await message.count() === 0, "Retry recovers Classic and clears the message");
+    check(await message.count() === 0 && await retry.count() === 0, "Retry recovers Classic and clears the message");
     await page.context().close();
   }
 
