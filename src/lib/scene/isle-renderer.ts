@@ -499,7 +499,9 @@ export class IsleRenderer {
     this.resize();
     this.renderer.setAnimationLoop(this.tick);
     // #1857: the soft shadows join the composer after the first frame (owner, 2026-11-28, A).
-    this.afterDraw.push(() => void this.attachSsao());
+    // It waits out the loading screen's push (boot.intro): building the pass and resizing there would land in the fade (#1385).
+    const attach = () => (boot.intro && !this.stopped ? void this.afterDraw.push(attach) : void this.attachSsao());
+    this.afterDraw.push(attach);
     } catch (err) {
       this.dispose();
       // In dev, forceContextLoss followed by a new WebGLRenderer on the same canvas throws
