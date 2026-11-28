@@ -259,7 +259,7 @@ export function toIntent(action: Action): Record<string, unknown> | null {
     case "discard":
       return { type: "discard", cards: action.resources };
     case "bankTrade":
-      return { type: "tradeBank", give: action.give, take: action.want };
+      return { type: "tradeBank", give: action.give, take: action.want, count: action.count };
     default:
       return null;
   }

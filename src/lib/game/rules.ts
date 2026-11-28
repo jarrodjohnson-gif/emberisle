@@ -526,8 +526,8 @@ export function applyAction(prev: GameState, actor: string, action: Action): { s
     case "playPlenty": line = `${me.name} plays Plenty — ${delta}.`; break;
     case "playMonopoly": line = `${me.name} plays Monopoly — ${delta || `gains 0 ${RESOURCE_LABEL[action.resource].toLowerCase()}`}.`; break;
     case "bankTrade": {
-      const rate = harborRate(prev, actor, action.give);
-      line = `${me.name} traded ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} to ${rate < 4 ? "a dock" : "the bank"} for 1 ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
+      const rate = harborRate(prev, actor, action.give), n = action.count ?? 1;
+      line = `${me.name} traded ${rate * n} ${RESOURCE_LABEL[action.give].toLowerCase()} to ${rate < 4 ? "a dock" : "the bank"} for ${n} ${RESOURCE_LABEL[action.want].toLowerCase()}.`;
       break;
     }
     case "respondTrade": {
@@ -798,14 +798,13 @@ function applyActionInternal(prev: GameState, actor: string, action: Action): { 
       if (state.phase !== "main") return { state: prev, error: "Cannot trade now." };
       if (!validRes(action.give) || !validRes(action.want)) return { state: prev, error: "Choose resources." };
       if (action.give === action.want) return { state: prev, error: "Trade for a different resource." };
-      const rate = harborRate(state, actor, action.give);
+      const n = action.count ?? 1, rate = harborRate(state, actor, action.give) * n;
       if (me.resources[action.give] < rate) return { state: prev, error: `Need ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()}.` };
-      if (state.bank[action.want] <= 0) return { state: prev, error: "Bank is empty." };
+      if (state.bank[action.want] < n) return { state: prev, error: "Bank is empty." };
       me.resources[action.give] -= rate;
       state.bank[action.give] += rate;
-      give(state, me, action.want, 1);
-      tally(state, me).bankTrades += 1;
-      log(state, `${me.name} trades ${rate} ${RESOURCE_LABEL[action.give].toLowerCase()} for ${RESOURCE_LABEL[action.want].toLowerCase()}.`);
+      give(state, me, action.want, n);
+      tally(state, me).bankTrades += n;
       return { state };
     }
     case "offerTrade": {

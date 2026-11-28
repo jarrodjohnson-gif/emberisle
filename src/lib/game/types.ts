@@ -202,7 +202,7 @@ export type Action =
   | { type: "playRoad"; edgeIds: string[] }
   | { type: "playPlenty"; resources: Resource[] }
   | { type: "playMonopoly"; resource: Resource }
-  | { type: "bankTrade"; give: Resource; want: Resource }
+  | { type: "bankTrade"; give: Resource; want: Resource; count?: number }
   | { type: "offerTrade"; to: string; give: Partial<Record<Resource, number>>; want: Partial<Record<Resource, number>> }
   | { type: "respondTrade"; accept: boolean }
   | { type: "endTurn" };

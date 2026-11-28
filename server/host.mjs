@@ -1825,7 +1825,8 @@ function toAction(game, msg) {
     case "discard":
       return { type: "discard", resources: msg.cards ?? msg.resources ?? {} };
     case "tradeBank":
-      return { type: "bankTrade", give: msg.give, want: msg.take ?? msg.want };
+      if (msg.count !== undefined && !(Number.isInteger(msg.count) && msg.count > 0)) return null;
+      return { type: "bankTrade", give: msg.give, want: msg.take ?? msg.want, count: msg.count };
     case "pass":
       return { type: "endTurn" };
     default:
