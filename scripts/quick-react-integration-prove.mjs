@@ -5,6 +5,9 @@
 //   Win screen: the win button reads exactly "GG! 🔊", is at least 44x44, inside the screen with no sideways scroll, sends
 //         sb_win_reaction once per click, rests for 3 s (disabled) and then works again; a watcher has no such button.
 //   Reactions: an emoji and a sound reach the other seat once and are echoed in the log; a watcher's tray sends nothing.
+//   Stress: 320 px width; enlarged text (root font size 125%); a 24-sticker fixture; a 60-character sound label; rotation with the
+//         panel open; camera re-measure with the panel open (the island hole, `__isle.insets()`, does not move); IME and typing
+//         are excluded from the 1-6 keys, which still send with the focus off a field.
 // At 440x956 and 956x440. Run: npm run quick-react-integration-prove. Screenshots go to test-results/quick-react-integration-*.jpg.
 import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
@@ -49,7 +52,7 @@ async function until(fn, what, ms = 10_000) {
   throw new Error(`timed out: ${what}`);
 }
 
-async function tab(name, viewport) {
+async function tab(name, viewport, stickerFixture = 0) {
   const ctx = await browser.newContext({ viewport, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
   page.on("console", (m) => m.type() === "error" && errors.push(`${name}: ${m.text()}`));
@@ -69,6 +72,14 @@ async function tab(name, viewport) {
       };
     }
   });
+  if (stickerFixture) {
+    // A fixture, not a catalogue change: the same module with N sticker ids over the real images. Its stickers are never sent.
+    await page.route((u) => /\/src\/components\/game\/emotes\.ts(\?.*)?$/.test(u.pathname + u.search), (route) => route.fulfill({
+      contentType: "text/javascript",
+      body: `const files = ${JSON.stringify(["banana-guy", "ben-10", "daffy-shock", "dark-smile", "glasses-glance", "goggles-guy", "leo-laugh", "memoji-scheme", "mike-sully", "monkey-pet", "old-grump", "shrek-smirk", "side-eye", "sponge-thumbs", "wide-eyes"])};
+export const EMOTES = Object.fromEntries(Array.from({ length: ${stickerFixture} }, (_, i) => ["fixture-" + String(i + 1).padStart(2, "0"), "/src/assets/emotes/" + files[i % files.length] + ".webp"]));`,
+    }));
+  }
   await page.goto(url);
   return { name, page };
 }
@@ -98,7 +109,7 @@ const SIZES = [
   { label: "956x440", width: 956, height: 440 },
 ];
 
-const a = await tab("Ember", SIZES[0]);
+const a = await tab("Ember", SIZES[0], 24);
 const b = await tab("Moss", SIZES[1]);
 await a.page.getByRole("button", { name: "Host a table" }).click();
 const code = (await a.page.getByTestId("table-code").textContent()).trim();
@@ -118,10 +129,9 @@ await w.page.getByRole("button", { name: "Open chat" }).waitFor();
 check(true, "game: two seats and a late watcher are at the table");
 
 // Tray, per size: one trigger, no separate quick-reaction button, the whole catalogue, and the watcher's log-only panel.
-const catalogue = await get(a, async () => {
-  const stickers = Object.keys(await (await import("/src/components/game/talk.tsx")).loadEmotes());
-  return { stickers: stickers.length };
-});
+const catalogueOf = (t) => get(t, async () => ({ stickers: Object.keys(await (await import("/src/components/game/talk.tsx")).loadEmotes()).length }));
+const catalogues = { Ember: await catalogueOf(a), Moss: await catalogueOf(b) };
+check(catalogues.Ember.stickers === 24 && catalogues.Moss.stickers === 15, `catalogue: Moss has the real 15 stickers, Ember the 24-sticker fixture ${JSON.stringify(catalogues)}`);
 for (const size of SIZES) {
   for (const t of [a, b, w]) await t.page.setViewportSize({ width: size.width, height: size.height });
   for (const t of [a, b]) {
@@ -132,8 +142,8 @@ for (const size of SIZES) {
     check((await t.page.getByRole("button", { name: /^React / }).count()) === 6, `${size.label} ${t.name}: the Chat tab has the six emoji`);
     await t.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
     await t.page.getByTestId("soundboard").waitFor();
-    await until(async () => (await t.page.getByTestId("stickers").getByRole("button").count()) === catalogue.stickers, `${t.name}: every sticker`);
-    check((await t.page.getByTestId("soundboard").getByRole("button").count()) === 15, `${size.label} ${t.name}: the Sounds & stickers tab has the 15 sound chips and ${catalogue.stickers} stickers`);
+    await until(async () => (await t.page.getByTestId("stickers").getByRole("button").count()) === catalogues[t.name].stickers, `${t.name}: every sticker`);
+    check((await t.page.getByTestId("soundboard").getByRole("button").count()) === 15, `${size.label} ${t.name}: the Sounds & stickers tab has the 15 sound chips and ${catalogues[t.name].stickers} stickers`);
     const m = await get(t, () => {
       const panel = document.querySelector('section[aria-label="Table chat"]');
       const p = panel.getBoundingClientRect();
@@ -164,6 +174,126 @@ await new Promise((r) => setTimeout(r, 400));
 check((await lines(b, { field: "sound", value: "sb_wololo" })) === soundBefore + 1 && (await lines(w, { field: "sound", value: "sb_wololo" })) === soundBefore + 1, "reactions: an emoji and a sound each arrive once at the other seat, and the watcher's log shows the sound once");
 await a.page.getByRole("tab", { name: "Chat", exact: true }).click();
 await closePanel(a);
+
+// Stress: the open panel, both tabs, must stay whole, reachable and unclipped under the conditions the design names.
+async function whole(t, label) {
+  for (const name of ["Chat", "Sounds & stickers"]) {
+    await openPanel(t);
+    await t.page.getByRole("tab", { name, exact: true }).click();
+    if (name === "Sounds & stickers") await t.page.getByTestId("soundboard").waitFor();
+    const m = await get(t, () => {
+      const panel = document.querySelector('section[aria-label="Table chat"]');
+      const p = panel.getBoundingClientRect();
+      const small = [];
+      const unreachable = [];
+      const outside = [];
+      for (const el of panel.querySelectorAll("button, input, [role=tab]")) {
+        el.scrollIntoView({ block: "nearest" });
+        const r = el.getBoundingClientRect();
+        if (!r.width) continue;
+        const what = el.getAttribute("aria-label") || el.textContent.trim().slice(0, 20) || el.id;
+        if (r.width < 43.5 || r.height < 43.5) small.push(`${what} ${Math.round(r.width)}x${Math.round(r.height)}`);
+        if (r.left < p.left - 0.5 || r.right > p.right + 0.5) outside.push(what);
+        if (r.top < p.top - 0.5 || r.bottom > p.bottom + 0.5 || r.top < -0.5 || r.bottom > innerHeight + 0.5) unreachable.push(what);
+      }
+      const sideways = [...panel.querySelectorAll("*")].filter((el) => el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX !== "visible" && getComputedStyle(el).textOverflow !== "ellipsis").map((el) => el.dataset.testid || el.tagName);
+      return { small, outside, unreachable, sideways, page: document.documentElement.scrollWidth > innerWidth, inside: p.left >= -0.5 && p.top >= -0.5 && p.right <= innerWidth + 0.5 && p.bottom <= innerHeight + 0.5 };
+    });
+    check(!m.small.length && !m.outside.length && !m.unreachable.length && !m.sideways.length && !m.page && m.inside, `${label}, ${name} tab: every control at least 44x44, reachable and inside the panel, nothing clipped, no sideways scroll ${JSON.stringify(m)}`);
+  }
+  await t.page.getByRole("tab", { name: "Chat", exact: true }).click();
+}
+
+// 320 px, 24 stickers (Ember carries the fixture), phone sheet.
+await a.page.setViewportSize({ width: 320, height: 640 });
+await openPanel(a);
+await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await until(async () => (await a.page.getByTestId("stickers").getByRole("button").count()) === 24, "Ember shows the 24 fixture stickers");
+check(true, "fixture: Ember's Sounds & stickers tab shows 24 stickers");
+await whole(a, "320x640, 24 stickers");
+await whole(b, "956x440 (real catalogue)");
+await b.page.setViewportSize({ width: 320, height: 640 });
+await whole(b, "320x640");
+for (const size of SIZES) {
+  await a.page.setViewportSize({ width: size.width, height: size.height });
+  await whole(a, `${size.label}, 24 stickers`);
+}
+
+// Enlarged text: the root font size at 125% (the browser's text-size setting scales rem the same way). 150% and 200% fail today:
+// the 320 px emoji are 42 px wide at 150%, and at 200% on 440 px the Sounds & stickers tab overlaps Mute players (see the PR).
+for (const size of [{ label: "440x956", width: 440, height: 956 }, { label: "320x640", width: 320, height: 640 }]) {
+  await a.page.setViewportSize({ width: size.width, height: size.height });
+  await get(a, (pct) => { document.documentElement.style.fontSize = pct + "%"; }, "125");
+  await whole(a, `${size.label}, enlarged text, 24 stickers`);
+  await get(a, () => { document.documentElement.style.fontSize = ""; });
+}
+
+// A long sound label wraps inside its chip: no sideways scroll and the chip stays whole.
+await a.page.setViewportSize({ width: 320, height: 640 });
+await openPanel(a);
+await a.page.getByRole("tab", { name: "Sounds & stickers", exact: true }).click();
+await get(a, () => {
+  const chip = document.querySelector('[data-testid="soundboard"] button');
+  const label = [...chip.querySelectorAll("*")].reverse().find((el) => el.children.length === 0 && el.textContent.trim()) ?? chip;
+  label.textContent = "A very long sound label that goes on and on and on past any chip";
+});
+await whole(a, "320x640, a 62-character sound label");
+await closePanel(a);
+
+// Rotation with the panel open: it stays open on the same tab with its draft, and is inside the screen both ways.
+await openPanel(b);
+await b.page.getByRole("tab", { name: "Chat", exact: true }).click();
+await b.page.locator("#chat-input").fill("rotate me");
+for (const size of [{ width: 440, height: 956 }, { width: 956, height: 440 }, { width: 440, height: 956 }]) {
+  await b.page.setViewportSize(size);
+  await new Promise((r) => setTimeout(r, 300));
+  const st = await get(b, () => {
+    const p = document.querySelector('section[aria-label="Table chat"]')?.getBoundingClientRect();
+    return { open: Boolean(p), draft: document.getElementById("chat-input")?.value, tab: document.getElementById("chat-tab-chat")?.getAttribute("aria-selected"), inside: Boolean(p) && p.left >= -0.5 && p.top >= -0.5 && p.right <= innerWidth + 0.5 && p.bottom <= innerHeight + 0.5 };
+  });
+  check(st.open && st.draft === "rotate me" && st.tab === "true" && st.inside, `rotation: at ${size.width}x${size.height} the panel is still open on Chat with its draft, inside the screen ${JSON.stringify(st)}`);
+}
+await b.page.locator("#chat-input").fill("");
+
+// Camera re-measure with the panel open: the island hole the camera fits does not change because the panel is open.
+await closePanel(b);
+const holeClosed = await get(b, () => window.__isle.insets());
+await openPanel(b);
+await get(b, () => window.dispatchEvent(new Event("resize")));
+const framesAt = await get(b, () => window.__isle.renders);
+await b.page.setViewportSize({ width: 441, height: 956 });
+await b.page.setViewportSize({ width: 440, height: 956 });
+await get(b, () => { window.__draw = true; });
+await b.page.waitForFunction((n) => window.__isle.renders > n, framesAt, { timeout: 15_000 });
+await get(b, () => { window.__draw = false; });
+const holeOpen = await get(b, () => window.__isle.insets());
+check(JSON.stringify(holeClosed) === JSON.stringify(holeOpen), `camera: after a forced re-measure with the panel open the island hole is unchanged ${JSON.stringify({ closed: holeClosed, open: holeOpen })}`);
+await closePanel(b);
+
+// Typing and IME: digits typed in the input, or during a composition, send no reaction; with the focus off a field the keys
+// 1 to 6 still send one.
+await openPanel(b);
+await b.page.getByRole("tab", { name: "Chat", exact: true }).click();
+const input = b.page.locator("#chat-input");
+await input.focus();
+const reactsBefore = await get(w, () => window.__emberisle.getState().reactions.length);
+await b.page.keyboard.press("1");
+await input.evaluate((el) => {
+  el.dispatchEvent(new CompositionEvent("compositionstart", { bubbles: true, data: "" }));
+  el.dispatchEvent(new CompositionEvent("compositionupdate", { bubbles: true, data: "に" }));
+});
+await b.page.keyboard.press("2");
+await input.evaluate((el) => el.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true, data: "に" })));
+await new Promise((r) => setTimeout(r, 600));
+check((await input.inputValue()).includes("1") && (await get(w, () => window.__emberisle.getState().reactions.length)) === reactsBefore, "typing and IME: 1 typed in the input and 2 pressed during a composition send no reaction");
+await input.fill("");
+await get(b, () => document.activeElement?.blur());
+await b.page.keyboard.press("3");
+await until(async () => (await get(w, () => window.__emberisle.getState().reactions.length)) === reactsBefore + 1, "the 3 key sends a reaction from off a field");
+check(true, "typing and IME: with the focus off a field, the 3 key sends one reaction");
+await closePanel(b);
+await b.page.setViewportSize({ width: 956, height: 440 });
+
 // Wait out the 3 s sound rest before the win button is used.
 await new Promise((r) => setTimeout(r, 3200));
 
