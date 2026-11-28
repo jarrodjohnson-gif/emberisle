@@ -38,7 +38,8 @@ interface ProfileSnapshot {
   setAt?: number | null;
   code?: string | null;
 }
-// Call check() before open/join after a transport drop; offline attachment falls back to a guest.
+// A signed-in session outlives a dropped profile socket (#1929): the host was verified when it began, so a Host or Join still
+// attaches the credential. Only a host that was never verified, or an insecure link, falls back to a guest.
 // Table attachment asks at the moment of sending. No credential is put in Me, game state or saved seats.
 export interface ProfileAttachment { credentialForHost(host: string): string | null }
 type StorageLike = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -297,7 +298,7 @@ export function createProfileClient(initialHost: string, options: {
     },
     credentialForHost(host: string) {
       if (!snapshot.profile) return null;
-      try { if (normalizeProfileHost(host) === snapshot.host && snapshot.confirmed && snapshot.status === "available" && transportAllowed(snapshot.host) && expiresAt > Date.now() && !snapshot.profile?.pinMustChange) return credential; } catch { /* guest */ }
+      try { if (normalizeProfileHost(host) === snapshot.host && snapshot.confirmed && (snapshot.status === "available" || snapshot.status === "offline") && transportAllowed(snapshot.host) && expiresAt > Date.now() && !snapshot.profile?.pinMustChange) return credential; } catch { /* guest */ }
       return null;
     },
     close() { reset({ status: "idle" }); },
