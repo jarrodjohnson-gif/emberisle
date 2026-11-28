@@ -227,7 +227,7 @@ import { cancelForeground, foregroundScope, haptics, play, playForeground, reset
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
-import { SONG_SOUNDS } from "@/lib/profile-songs";
+import { SONG_SOUNDS } from "@/lib/profile-song-sounds";
 
 const tradeSounds = import("../trade-sound").catch(() => null);
 

@@ -68,7 +68,9 @@ check("another owner may select the same shared song", (await edit(b, B.credenti
 check("display and login rename preserve selection", (await edit(a, A.credential, { displayName: "Renamed", login: "song-renamed", pin: "4821" })).profile?.winSongId === song.id);
 check("clear restores null", (await edit(b, B.credential, { winSongId: null })).profile?.winSongId === null);
 // Each socket starts with ten burst tokens; separate authenticated connections avoid turning validation checks into rate tests.
-for (const value of ["/audio/isaac_win.mp3", "https://example.test/song.mp3", "../isaac_win.mp3", "removed-song", {}, 42]) {
+// #1351: a per-friend custom ID, even one shaped from the owner's own profile UUID, is not authorized: no binding exists.
+const customIds = [`custom-${A.profile.profileId}`, `custom:${A.profile.profileId}`, `media-${A.profile.profileId}`, "friend-clip"];
+for (const value of ["/audio/isaac_win.mp3", "https://example.test/song.mp3", "../isaac_win.mp3", "removed-song", ...customIds, {}, 42]) {
   const c = await client(port);
   const reply = await edit(c, A.credential, { winSongId: value, displayName: "Must not commit" });
   const unchanged = await c.req({ type: "profileResume", credential: A.credential });

@@ -8,6 +8,7 @@ import { SeatDot } from "@/components/game/SeatDot";
 import { PLAYER_COLORS, PLAYER_NAMES } from "@/lib/game/types";
 import type { ProfileFields, ProfileOwner } from "@/lib/net/profiles";
 import { LOGIN } from "@/lib/net/proto";
+import { PROFILE_SONGS } from "@/lib/profile-songs";
 import type { Errors, FormsUi } from "@/components/game/ProfileSheet";
 
 const PIN = /^\d{4}$/;
@@ -22,7 +23,7 @@ export function ProfileForms({ ui }: { ui: FormsUi }) {
   // Opening a form fills it from the profile, clears every PIN and puts the focus in its first field. Closing it hands the
   // focus back to the summary button that opened it, once the summary is drawn (gone if the sheet closed or signed out).
   useEffect(() => {
-    setForm((f) => ({ ...f, displayName: profile.displayName, login: profile.login, catchphrase: profile.catchphrase, color: profile.color, backupColor: profile.backupColor ?? "", pin: "", newPin: "", pinConfirm: "" }));
+    setForm((f) => ({ ...f, displayName: profile.displayName, login: profile.login, catchphrase: profile.catchphrase, color: profile.color, backupColor: profile.backupColor ?? "", winSongId: profile.winSongId ?? "", pin: "", newPin: "", pinConfirm: "" }));
     ref.current?.querySelector("input")?.focus();
     return () => void requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-opens="${kind}"]`)?.focus());
   }, [kind, profile, setForm]);
@@ -70,6 +71,8 @@ export function ProfileForms({ ui }: { ui: FormsUi }) {
     const fields: Partial<ProfileFields> & { pin?: string } = { displayName: form.displayName.trim(), login, catchphrase: form.catchphrase.trim(), color: form.color };
     if (form.backupColor) fields.backupColor = form.backupColor;
     if (renamed) fields.pin = form.pin;
+    // Only a changed choice is sent: an explicit pick sets the song and Default clears it (null).
+    if (form.winSongId !== (profile.winSongId ?? "")) fields.winSongId = form.winSongId || null;
     void send(() => c.edit(fields));
   };
 
@@ -163,6 +166,13 @@ export function ProfileForms({ ui }: { ui: FormsUi }) {
       {input("catchphrase", "Catchphrase (optional)", { maxLength: 80 })}
       {colours("color", "Favourite colour")}
       {colours("backupColor", "Backup colour")}
+      <label className="flex flex-col gap-1 text-sm font-medium text-fg">
+        Win song (optional)
+        <select value={form.winSongId} onChange={(e) => setForm((f) => ({ ...f, winSongId: e.target.value }))} className={field}>
+          <option value="">Default</option>
+          {PROFILE_SONGS.map((song) => <option key={song.id} value={song.id}>{song.label}</option>)}
+        </select>
+      </label>
       {formError}
       {save("Save")}
     </form>
