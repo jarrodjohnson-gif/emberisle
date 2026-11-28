@@ -2,7 +2,8 @@
 // small chip per good, painted like its hand card (#436), so the build button and the Costs card say the same thing from
 // the same COST table. As on the board game's card, a chip alone means one and carries its count only above that. With a
 // hand, a good the hand is short of dims and carries the shortfall, so a touch screen sees what is missing without a hover;
-// the build tile passes the hand whenever it reads missing goods (#606), ringing each lacking good in #b23a2e.
+// the build tile passes the hand whenever it reads missing goods (#606), ringing each lacking good in #b23a2e. The ring carries
+// no number (#1512, owner answer q1512-shortfall): what a build takes belongs on the hand row, not on a chip.
 import { RESOURCE_ICON, RESOURCE_PAINT } from "@/components/game/Hand";
 import { legalCities, legalRoads, legalSettle } from "@/lib/game/rules";
 import { COST, RESOURCES, RESOURCE_LABEL, type GameState, type PlayerState, type Resource } from "@/lib/game/types";
@@ -94,13 +95,6 @@ export function CostChips({ kind, hand, className }: { kind: Price; hand?: Recor
               <Icon className="size-3" />
               {(cost[r] ?? 0) > 1 ? cost[r] : null}
             </span>
-            {/* A crimson badge (danger, not the orange ready dot) hung from the chip's top edge and flush with its right edge:
-                it widens nothing and never crosses the next chip; it sits in the gap the build tile leaves under its label. */}
-            {missing ? (
-              <span className="absolute bottom-full right-0 translate-y-1 rounded-full bg-[#b23a2e] px-1 text-[9px] font-semibold leading-[10px] tabular-nums text-white">
-                −{missing}
-              </span>
-            ) : null}
           </span>
         );
       })}
