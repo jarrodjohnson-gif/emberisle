@@ -444,6 +444,9 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-he
   @container not style(--lobby-big: 1) {
     html .lobby-layout .lobby-layout-cover > .lobby-rules { flex-wrap: wrap; height: auto; min-height: 44px; row-gap: 4px; }
     html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status { flex: 1 0 100%; height: auto; min-height: 0; padding-left: 0; }
+    /* The connection status shares the caption's line, so the line stays 18 px; only when both can't fit does each give up width. */
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status:has(> [data-testid="connection-status"]) { flex-direction: row; align-items: baseline; justify-content: flex-start; column-gap: 8px; }
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status > * { flex: 0 1 auto; }
     /* "Play games" is one line where the row holds it. With a wider system font (DejaVu) it wraps to two lines, as today,
        so How to play never drops to a second row: the tablist breaks the line at its narrowest and grows back to one line. */
     html .lobby-layout .lobby-layout-cover > .lobby-rules > .lm { flex: 1 1 0; max-width: max-content; }
