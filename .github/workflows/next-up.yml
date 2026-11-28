@@ -2,7 +2,7 @@ name: Next up
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 * * * *'
   issues:
     types: [labeled, unlabeled]
   issue_comment:
