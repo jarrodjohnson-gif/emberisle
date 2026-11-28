@@ -244,7 +244,7 @@ before the allowance is raised, and Opus in the dispatch thread sets the new num
 - **Builder:** the chat doing the work. Steps 1-4, pushes, opens the PR, fixes CI, and has a reviewer subagent on a different model review it ([`builder.md`](flow/builder.md)). **It never merges.**
 - **Reviewer:** that subagent. It follows [REVIEWING.md](REVIEWING.md) and posts its review on the PR.
 - **Merge:** the auto-merge workflow decides every merge ([`merging.md`](flow/merging.md)). No chat decides one.
-- **Jarrod:** the owner. He answers on the Desk page ([`clerk.md`](flow/clerk.md)). No code reading needed.
+- **Jarrod:** the owner. He answers decision cards in the project dispatch thread ([`dispatcher.md`](flow/dispatcher.md)). No code reading needed.
 
 A new Builder chat therefore starts: take the next eligible issue with no file conflict
 ([LANES.md](LANES.md)).
@@ -268,7 +268,7 @@ If bugs live in an outside log, do not copy each one. Make one pointer issue per
 
 Churn costs more than most rule fixes are worth. So:
 
-- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/flow/`, `docs/REVIEWING.md`, `docs/HELPERS.md`, `docs/OWNER.md`) change only through an issue for that change. Every such PR merges only on Jarrod's tap on the Desk page ([`docs/flow/merging.md`](flow/merging.md)).
+- **The rule documents** (`AGENTS.md`, `docs/FRAMEWORK.md`, `docs/LANES.md`, `docs/DESK.md`, `docs/flow/`, `docs/REVIEWING.md`, `docs/HELPERS.md`, `docs/OWNER.md`) change only through an issue for that change. Every such PR merges only with `owner-merge` ([`docs/flow/merging.md`](flow/merging.md)).
 - **These need no issue of their own:** fixing a typo, a wrong number or a broken link; recording an owner decision in `docs/DECISIONS.md`.
 - **GitHub settings** (the `main` ruleset, variables, secrets) change only on Jarrod's own say-so, and each change gets a row in `docs/DECISIONS.md`.
 - **CI suite names are fixed.** The four `browser-b` names, the three `browser-a` parts, `server`, `build` and `checks` live in three places: the `main` ruleset, the job names in `.github/workflows/ci.yml`, and `AGGREGATE_JOBS` in `scripts/flake-rerun.mjs`. Don't rename or add a suite without changing all three in one go and logging it.

@@ -15,29 +15,29 @@
 
 These are short on purpose. Follow all of them, every round.
 
-1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Read its body, then only the comments after the newest `Hub digest`. Do any direction that names you first. A chat the dispatcher started skips #854: its prompt is its direction.
+1. **Start each round by reading the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854).** Read its body, then only the comments after the newest `Hub digest`. Do any direction that names you first. A builder the dispatch thread started skips #854: its prompt is its direction.
 2. **Pick work in this order:** `prio:p0`, then `prio:p1`, then `prio:p2` (`docs/LANES.md`). Helpers take the queue in [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851).
 3. **Claim before you code.** Comment on the issue: `/claim`, `claimed: <your agent name>, <date>`, `files: <paths>`. If you can't comment (a 403), put that block at the top of your PR body. When a claim lasts and when it expires: [`docs/LANES.md`](docs/LANES.md#picking-an-issue), step 2.
 4. **One issue per PR. At most 4 open PRs per agent**, unless `docs/DECISIONS.md` logs a dated, different limit for you. At the limit, work only on those PRs. A PR with no push for 24 hours is open for any builder to adopt (`docs/LANES.md`, rung 1).
 5. **Don't park drafts, and own your PR to the end.** Open the PR as ready for review once your own checks pass. If CI goes red, fix it. When it is green, a Claude builder starts its own reviewer subagent on a different model, fixes the findings, and stops only when the review is clean ([`docs/flow/builder.md`](docs/flow/builder.md)).
 6. **Register every new proof** in `package.json` and `.github/workflows/ci.yml`, next to its neighbours. A proof that CI never runs doesn't count.
-7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` or `owner-merge` label; only the clerk adds them, and only to carry Jarrod's own answer from the Desk page. The project dispatch thread may also add `owner-merge`, under Jarrod's 2026-11-28 standing delegation ([`docs/DECISIONS.md`](docs/DECISIONS.md)). The one exception: the dispatcher carries out a merge the auto-merge workflow approved but could not make ([`docs/flow/dispatcher.md`](docs/flow/dispatcher.md), step 2). Add and remove labels one at a time. Never send a PR's whole label list, and never touch a `signal:` label.
+7. **Never merge, never push to `main`, never force-push someone else's branch, never skip or loosen a test.** Never write your own review comment, and never add the `owner-ok` or `owner-merge` label; only the project dispatch thread adds them, to carry Jarrod's own answer or under his 2026-11-28 standing delegation ([`docs/DECISIONS.md`](docs/DECISIONS.md)). The one exception: the dispatch thread carries out a merge the auto-merge workflow approved but could not make ([`docs/flow/dispatcher.md`](docs/flow/dispatcher.md), step 2). Add and remove labels one at a time. Never send a PR's whole label list, and never touch a `signal:` label.
 8. **Build with the issue's `model:` label, if it has one, and skip the issue if you can't run that model.** A `tier:` label says which models may take it.
 9. **Busy files are fine.** `package.json`, `ci.yml` and `scripts/size-prove.mjs` never count as overlap. A different function in a file another PR touches is fine if you name that PR in your claim.
-10. **Never stop, and never ask for work.** A Claude chat the dispatcher started is the one exception: it stops when its one issue or PR batch is done, and the dispatcher starts the next chat. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854. A chat the dispatcher started posts nothing there: it sets its title to `nothing eligible` ([`docs/flow/builder.md`](docs/flow/builder.md), step 7).
+10. **Never stop, and never ask for work.** A builder the dispatch thread started is the one exception: it stops when its one issue or PR is done, and the thread starts the next builder. If the lineup and the ready list are empty, work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible) yourself. Only when every rung and the [anytime queue](docs/LANES.md#anytime-queue) are empty, post `Nothing eligible` on #854. A builder the dispatch thread started posts nothing there: it reports `nothing eligible` to the thread ([`docs/flow/builder.md`](docs/flow/builder.md), step 7).
 11. **Run long browser proofs one at a time**, and paste real output in the PR. Never estimate numbers.
 12. **Don't make design decisions.** Ask Jarrod as rule 14 says, with your recommendation, and move on. A look question that a Fable look check settles is the one exception (`docs/DECISIONS.md`, 2026-11-28).
 13. **A `Question:` is not a stop.** After you post one, carry on with any part of the issue that does not depend on the answer (other files, the proof, screenshots, docs). Stop only when nothing is left to do. A test line that an owner-approved design makes obsolete may be replaced, never deleted: own commit, old/new table in the PR ([`docs/DECISIONS.md`](docs/DECISIONS.md), 2026-10-25). Size ceilings and allowances never move without the owner. Under his 2026-11-28 standing delegation, Claude Opus 5.5 in the project dispatch thread moves them for him ([`docs/DECISIONS.md`](docs/DECISIONS.md)).
-14. **Need Jarrod? Add the `needs-owner` label to your PR** and post one comment there that starts `Blocked:` or `Question:`. With no PR yet, add `needs-owner` to the issue and post the comment on the issue. The clerk puts it on the Desk page, the one place he answers ([`docs/flow/clerk.md`](docs/flow/clerk.md)). Never ask him in a chat. Put progress in your PR body, not on #854.
+14. **Need Jarrod? Add the `needs-owner` label to your PR** and post one comment there that starts `Blocked:` or `Question:`. With no PR yet, add `needs-owner` to the issue and post the comment on the issue. The project dispatch thread brings it to him as a decision card, the one place he answers ([`docs/flow/dispatcher.md`](docs/flow/dispatcher.md)). Never ask him in a chat. Put progress in your PR body, not on #854.
 
 ## Never idle
 
-A `Question:` or a block never ends your round. Answers come slowly. (A chat the dispatcher started takes no second issue: it finishes what it can on its own PR and stops, as [`docs/flow/builder.md`](docs/flow/builder.md) says.)
+A `Question:` or a block never ends your round. Answers come slowly. (A builder the dispatch thread started takes no second issue: it finishes what it can on its own PR and stops, as [`docs/flow/builder.md`](docs/flow/builder.md) says.)
 
 - After a `Question:` (rule 14), finish what does not need the answer (rule 13). Then claim the next eligible issue in the same turn.
 - Stay within your open-PR limit (rule 4) and your model's one-issue rule.
 - No eligible issue? Work down the ladder, then the [anytime queue](docs/LANES.md#anytime-queue).
-- Jarrod answers on the Desk page, and the clerk posts his answer on the PR or issue. Never wait for it.
+- Jarrod answers cards in the dispatch thread, and the thread posts his answer on the PR or issue. Never wait for it.
 - A 403 on a comment or label blocks one step, not the round. Put your claim in the PR body (rule 3).
 - A 403 on a push: add `needs-owner` and post `Blocked:` once with the exact git error. Never retry another way: no fork, no other token, no force-push.
 - After a push 403, claim nothing that needs a push. Take work that does not, such as a Question or a read-only audit.
@@ -49,7 +49,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 
 **Told to "work on Emberisle", or something like it?** Then:
 
-0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work. A chat the dispatcher started skips this step (rule 1).
+0. **Read the Agent hub, issue [#854](https://github.com/jarrodjohnson-gif/emberisle/issues/854), first, at the start of every round.** Do any direction there that names your agent before picking other work. A builder the dispatch thread started skips this step (rule 1).
 1. You are a **Builder**. Follow [`docs/FRAMEWORK.md`](docs/FRAMEWORK.md) section 7, and pick an issue
    using [`docs/LANES.md`](docs/LANES.md).
    Take the top line in **Next up (auto)** that your tier allows. Helpers: only `helper-ok` lines.
@@ -62,7 +62,7 @@ A `Question:` or a block never ends your round. Answers come slowly. (A chat the
 5. **Keep working while eligible work exists.** Pick open `status:todo` issues with a lane label,
    closed dependencies, no active claim or open PR, and no file overlap with another active claim.
    Lanes sort work; they do not lock it. Claim as [`docs/LANES.md`](docs/LANES.md#picking-an-issue) says.
-6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `Nothing eligible` line on #854 naming the issues you skipped and why. A chat the dispatcher started sets its title instead (rule 10).
+6. **Still nothing eligible?** Work down the fallback ladder in [`docs/LANES.md`](docs/LANES.md#when-nothing-is-eligible). Only if every rung and the anytime queue are empty, post one `Nothing eligible` line on #854 naming the issues you skipped and why. A builder the dispatch thread started reports it to the thread instead (rule 10).
 
 **Told you are a helper**, for example a friend's AI working from a fork? (Josh's agent is a full builder, not a helper: see `docs/LANES.md`.) Read #854, then take work
 from the helper queue, issue [#851](https://github.com/jarrodjohnson-gif/emberisle/issues/851), and follow
