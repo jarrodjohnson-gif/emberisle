@@ -309,6 +309,7 @@ let peopleUntil = 0;
 // Bots that said Yes inside the people-first window, in the order they said it.
 let heldYes: string[] = [];
 let offerSeq = 0;
+const NO_COUNTERS = { counters: [], counterUsed: [], counterClosed: null };
 const counterModule = chunk(() => import("./practice-counter"));
 let practiceCounter: typeof import("./practice-counter") | undefined;
 // `${turn}:${bot}` of the last bot turn that had its one chance to ask the table.
@@ -332,7 +333,7 @@ const clearPlay = (): Partial<GameStore> => ({
   roadPicks: [],
   pendingPlace: null,
   pendingSteal: null,
-  offer: null, counters: [], counterUsed: [], counterClosed: null,
+  offer: null, ...NO_COUNTERS,
   declined: [],
   tradeOutcome: null,
   tradeTaker: null,
@@ -713,7 +714,7 @@ export const useGame = create<GameStore>((set, get) => ({
   water: null,
   viewChoice: savedView(),
   playView: "diorama",
-  offer: null, counters: [], counterUsed: [], counterClosed: null,
+  offer: null, ...NO_COUNTERS,
   declined: [],
   tradeOutcome: null, tradeTaker: null,
   tradeOpen: false,
@@ -1223,7 +1224,7 @@ export function endOffer(set: Set, get: Get, taker: string | null) {
   if (!offer) return;
   clearOfferTimers();
   const takerName = state?.players.find((p) => p.id === taker)?.name ?? "Someone";
-  set({ offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [] });
+  set({ offer: null, ...NO_COUNTERS, declined: [] });
   // Both parties hear a deal in full and the rest of the table softer; only the asker hears a No (#609).
   const me = get().localId;
   if (taker) play("trade_yes", me === taker || me === offer.from ? 1 : 0.5);
@@ -1243,7 +1244,7 @@ function openOffer(set: Set, get: Get, from: string, give: Bag, want: Bag, autom
   const fromName = state.players.find((p) => p.id === from)?.name ?? "Someone";
   // #1245 (owner q-trade-hold B): only a bot's offer runs out; a person's holds until answered (host.mjs openOffer).
   const runOut = state.players.find((p) => p.id === from)?.kind === "bot";
-  set({ offer: { tradeId, from, fromName, give, want, counter: true, until: runOut ? Date.now() + OFFER_MS : null }, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
+  set({ offer: { tradeId, from, fromName, give, want, counter: true, until: runOut ? Date.now() + OFFER_MS : null }, ...NO_COUNTERS, declined: [], tradeOutcome: null, tradeTaker: null });
   const me = get().localId;
   void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
   if (runOut) offerTimers.push(setTimeout(() => {
@@ -1385,7 +1386,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       clearBanner();
       clearKnocks();
       clearOfferTimers();
-      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
+      set({ buildMode: "none", roadPicks: [], pendingPlace: null, banner: null, tradeOpen: false, offer: null, ...NO_COUNTERS, declined: [], tradeOutcome: null, tradeTaker: null, menuFor: null, rematchChoice: undefined });
     }
     get().loadState(game, me, get().isHost, get().code);
     if (recovery && !get().spectator) {
@@ -1415,7 +1416,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       // G2: a host on a newer wire protocol than this page says so where errors go, and keeps saying it after every state.
       outdated = (proto ?? 0) > PROTO ? "This page is out of date. Reload to update." : null;
       clearOfferTimers();
-      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableNumberTokens: tokensFrom(numberTokens), tableVariant: variant, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ serverSha: typeof serverSha === "string" && /^(?:[a-f0-9]{7,40}|dev)$/.test(serverSha) ? serverSha : null, resync: true, tableVictoryTarget: victoryTarget === 7 ? 7 : 10, tableWayfarerMode: wayfarerMode ?? "on", tableNumberTokens: tokensFrom(numberTokens), tableVariant: variant, offer: null, ...NO_COUNTERS, declined: [], tradeOutcome: null, tradeTaker: null });
       if (secret) rememberSeat({ code, secret });
       // A page-load rejoin has no state yet, so it passes through the lobby until the host's state push moves it to play.
       // A mid-game reconnect already holds the game: stay on the board so the HUD keeps its local state.
@@ -1458,7 +1459,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       firstState = true;
       bestSkew = -Infinity;
       clearOfferTimers();
-      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ announcement: null, error: `Reconnecting… (try ${attempt})`, toast: "Reconnecting…", turnTimer: null, offer: null, ...NO_COUNTERS, declined: [], tradeOutcome: null, tradeTaker: null });
     },
     chat: (line) => {
       const { chat, chatOpen, unread, seatId, screen } = get();
@@ -1509,7 +1510,7 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
       clearOfferTimers();
       const fromName = get().state?.players.find((p) => p.id === from)?.name ?? "Someone";
       // #1245: a null `seconds` is an offer that holds until answered (no run-out).
-      set({ offer: { tradeId, from, fromName, give, want, counter, until: seconds === null ? null : Date.now() + seconds * 1000 }, counters: [], counterUsed: [], counterClosed: null, declined: [], tradeOutcome: null, tradeTaker: null });
+      set({ offer: { tradeId, from, fromName, give, want, counter, until: seconds === null ? null : Date.now() + seconds * 1000 }, ...NO_COUNTERS, declined: [], tradeOutcome: null, tradeTaker: null });
       const me = get().localId;
       void tradeSounds.then((m) => m?.offerChime(play, from, fromName, me, give, want));
       tap({ deal: deals, offer: { tradeId, from, fromName, give, want }, automated: null });
@@ -1521,17 +1522,8 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
     tradeClosed: ({ tradeId, taker }) => {
       if (get().offer?.tradeId === tradeId) endOffer(set, get, taker ?? null);
     },
-    tradeCounter: (counter) => {
-      const { offer, counters, counterUsed, localId } = get();
-      if (offer?.tradeId !== counter.tradeId || counters.some((c) => c.counterId === counter.counterId)) return;
-      set({ counters: [...counters, counter], counterUsed: [...counterUsed, counter.by], counterClosed: null });
-      if (offer.from === localId) play("trade_offer");
-    },
-    tradeCounterClosed: ({ tradeId, counterId, why }) => {
-      const { counters } = get();
-      const counter = counters.find((c) => c.tradeId === tradeId && c.counterId === counterId);
-      if (counter) set({ counters: counters.filter((c) => c !== counter), counterClosed: { tradeId, counterId, by: counter.by, why } });
-    },
+    tradeCounter: (counter) => void counterModule.load().then((m) => m.incoming(counter)),
+    tradeCounterClosed: (msg) => void counterModule.load().then((m) => m.closed(msg)),
     tableProfileCard: (msg) => cardReply.on?.(msg),
     profileError: (msg) => cardReply.on?.(msg),
     error: (message, request) => {

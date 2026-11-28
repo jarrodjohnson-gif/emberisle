@@ -95,3 +95,14 @@ function makeCounter(tradeId: string, by: string, give: Bag, want: Bag): string 
   }
 }
 
+export function incoming(counter: TradeCounter) {
+  const { offer, counters, counterUsed, localId } = get();
+  if (offer?.tradeId !== counter.tradeId || counters.some((c) => c.counterId === counter.counterId)) return;
+  set({ counters: [...counters, counter], counterUsed: [...counterUsed, counter.by], counterClosed: null });
+  if (offer.from === localId) chime();
+}
+export function closed({ tradeId, counterId, why }: { tradeId: string; counterId: string; why: CounterClose["why"] }) {
+  const { counters } = get();
+  const counter = counters.find((c) => c.tradeId === tradeId && c.counterId === counterId);
+  if (counter) set({ counters: counters.filter((c) => c !== counter), counterClosed: { tradeId, counterId, by: counter.by, why } });
+}
