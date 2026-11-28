@@ -111,9 +111,16 @@ function clearKnocks() {
   knocks.clear();
 }
 
+// The host's playback projection (#1045): `{ gameId, song }` on the final state frame. Only a shared catalogue ID names a
+// clip; anything else (a removed or unknown song, a malformed frame, none at all) is no pick, so the old cues play.
+const songOf = (o: unknown) => {
+  const { gameId, song } = (o ?? {}) as { gameId?: unknown; song?: string };
+  return typeof gameId == "string" && Object.hasOwn(SONG_SOUNDS, song!) ? SONG_SOUNDS[song!] : undefined;
+};
+
 // Play the sound for a state change, and the your-turn chime when the turn comes round to this browser's seat
 // (not in hotseat, where every seat is this browser).
-export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean) {
+export function hear(before: GameState | null, after: GameState, me: string, mode: GameStore["mode"], reconnect?: boolean, outcome?: unknown) {
   const victim =
     mode !== "hotseat" && !!before && before.current !== me && after.vertices.some((v) => v.building?.playerId === me && v.hexes.includes(after.robberHex));
   const cue = haptics.player?.(before, after, me, mode) ?? play;
@@ -123,7 +130,7 @@ export function hear(before: GameState | null, after: GameState, me: string, mod
     // End music: once per live game end, after the sting; a reload into a finished game stays quiet. Leaving the end screen
     // (the menu, a rematch, a new game) cancels both, including while this chunk loads.
     const scope = foregroundScope;
-    void tradeSounds.then((m) => scope === foregroundScope && m?.gameEnd(before, after, me, mode));
+    void tradeSounds.then((m) => scope === foregroundScope && m?.gameEnd(before, after, me, mode, songOf(outcome)));
   } else {
     for (const [sound, volume] of soundsFor(before, after, mode === "hotseat" || after.current === me, victim)) {
       // A piece knocks when it lands, not when it is picked (#438); reduced motion has no fall, so it knocks at once.
@@ -220,6 +227,7 @@ import { cancelForeground, foregroundScope, haptics, play, playForeground, reset
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
+import { SONG_SOUNDS } from "@/lib/profile-songs";
 
 const tradeSounds = import("../trade-sound").catch(() => null);
 
@@ -1319,13 +1327,13 @@ async function connect(set: Set, get: Get, first: (t: TableClient, me: Me, url: 
   // The best clock estimate: the largest sample since this socket's welcome or the start of the window shown, whichever is later.
   // A redial starts it over (a rejoin may reach a different host clock); a new window does too, so a clock step heals there.
   let bestSkew = -Infinity;
-  const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result }) => {
+  const applyState: TableEvents["state"] = ({ you, game, legal, turnDeadline, turnPlayer, serverNow, result, outcome }) => {
     set({ gameResult: game.phase === "over" ? gameResult(result) : null });
     // A watcher's `you` is null: "" matches no player, so nothing is ever its turn and the your-turn chime never fires.
     const me = you ?? "";
     const rollOff = rollOffLine(get().state, game);
     // hear first: it is what claims a match point, and the banner line is read off that claim on this same state.
-    hear(get().state, game, me, "online", firstState);
+    hear(get().state, game, me, "online", firstState, outcome);
     tap({ deal: deals, before: get().state, after: game, first: firstState });
     const swing = awardLine(get().state, game) ?? takeMatchPointLine();
     // The deadline moves onto this clock by the skew the message shows, so a phone minutes off still counts true.

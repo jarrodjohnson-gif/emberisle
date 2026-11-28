@@ -12,7 +12,7 @@ It replaced the dispatcher chat, the clerk, the Desk page and the two tick tasks
 
 - Never merge, except the hand-over merge in step 2.
 - Never decide for Jarrod. Only he answers a card. His 2026-11-28 standing delegation says what Claude decides for him ([`../DECISIONS.md`](../DECISIONS.md)).
-- Never add `owner-ok` or `owner-merge` except to carry his own answer. Under that delegation, add only `owner-merge`, as its row says.
+- Never add `owner-ok`, `owner-merge` or an `owner-replaced` marker except to carry his own answer. Under that delegation, add only `owner-merge`, as its row says.
 - Add and remove labels one at a time. Read the labels just before every write. Never send a whole label list (#1341).
 - Never touch a `signal:` label.
 - Never ask Jarrod to paste a token or a secret.
@@ -96,7 +96,8 @@ When Jarrod taps a card, carry his answer at once.
 1. Post one comment on the PR or issue. It starts `Owner answer (Desk page, project card <date time UTC>):`. Then give his option, then his note word for word. His note wins over the option.
 2. Add the marker his answer calls for, for the PR's exact head SHA:
    - `<!-- owner-merge: <SHA> -->`, then the `owner-merge` label, when he says to merge a rule-file PR;
-   - `<!-- owner-ok: <SHA> -->`, then the `owner-ok` label, when he approves a `needs-owner` PR. His note must be empty, and no other card on it open.
+   - `<!-- owner-ok: <SHA> -->`, then the `owner-ok` label, when he approves a `needs-owner` PR. His note must be empty, and no other card on it open;
+   - an `owner-replaced` marker, when he approves replaced test lines ([`merging.md`](merging.md#a-red-loosen-the-owner-approved)). The 2026-11-28 owner-marker row in [`../DECISIONS.md`](../DECISIONS.md) set it.
 3. If the head moved since the card, add no marker. Make a fresh card for the new head.
 4. Remove `on-desk`. If a builder must still act on his answer, add `answered`.
 

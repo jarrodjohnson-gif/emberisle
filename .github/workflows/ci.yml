@@ -600,6 +600,8 @@ jobs:
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run fortune-tray-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
+        run: npm run dock-text-floor-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run fortune-cue-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'a3'
         run: npm run lobby-prove
@@ -715,6 +717,8 @@ jobs:
         run: npm run sticker-motion-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
         run: npm run quick-react-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-b'
+        run: npm run quick-react-integration-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run react-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
@@ -733,6 +737,8 @@ jobs:
         run: npm run sound-mixer-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
         run: npm run foreground-clip-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
+        run: npm run outcome-playback-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-2'
         run: npm run sound-sheet-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'flows-a'
