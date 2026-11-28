@@ -125,7 +125,7 @@ const footer = (reviewer = "Opus 5.5", builder = "Sonnet 5.5", sha = SHA, clean 
 function codePr(over = {}) {
   const base = pr({ files: [file("src/main.tsx", "modified", 900), file("scripts/new-prove.mjs", "added"), reg("package.json"), reg(".github/workflows/ci.yml"), file("src/old.ts", "removed")],
     comments: [{ author_association: "OWNER", body: footer() }], ...over });
-  return { ...base, code: over.code ?? true };
+  return { ...base, code: over.code ?? true, loosenLog: over.loosenLog };
 }
 // A reviewed rule-file PR with the owner's yes for this head: the label and the clerk's marker comment.
 const ownerPr = (over = {}) => codePr({ files: [file("docs/DESK.md")], comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: answer("owner-merge", SHA) }], ...over, pr: { labels: [{ name: "owner-merge" }], ...over.pr } });
@@ -143,6 +143,46 @@ const CODE_EXCLUDED = ["AGENTS.md", "docs/DESK.md", "docs/DECISIONS.md", "docs/O
   ".claude/settings.json", "scripts/auto-merge-eligible.mjs", "scripts/desk-gate.mjs", "scripts/desk-board-prove.mjs", "scripts/pr-signal.mjs", "src/../AGENTS.md",
   // #1860 item 4: the proof guards and the size ceilings.
   "scripts/loosen-prove.mjs", "scripts/registered-prove.mjs", "scripts/size-prove.mjs", "scripts/Size-Prove.mjs"];
+
+// #1914: a red `loosen` the owner approved. The job log as the Actions API returns it, and his owner-replaced markers.
+const P = "scripts/table-menu-prove.mjs";
+const Q = "scripts/size-delta-prove.mjs";
+const L1 = 'assert.deepEqual(rows.map((t) => t.trim()), ["How to play", "Sound100%›"], `${v.tag}: menu rows`);';
+const L2 = 'assert.equal(await playing(), false, "the menu row switches it off");';
+const L3 = 'check("+300 B on index passes", ["--sizes", fx("pass.json")], 0, "ok   index growth: +300 B, allowance 420 B");';
+const LOOSEN_ID = 140901142033;
+const BASE_RUN = `Running the base's loosen-prove from ${"c".repeat(40)}.`;
+const PR_RUN = "Testing the PR's guard copy in the same advisory job.";
+const TAIL = [
+  "To retire a proof whose feature is gone, the owner first lists it in docs/retired-proofs.json on main; a later PR then deletes it.",
+  "##[error]Process completed with exit code 1.",
+];
+// reports: [file, line] pairs that the base's loosen-prove printed. The run step's script, echoed in grey, comes first.
+function loosenLog(reports, { proofs = new Set(reports.map(([f]) => f)).size, head = [BASE_RUN], before = [], tail = TAIL, after = [], id = LOOSEN_ID, eol = "\n" } = {}) {
+  const text = [
+    "##[group]Run set -euo pipefail",
+    `\u001b[36;1m  echo "Running the base's loosen-prove from $BASE_SHA."\u001b[0m`,
+    `\u001b[36;1mecho "${PR_RUN}"\u001b[0m`,
+    "##[endgroup]",
+    ...head,
+    "ok   self-test: an unchanged proof passes",
+    ...before,
+    ...reports.map(([f, l]) => `FAIL ${f}: removed or edited check line: ${l}`),
+    `${proofs} proof(s) loosened, or owner-only file(s) changed, against ${"c".repeat(12)}. Restore the checks, or keep them and add new ones (AGENTS.md rule 7).`,
+    ...tail,
+    ...after,
+    "Cleaning up orphan processes",
+  ].map((l) => `2026-11-28T07:09:58.7008954Z ${l}`).join(eol);
+  return { id, text };
+}
+const replacedMarker = (file, lines, head = SHA) => `<!-- owner-replaced: ${JSON.stringify({ head, file, lines })} -->`;
+const replacedAnswer = (...markers) => `Owner answer (Desk page, 2026-11-28T08:00:00Z): A: replace them\n${markers.join("\n")}`;
+const redLoosen = (over = {}) => checkRun("loosen", { id: LOOSEN_ID, conclusion: "failure", ...over });
+// A reviewed code PR whose base loosen-prove reported two replaced lines in one proof, both named by the owner for this head.
+const replacedPr = (over = {}) => codePr({ files: [file("src/main.tsx"), file(P)], checkRuns: [checkRun("checks"), redLoosen()],
+  comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: replacedAnswer(replacedMarker(P, [L1, L2])) }],
+  loosenLog: loosenLog([[P, L1], [P, L2]]), ...over });
+const withAnswer = (body, author = "OWNER") => [{ author_association: "OWNER", body: footer() }, { author_association: author, body }];
 CASES.push(
   ["code: a reviewed code PR", codePr(), true],
   ["code: the same PR with the switch off", codePr({ code: false }), false],
@@ -217,6 +257,60 @@ CASES.push(
   ["docs: needs-owner", pr({ pr: { labels: [{ name: "needs-owner" }] } }), false],
   ["docs: needs-owner and owner-ok for this head", pr({ pr: { labels: [{ name: "needs-owner" }, { name: "owner-ok" }] }, comments: [{ author_association: "OWNER", body: `<!-- review-desk: clean ${SHA} -->` }, { author_association: "OWNER", body: answer("owner-ok", SHA) }] }), true],
   ["docs: needs-owner and owner-ok with no marker", pr({ pr: { labels: [{ name: "needs-owner" }, { name: "owner-ok" }] } }), false],
+  // #1914: owner-replaced. These pass: every line the base's loosen-prove reported is named for this head.
+  ["replaced: every reported line covered", replacedPr(), true],
+  ["replaced: two proofs, one marker each", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1]), replacedMarker(Q, [L3]))), loosenLog: loosenLog([[P, L1], [Q, L3]]) }), true],
+  ["replaced: a comment with CRLF line ends and a CRLF log", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2])).replaceAll("\n", "\r\n")), loosenLog: loosenLog([[P, L1], [P, L2]], { eol: "\r\n" }) }), true],
+  ["replaced: a line reported twice and named twice", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L1]))), loosenLog: loosenLog([[P, L1], [P, L1]]) }), true],
+  ["replaced: an upper-case head in the marker", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2], SHA.toUpperCase()))) }), true],
+  ["replaced: a named line loosen did not report", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2, L3]))) }), true],
+  ["replaced: owner-merge on size-prove with its ceiling line named", ownerPr({ files: [file("scripts/size-prove.mjs")], checkRuns: [checkRun("checks"), redLoosen()],
+    comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `${answer("owner-merge", SHA)}\n${replacedMarker("scripts/size-prove.mjs", [L3])}` }],
+    loosenLog: loosenLog([["scripts/size-prove.mjs", L3]]) }), true],
+  // These fail: everything else stays as strict as before.
+  ["replaced: one reported line not named", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1]))) }), false],
+  ["replaced: a line reported twice and named once", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1]))), loosenLog: loosenLog([[P, L1], [P, L1]]) }), false],
+  ["replaced: the marker is for another head", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2], OTHER))) }), false],
+  ["replaced: the marker from an outsider", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2])), "NONE") }), false],
+  ["replaced: the marker from a past contributor", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2])), "CONTRIBUTOR") }), false],
+  ["replaced: the marker names another proof", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(Q, [L1, L2]))) }), false],
+  ["replaced: one of two proofs named", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1]))), loosenLog: loosenLog([[P, L1], [Q, L3]]) }), false],
+  ["replaced: the marker in a review that quotes it", replacedPr({ comments: [{ author_association: "OWNER", body: footer().replace("Clean.", `Clean.\n${replacedMarker(P, [L1, L2])}`) }] }), false],
+  ["replaced: the marker in a comment that only mentions an owner answer", replacedPr({ comments: withAnswer(`Owner answer pending.\n${replacedMarker(P, [L1, L2])}`) }), false],
+  ["replaced: the marker inside a line of text", replacedPr({ comments: withAnswer(replacedAnswer(`See ${replacedMarker(P, [L1, L2])}`)) }), false],
+  ["replaced: the marker is not JSON", replacedPr({ comments: withAnswer(replacedAnswer(replacedMarker(P, [L1, L2]).replace('{"head"', '{head'))) }), false],
+  ["replaced: a newer owner answer names another head", replacedPr({ comments: [...withAnswer(replacedAnswer(replacedMarker(P, [L1, L2]))), { author_association: "OWNER", body: replacedAnswer(replacedMarker(P, [L1, L2], OTHER)) }] }), false],
+  ["replaced: no log read", replacedPr({ loosenLog: undefined }), false],
+  ["replaced: the log of another job", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { id: LOOSEN_ID + 1 }) }), false],
+  ["replaced: a run and a log with no id", replacedPr({ checkRuns: [checkRun("checks"), checkRun("loosen", { conclusion: "failure" })], loosenLog: { text: loosenLog([[P, L1], [P, L2]]).text } }), false],
+  ["replaced: the PR's own loosen-prove copy ran", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { after: [PR_RUN] }) }), false],
+  ["replaced: the base's run line twice", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { head: [BASE_RUN, BASE_RUN] }) }), false],
+  ["replaced: no base run line (the base had no loosen-prove)", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { head: [] }) }), false],
+  ["replaced: a log that is only the report lines, with no base run line", replacedPr({ loosenLog: { id: LOOSEN_ID, text: loosenLog([[P, L1], [P, L2]]).text.split("\n").filter((l) => /self-test|FAIL|proof\(s\)|To retire|##\[error\]/.test(l)).join("\n") } }), false],
+  ["replaced: a check count reason as well", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { before: [`FAIL ${P}: check count fell from 9 to 8`] }) }), false],
+  ["replaced: a deleted proof as well", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { before: [`FAIL ${Q}: deleted, and docs/retired-proofs.json on the base does not list it`] }) }), false],
+  ["replaced: the proof count disagrees with the lines", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { proofs: 2 }) }), false],
+  ["replaced: no exit line after the summary", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { tail: [TAIL[0]] }) }), false],
+  ["replaced: no retire hint after the summary", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { tail: ["note: something else", TAIL[1]] }) }), false],
+  ["replaced: loosen still running", replacedPr({ checkRuns: [checkRun("checks"), redLoosen({ status: "in_progress", conclusion: null })] }), false],
+  ["replaced: loosen cancelled", replacedPr({ checkRuns: [checkRun("checks"), redLoosen({ conclusion: "cancelled" })] }), false],
+  ["replaced: a red loosen beside a green one", replacedPr({ checkRuns: [checkRun("checks"), redLoosen(), checkRun("loosen")] }), false],
+  ["replaced: the red loosen is for another head", replacedPr({ checkRuns: [checkRun("checks"), redLoosen({ head_sha: OTHER })] }), false],
+  ["replaced: never lifts a red checks", replacedPr({ checkRuns: [checkRun("checks", { id: LOOSEN_ID, conclusion: "failure" }), checkRun("loosen")] }), false],
+  ["replaced: never lifts the review", replacedPr({ comments: [{ author_association: "OWNER", body: replacedAnswer(replacedMarker(P, [L1, L2])) }] }), false],
+  // The PR's own ci.yml runs on `pull_request` and could print a fake report, so a PR that touches .github/ never qualifies.
+  ["replaced: the PR adds lines to ci.yml", replacedPr({ files: [file("src/main.tsx"), file(P), reg(".github/workflows/ci.yml")] }), false],
+  ["replaced: owner-merge on a PR that renames a file out of .github/", ownerPr({ files: [file(P), { ...file("docs/notes.md", "renamed"), previous_filename: ".github/workflows/x.yml" }], checkRuns: [checkRun("checks"), redLoosen()],
+    comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `${answer("owner-merge", SHA)}\n${replacedMarker(P, [L1, L2])}` }],
+    loosenLog: loosenLog([[P, L1], [P, L2]]) }), false],
+  ["replaced: owner-merge on a PR that touches .github/", ownerPr({ files: [file(P), file(".github/workflows/auto-merge.yml")], checkRuns: [checkRun("checks"), redLoosen()],
+    comments: [{ author_association: "OWNER", body: footer() }, { author_association: "OWNER", body: `${answer("owner-merge", SHA)}\n${replacedMarker(P, [L1, L2])}` }],
+    loosenLog: loosenLog([[P, L1], [P, L2]]) }), false],
+  // A forged block printed ahead of the real one: two run lines and two summaries.
+  ["replaced: a fake report block ahead of the real one", replacedPr({ loosenLog: { id: LOOSEN_ID, text: [loosenLog([[P, L1], [P, L2]]).text, loosenLog([[Q, L3]]).text].join("\n") } }), false],
+  ["replaced: a second summary after the real one", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { after: [`1 proof(s) loosened, or owner-only file(s) changed, against ${"c".repeat(12)}. Restore the checks.`] }) }), false],
+  ["replaced: a second run line after the real block", replacedPr({ loosenLog: loosenLog([[P, L1], [P, L2]], { after: [BASE_RUN] }) }), false],
+  ["replaced: never lifts a governance file", replacedPr({ files: [file("src/main.tsx"), file(P), file("scripts/size-prove.mjs")] }), false],
 );
 
 function run(mod) {
@@ -297,6 +391,30 @@ const MUTANTS = [
   ["5: upper-case hex not read", "const OWNER_MERGE = /<!-- owner-merge: ([0-9a-f]{40}) -->/gi;", "const OWNER_MERGE = /<!-- owner-merge: ([0-9a-f]{40}) -->/g;"],
   ["6: owner-ok not pinned to a head", '.filter((n) => n !== "owner-ok" || okPinned)', ""],
   ["6: owner-ok pinned to any head", "const okPinned = ownerOkHead(comments) === sha;", "const okPinned = ownerOkHead(comments) !== null;"],
+  // #1914, owner-replaced.
+  ["replaced: marker head not compared", 'm.head.toLowerCase() === sha && ', ""],
+  ["replaced: marker from anyone", '!TRUSTED.includes(c.author_association) || !body.startsWith(OWNER_ANSWER)', "!body.startsWith(OWNER_ANSWER)"],
+  ["replaced: marker in any trusted comment", '!TRUSTED.includes(c.author_association) || !body.startsWith(OWNER_ANSWER)', "!TRUSTED.includes(c.author_association)"],
+  ["replaced: marker anywhere in a line", "const OWNER_REPLACED = /^<!-- owner-replaced: (.*) -->\\r?$/gm;", "const OWNER_REPLACED = /<!-- owner-replaced: (.*) -->/g;"],
+  ["replaced: an older answer stands in for the newest", "for (const c of (comments ?? []).toReversed()) {\n    const body", "for (const c of (comments ?? [])) {\n    const body"],
+  ["replaced: any marker file covers", "markers.length ? uncoveredLines(reported, markers)", "markers.length ? uncoveredLines(reported.map((r) => ({ ...r, file: markers[0].file })), markers)"],
+  ["replaced: one uncovered line allowed", "if (!uncovered || uncovered.length)", "if (!uncovered)"],
+  ["replaced: a line named once covers two reports", "    if (n) left.set(`${file}\\n${line}`, n - 1);\n", ""],
+  ["replaced: the PR's own copy's log accepted", "lines.includes(PR_RUN) || ", ""],
+  ["replaced: a PR's own ci.yml may write the log", 'const red = !ownCi && name === "loosen"', 'const red = name === "loosen"'],
+  ["replaced: renames out of .github/ not seen", "[f.filename, f.previous_filename].some((p) => String(p", "[f.filename].some((p) => String(p"],
+  ["replaced: two run lines accepted", "lines.filter((l) => BASE_RUN.test(l)).length !== 1 || ", ""],
+  ["replaced: two summaries accepted", " || lines.filter((l) => LOOSE_SUM.test(l)).length !== 1", ""],
+  ["replaced: other reasons skipped", "const sum = lines[i].match(LOOSE_SUM);\n    if (!sum || ", "const sum = lines[i].match(LOOSE_SUM);\n    if (!sum) continue;\n    if ("],
+  ["replaced: proof count not compared", " || Number(sum[1]) !== new Set(out.map((r) => r.file)).size", ""],
+  ["replaced: retire hint not checked", '!lines[i + 1]?.startsWith("To retire a proof") || ', ""],
+  ["replaced: exit line not checked", ' || lines[i + 2] !== "##[error]Process completed with exit code 1."', ""],
+  ["replaced: log job id not compared", "&& loosenLog.id === r.id ?", "?"],
+  ["replaced: a run with no id accepted", "Number.isInteger(r.id) && ", ""],
+  ["replaced: lifts any red run", 'const red = !ownCi && name === "loosen" && ', "const red = !ownCi && "],
+  ["replaced: any loosen state counts", 'r.status === "completed" && r.conclusion === "failure"', "true"],
+  ["replaced: one of several runs counts", "runs.length === 1 && ", ""],
+  ["replaced: run head not compared", "runs.length === 1 && r.head_sha === sha && ", "runs.length === 1 && "],
   ["6: owner-ok read from the owner-merge marker", "export const ownerOkHead = (comments) => ownerHead(comments, OWNER_OK);", "export const ownerOkHead = (comments) => ownerHead(comments, OWNER_MERGE);"],
 ];
 const dir = mkdtempSync(join(tmpdir(), "auto-merge-mutants-"));
@@ -326,6 +444,7 @@ assert.equal(/head_(branch|repository|ref)|pull_request\.head|refs\/pull|merge_c
 assert.equal(/\$\{\{[^}]*(comment\.body|pull_request\.title|pull_request\.body|head\.label)[^}]*\}\}/.test(workflow.replace(/contains\(github\.event\.comment\.body, '[^']*'\)/g, "")), false, "no PR text in an expression");
 assert.match(workflow, /gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA"/);
 assert.match(workflow, /if: steps\.decide\.outputs\.merge == 'true'/);
+assert.match(workflow, /contains\(github\.event\.comment\.body, '<!-- owner-replaced:'\)/, "the owner's owner-replaced comment re-checks the PR (#1914)");
 assert.match(workflow, /if out=\$\(gh pr merge "\$NUM" --repo "\$REPO" --squash --match-head-commit "\$SHA" 2>&1\); then\n.*labels\[\]=auto-merged'\n[\s\S]*?\n\s+exit 0\n\s+fi\n[\s\S]*?grep -qE 'refusing to allow a GitHub App to create or update workflow\|without \.workflows\. permission'[\s\S]*?labels\[\]=merge-by-chat'/, "a merge refused for the workflow-permission reason is handed to the dispatcher, never retried another way");
 assert.equal((workflow.match(/secrets\./g) || []).length, 1, "the only secret is the optional merge token");
 assert.equal((workflow.match(/gh pr merge/g) || []).length, 1, "one merge command, pinned to the checked SHA");
@@ -404,6 +523,21 @@ for (const [name, from, to] of WORKFLOW_MUTANTS) {
   assert.throws(() => workflowRules(workflow.replace(from, to)), `workflow mutant "${name}" caught`);
   console.log(`ok   workflow mutant caught: ${name}`);
 }
+
+// #1914: loosenedLines() reads the `loosen` job's log, so the words it matches must still be what loosen-prove and the job print.
+const loosenSrc = readFileSync(new URL("./loosen-prove.mjs", import.meta.url), "utf8");
+for (const words of [
+  "reasons.push(`removed or edited check line: ${l}`);",
+  "console.log(`FAIL ${from === to ? from : `${from} -> ${to}`}: ${r}`);",
+  "console.log(`${failed} proof(s) loosened, or owner-only file(s) changed, against ${base.slice(0, 12)}. Restore the checks,",
+  "  console.log(`To retire a proof whose feature is gone,",
+  "  process.exit(1);\n}\nconsole.log(`loosen-prove: ",
+  "console.log(`ok   self-test: ${label}`);",
+]) assert.ok(loosenSrc.includes(words), `loosen-prove still prints: ${words}`);
+const loosenJob = ci.match(/^ {2}loosen:\n[\s\S]*?(?=^ {2}\S)/m)?.[0] ?? "";
+assert.match(loosenJob, /set -euo pipefail\n[\s\S]*echo "Running the base's loosen-prove from \$BASE_SHA\."\n\s+git show "\$BASE_SHA:scripts\/loosen-prove\.mjs" > "\$RUNNER_TEMP\/loosen-prove\.mjs"\n\s+node "\$RUNNER_TEMP\/loosen-prove\.mjs" --base "\$BASE_SHA"\n[\s\S]*fi\n[^\n]*\n\s+echo "Testing the PR's guard copy in the same advisory job\."\n\s+node scripts\/loosen-prove\.mjs/,
+  "the loosen job runs the base's copy first, under set -e, and names the PR's copy before it runs");
+console.log("ok   #1914: the loosen job and loosen-prove still print the words loosenedLines() reads");
 
 // ci.yml's docs_only: run its own case statement. Agent instructions are not docs, so CI runs in full for them.
 const caseBlock = ci.match(/^( *)case "\$file" in\n[\s\S]*?^\1esac$/m);
