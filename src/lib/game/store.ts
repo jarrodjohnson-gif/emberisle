@@ -163,6 +163,7 @@ export interface GameLogLine {
 export const GAME_LOG_MAX = 200;
 const WATER_KEY = "emberisle-water";
 const VIEW_KEY = "emberisle-view";
+const BOARD_KEY = "emberisle-board-look";
 
 // The engine keeps only the last 200 log lines (rules.ts `log`), so once the log is full its length never grows and
 // `after.slice(before.length)` would be empty. The new lines are what follows the longest tail of the old log that
@@ -183,23 +184,26 @@ function appendLog(log: GameLogLine[], lines: string[]) {
   return lines.length ? [...log, ...stamp(lines)].slice(-GAME_LOG_MAX) : log;
 }
 
-function savedWater(): WaterPath | null {
+function recall(key: string): string | null {
   try {
-    const v = localStorage.getItem(WATER_KEY);
-    return v === "crystal" || v === "simple" ? v : null;
+    return localStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
+function savedWater(): WaterPath | null {
+  const v = recall(WATER_KEY);
+  return v === "crystal" || v === "simple" ? v : null;
+}
+
+// Absent, invalid or unreadable storage means Jelly (#760).
+const savedBoardLook = (): LandLook => (recall(BOARD_KEY) === "classic" ? "classic" : "jelly");
+
 // The table's camera in play (#597) as the player chose it, or null for the default for the screen's shape.
 function savedView(): PlayView | null {
-  try {
-    const v = localStorage.getItem(VIEW_KEY);
-    return v === "diorama" || v === "overhead" ? v : null;
-  } catch {
-    return null;
-  }
+  const v = recall(VIEW_KEY);
+  return v === "diorama" || v === "overhead" ? v : null;
 }
 
 // The board as it would be with these paths laid, so the second pick of a path fortune can glow (#184).
@@ -220,6 +224,7 @@ import { cancelForeground, foregroundScope, haptics, play, playForeground, reset
 import { calmMotion, LAND_MS } from "@/lib/scene/landing";
 import type { WaterPath, WaterStatus } from "@/lib/scene/crystal-water";
 import type { PlayView } from "@/lib/scene/mobile-fit";
+import type { LandLook } from "@/lib/scene/land-appearance";
 
 const tradeSounds = import("../trade-sound").catch(() => null);
 
@@ -507,6 +512,10 @@ interface GameStore {
   // The view the renderer shows in play now, chosen or default.
   playView: PlayView;
   setViewChoice: (v: PlayView) => void;
+  // The board look (#760): this browser's local choice, and a load failure with its Retry as the renderer reports it.
+  boardLook: LandLook;
+  setBoardLook: (v: LandLook) => void;
+  boardFail: { text: string; retry: () => void } | null;
   // Ask-the-table trades (docs/BUILD_BIBLE.md 4.4): the open offer, who has said No to it, and the asker's closing line.
   offer: OpenOffer | null;
   declined: string[];
@@ -686,6 +695,8 @@ export const useGame = create<GameStore>((set, get) => ({
   water: null,
   viewChoice: savedView(),
   playView: "diorama",
+  boardLook: savedBoardLook(),
+  boardFail: null,
   offer: null,
   declined: [],
   tradeOutcome: null, tradeTaker: null,
@@ -1124,6 +1135,14 @@ export const useGame = create<GameStore>((set, get) => ({
       // storage can be blocked; the choice still holds for this page
     }
     set({ viewChoice: v });
+  },
+  setBoardLook: (v) => {
+    try {
+      localStorage.setItem(BOARD_KEY, v);
+    } catch {
+      // storage can be blocked; the choice still holds for this page
+    }
+    set({ boardLook: v });
   },
   sendChat: (text) => {
     const { spectator, net } = get();
