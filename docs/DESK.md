@@ -47,7 +47,7 @@ A draft PR gets no signal.
 
 - Add and remove labels one at a time. Never send a whole label list (#1341).
 - Never touch a `signal:` label.
-- Only the dispatch thread adds `owner-ok`, `owner-merge` or an `owner-replaced` marker. It does so only to carry Jarrod's answer, or under his 2026-11-28 standing delegation ([`DECISIONS.md`](DECISIONS.md)).
+- Only the dispatch thread adds `owner-ok` or `owner-merge`, to carry Jarrod's own answer. It may also add `owner-merge` under his 2026-11-28 standing delegation ([`DECISIONS.md`](DECISIONS.md)).
 
 ## Keep it cheap
 

@@ -15,7 +15,7 @@ A builder the dispatch thread started does steps 0 to 2, then reports back as st
    - Its model is never yours, and never a model that built any part of the PR. Sonnet 5.5 reviews Opus work, and Opus 5.5 reviews Sonnet work. Haiku 5.5 may review a docs-only PR.
    - Give it [REVIEWING.md](../REVIEWING.md), the PR number and the full head SHA.
    - It posts its review on the PR itself. You never write, edit or delete a review comment.
-5. **Fix its findings**, push, wait for green, and start a fresh reviewer on the new head. Do this three times at most.
+5. **Fix its findings**, push, wait for green, and start a fresh reviewer on the new head. Do this three times at most. For a builder the dispatch thread started, the thread's cap of two rounds applies ([`dispatcher.md`](dispatcher.md), "A builder's PR").
 6. **Stop when the PR is done.** Done means the newest review is clean at the head, and `checks` is green there. Set the issue to `status:in-review`, unsubscribe from the PR, and post one last line.
 7. **Report back, if the dispatch thread started you.** Give the PR number, the full head SHA and the CI result. Say `blocked` when you added `needs-owner`, or `nothing eligible` when you found no issue to take.
 
@@ -23,7 +23,7 @@ A builder the dispatch thread started does steps 0 to 2, then reports back as st
 
 - Add and remove labels one at a time. Never send a PR's or an issue's whole label list: that wipes the others (#1341).
 - Never touch a `signal:` label. `scripts/pr-signal.mjs` sets it.
-- Never add `owner-ok` or `owner-merge`. Only the project dispatch thread adds them, carrying Jarrod's answer or under his 2026-11-28 standing delegation ([`../DECISIONS.md`](../DECISIONS.md)).
+- Never add `owner-ok` or `owner-merge`. Only the project dispatch thread adds them, carrying Jarrod's own answer. It may also add `owner-merge` under his 2026-11-28 standing delegation ([`../DECISIONS.md`](../DECISIONS.md)).
 
 ## When you need Jarrod
 
@@ -33,7 +33,7 @@ Ask him when:
 
 - the look check says `big`. Put real screenshots in the PR body first, at the sizes in [REVIEWING.md](../REVIEWING.md) and at his phone sizes (440x956 and 956x440), or the audio;
 - the PR is a design, a mock or a set of options for him to choose from, even if it is docs only;
-- the review still has findings after three rounds;
+- the review still has findings after three rounds. The dispatch thread's two-round cap applies to the builders it starts;
 - the issue needs a design decision ([AGENTS.md](../../AGENTS.md) rule 12).
 
 Write the comment so a card can be made from it: one question, plain words, the options, your recommendation, and where the pictures are in the branch. Then finish what does not depend on the answer, unsubscribe and end. The dispatch thread brings your question to him as a card. The next builder for that PR picks up his answer.
