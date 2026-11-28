@@ -96,8 +96,8 @@ function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?
     document.getElementById(`chat-tab-${next}`)?.focus();
   };
   return (
-    <div data-testid={testid} className="flex shrink-0 items-center gap-1">
-      <div role="tablist" aria-label="Chat panel" className="flex min-w-0 flex-1 gap-1" onKeyDown={onKey}>
+    <div data-testid={testid} className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+      <div role="tablist" aria-label="Chat panel" className="flex min-w-[calc(4.5rem+44px)] flex-1 gap-1" onKeyDown={onKey}>
         {TABS.map(([id, label, Icon]) => (
           <button
             key={id}
@@ -110,7 +110,7 @@ function Tabs({ actions, testid, dense, narrow }: { actions?: ReactNode; testid?
             onClick={() => setTab(id)}
             className={cn(
               dense ? "h-8" : "h-11",
-              "flex min-w-11 cursor-pointer items-center gap-1 rounded-control bg-glass px-1.5 text-sm text-zinc-700 hover:text-zinc-900",
+              "flex min-w-[44px] cursor-pointer items-center gap-1 rounded-control bg-glass px-1.5 text-sm text-zinc-700 hover:text-zinc-900",
               id === "chat" && "shrink-0",
               tab === id && "font-semibold text-zinc-900 underline underline-offset-4",
             )}
