@@ -763,6 +763,8 @@ jobs:
         run: npm run classic-builder-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-life'
         run: npm run classic-switch-prove
+      - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'scene-water'
+        run: npm run classic-board-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation-3'
         run: npm run idle-prove
       - if: needs.changes.outputs.browser != 'false' && matrix.suite == 'presentation'

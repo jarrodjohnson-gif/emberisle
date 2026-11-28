@@ -53,6 +53,11 @@ export default function IslandCanvas() {
     // Reported from inside sync (and later by the probe), so the store update waits for sync to finish.
     renderer.onWater = (water) => queueMicrotask(() => useGame.setState({ water }));
     renderer.onView = (playView) => queueMicrotask(() => useGame.setState({ playView }));
+    // Only a change of the failure reaches the store; a land report with none leaves the store, and so the sync, alone.
+    renderer.onLand = ({ error }) => queueMicrotask(() => {
+      if (error || useGame.getState().boardFail) useGame.setState({ boardFail: error ? { text: error, retry: () => renderer.retryLandLook() } : null });
+    });
+    let look: "jelly" | "classic" = "jelly";
     let action = "";
     let chrome = "";
     let failed = false;
@@ -72,6 +77,7 @@ export default function IslandCanvas() {
       const s = useGame.getState();
       renderer.setWaterChoice(s.waterChoice);
       renderer.setPlayView(s.viewChoice);
+      if (s.boardLook !== look) renderer.setLandLook((look = s.boardLook));
       // The GPU probe waits for a settled client: the title with nothing dialling, or play with its first state.
       renderer.setSettled(!s.restoring && ((s.screen === "title" && !s.net) || (s.screen === "play" && !!s.state)));
       renderer.setTitleMode(s.screen !== "play");

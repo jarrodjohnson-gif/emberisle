@@ -89,6 +89,7 @@
     "pieces-prove": "node --import ./server/register.mjs scripts/pieces-prove.mjs",
     "pieces-land-prove": "node scripts/pieces-land-prove.mjs",
     "classic-switch-prove": "node scripts/classic-switch-prove.mjs",
+    "classic-board-prove": "node scripts/classic-board-prove.mjs",
     "legal-edge-prove": "node scripts/legal-edge-prove.mjs",
     "bot-cues-prove": "node scripts/bot-cues-prove.mjs",
     "classic-builder-prove": "node scripts/classic-builder-prove.mjs",

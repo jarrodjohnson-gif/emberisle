@@ -34,6 +34,9 @@ export function TableMenu() {
   const setWaterChoice = useGame((s) => s.setWaterChoice);
   const view = useGame((s) => s.playView);
   const setViewChoice = useGame((s) => s.setViewChoice);
+  const boardLook = useGame((s) => s.boardLook);
+  const setBoardLook = useGame((s) => s.setBoardLook);
+  const boardFail = useGame((s) => s.boardFail);
   const muted = useMuted();
   const master = useSoundMix().master;
   const { state: copied, copy, reset } = useCopy<"code" | "log">();
@@ -245,37 +248,36 @@ export function TableMenu() {
               <div className="grid grid-cols-[max-content_minmax(0,1fr)_minmax(0,1fr)] gap-x-1 px-3">
               {/* The sea's look; the choice is remembered and overrides the GPU probe (docs/design/crystal-water.md).
                   The label sits under the icon, same as View, so the choices share the row (#1501). */}
-              <div role="group" aria-label="Water" data-testid="water-toggle" className="-mx-3 grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
-                <span className="flex flex-col items-center leading-none">
-                  <Waves className={ICON} />
-                  Water
-                </span>
-                <span className="contents">
-                  {(["crystal", "simple"] as const).map((p) => (
-                    <Button key={p} size="sm" variant={water === p ? "default" : "ghost"} aria-pressed={water === p} className="min-w-11 px-1.5" onClick={() => setWaterChoice(p)}>
-                      {p === "crystal" ? "Crystal" : "Simple"}
-                    </Button>
-                  ))}
-                </span>
-              </div>
-              {/* The camera in play (#597): the tilted diorama or the overhead board; remembered like the water. Unchosen, it shows
-                  the renderer's default for the screen's shape. #1501: the label sits under the icon so the two choices share
-                  the row and stay inside the panel at phone width. The row keeps the px-3 inset of every other row. Text stays
-                  15 px; each choice stays at least 44 px. Owner q1503-menu-fit D: py-1 on both rows leaves an 8 px gap
-                  between the Water and View choice boxes, so a selected box never touches the one below it. */}
-              <div role="group" aria-label="View" data-testid="view-toggle" className="-mx-3 grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
-                <span className="flex flex-col items-center leading-none">
-                  <Box className={ICON} />
-                  View
-                </span>
-                <span className="contents">
-                  {(["diorama", "overhead"] as const).map((v) => (
-                    <Button key={v} size="sm" variant={view === v ? "default" : "ghost"} aria-pressed={view === v} className="min-w-11 px-1.5" onClick={() => setViewChoice(v)}>
-                      {v === "diorama" ? "Diorama" : "Overhead"}
-                    </Button>
-                  ))}
-                </span>
-              </div>
+              {/* One row shape for the three local choices. Water: the sea's look, remembered over the GPU probe (docs/design/crystal-water.md).
+                  View (#597): the tilted diorama or the overhead board; unchosen, the renderer's default for the screen's shape. Board
+                  (#760): Jelly or Classic land; a load failure says so under the row, with Retry. #1501: the label sits under the icon so
+                  the choices share the row and stay inside the panel at phone width; text stays 15 px, each choice at least 44 px.
+                  Owner q1503-menu-fit D: py-1 leaves an 8 px gap between the rows' choice boxes. */}
+              {([
+                ["Water", Waves, water, setWaterChoice, [["crystal", "Crystal"], ["simple", "Simple"]]],
+                ["View", Box, view, setViewChoice, [["diorama", "Diorama"], ["overhead", "Overhead"]]],
+                ["Board", Eye, boardLook, setBoardLook, [["jelly", "Jelly"], ["classic", "Classic"]]],
+              ] as const).map(([name, Icon, now, choose, choices]) => (
+                <div key={name} role="group" aria-label={name} data-testid={`${name.toLowerCase()}-toggle`} className="-mx-3 grid grid-cols-subgrid col-span-3 items-center px-3 py-1 text-body">
+                  <span className="flex flex-col items-center leading-none">
+                    <Icon className={ICON} />
+                    {name}
+                  </span>
+                  <span className="contents">
+                    {choices.map(([value, label]) => (
+                      <Button key={value} size="sm" variant={now === value ? "default" : "ghost"} aria-pressed={now === value} className="min-w-11 px-1.5" onClick={() => (choose as (v: string) => void)(value)}>
+                        {label}
+                      </Button>
+                    ))}
+                  </span>
+                  {name === "Board" && boardFail && (
+                    <>
+                      <span role="alert" className="col-span-2 mt-2 text-caption text-danger">{boardFail.text}</span>
+                      <Button size="sm" variant="ghost" className="mt-2 min-w-11 px-1.5" onClick={boardFail.retry}>Retry</Button>
+                    </>
+                  )}
+                </div>
+              ))}
               </div>
               {mode === "online" && code ? (
                 <Button variant="ghost" className={ROW} onClick={() => copy("code", code)}>

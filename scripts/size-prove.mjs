@@ -40,7 +40,8 @@ const CEILINGS = [
   // #1609: raised from 127,000 B to 128,000 B by the owner (q1655-five-six-start A, 2026-11-14): five and six seat games
   // start from the Play page; index measured 127,203 B.
   // #1044, 2026-11-27: raised from 128,000 B to 128,250 B by the owner (q1892-size-limit A): one long clip at a time.
-  { name: "index", gzipBytes: 128250 },
+  // index 128,500 B: Jarrod, project card 2026-11-28 07:39 UTC, for #760 (#1913) and #1045 (#1910)
+  { name: "index", gzipBytes: 128500 },
   // #1857, 2026-11-28: three.js split to three.core; measured 132,485 B. Set by the dispatcher under the 2026-11-28 standing delegation (DECISIONS).
   // (Earlier: #1877, 2026-11-24, raised from 204,500 B to 205,500 B.)
   { name: "IslandCanvas", gzipBytes: 140000 },
