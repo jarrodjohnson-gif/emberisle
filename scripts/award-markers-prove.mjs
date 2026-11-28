@@ -121,6 +121,9 @@ try {
 
     // The banner: one strip per edge of the witness, in its order, never pickable or hit by a ray.
     const fx = await push(page, { n: 5, road: true });
+    // The strips are built hidden while their paths land; give the landing time to finish on a slow (CI) renderer before the
+    // visibility read. A strip that stays outside the hole still fails the check below.
+    await page.waitForFunction(() => (window.__isle.awards?.group.children ?? []).every((m) => m.visible), null, { timeout: 5_000 }).catch(() => {});
     r = await page.evaluate(READ);
     assert.ok(r.inScene, `${tag}: marker group not in the scene`);
     const witness = await page.evaluate(async () => {
