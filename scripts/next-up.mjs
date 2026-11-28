@@ -13,27 +13,30 @@ export function dependencies(body) {
   const text = [section(body, 'Depends on'), ...String(body ?? '').split(/\r?\n/).filter(line => /^\s*(?:\*\*)?Depends on\s*:/i.test(line))].join('\n');
   return [...new Set([...text.matchAll(/#(\d+)\b/g)].map(match => Number(match[1])))];
 }
-export function activeClaims(comments) {
+export function activeClaims(comments, now = Date.now(), hasOpenPr = false) {
   const active = new Map();
   for (const comment of comments) {
     for (const line of String(comment.body ?? '').split(/\r?\n/)) {
-      const match = /^\s*(claimed|paused):\s*(.+?),\s*\d{4}-\d{2}-\d{2}\b/i.exec(line);
+      const match = /^\s*(claimed|paused|expired|released):\s*(.+?),\s*\d{4}-\d{2}-\d{2}\b/i.exec(line);
       if (!match) continue;
       const agent = match[2].trim();
-      if (match[1].toLowerCase() === 'paused') active.delete(agent);
-      else if (!active.has(agent)) active.set(agent, agent);
+      if (match[1].toLowerCase() !== 'claimed') active.delete(agent);
+      else if (!active.has(agent)) active.set(agent, { agent, at: Date.parse(comment.created_at) });
     }
   }
-  return [...active.values()];
+  // Branch pushes are absent from the API input; only comment time and open PRs can keep a claim live.
+  const time = new Date(now).getTime();
+  return [...active.values()].filter(claim => hasOpenPr || !Number.isFinite(claim.at) ||
+    !Number.isFinite(time) || time - claim.at <= 48 * 60 * 60 * 1000).map(claim => claim.agent);
 }
 const priority = (issue) => ['prio:p0', 'prio:p1', 'prio:p2'].findIndex(label => names(issue).includes(label));
 const rank = (issue) => priority(issue) < 0 ? 3 : priority(issue);
-export function buildQueue(issues, prs, comments, dependencyStates) {
+export function buildQueue(issues, prs, comments, dependencyStates, now = Date.now()) {
   const ready = [], taken = [], blocked = [];
   for (const issue of issues) {
     if (issue.pull_request || issue.state !== 'open' || !names(issue).some(label => label.startsWith('lane:'))) continue;
-    const claims = activeClaims(comments[issue.number] ?? []);
     const linked = prs.filter(pr => pr.state === 'open' && new RegExp(`#${issue.number}(?!\\d)`).test(`${pr.title}\n${pr.body ?? ''}`));
+    const claims = activeClaims(comments[issue.number] ?? [], now, linked.length > 0);
     if (claims.length || linked.length) {
       taken.push({ issue, claims, prs: linked });
       continue;
@@ -121,7 +124,7 @@ export async function updateQueue({ repo, token, fetchImpl = fetch, now = new Da
       states[number] = (await api(`/issues/${number}`)).state;
     }
   }
-  const queue = buildQueue(issues.filter(issue => issue.number !== target.number), prs, comments, states);
+  const queue = buildQueue(issues.filter(issue => issue.number !== target.number), prs, comments, states, now);
   const body = renderQueue(queue, now);
   if (Buffer.byteLength(body) > 65000) throw new Error('Queue body exceeds safety limit');
   await api(`/issues/${target.number}`, 'PATCH', { body });
