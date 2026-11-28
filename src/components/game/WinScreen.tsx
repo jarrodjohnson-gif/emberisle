@@ -244,7 +244,7 @@ function Panel({ wait }: { wait: Wait }) {
                 window.setTimeout(() => setResting(false), 3000);
               }}
             >
-              React
+              GG! 🔊
             </Button>
           ) : null}
           <Button variant="secondary" className="min-w-fit flex-1 whitespace-nowrap" data-testid="win-look" onClick={() => setHidden(true)}>
