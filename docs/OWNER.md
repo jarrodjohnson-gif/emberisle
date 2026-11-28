@@ -10,7 +10,7 @@ How the work flows is in [`DESK.md`](DESK.md). This file keeps what the flow doe
   - a cloudflared quick tunnel in another.
   - A restart only needs the night window restarted; the tunnel URL stays the same.
 - He wants short, plain words, the fewest possible questions, and no clicks unless unavoidable. Give him your recommendation, not a menu.
-- He answers only on the Desk page ([`flow/clerk.md`](flow/clerk.md)). Never ask him in a chat.
+- He answers only on decision cards in the project dispatch thread ([`flow/dispatcher.md`](flow/dispatcher.md)). Never ask him in a chat.
 - **Who decides what:** [`FRAMEWORK.md`](FRAMEWORK.md) section 7. Bugs and minor UX are the agents'. Major UX and design (features, rules, art style, sound identity) are his.
 - Firm preferences so far:
   - the HUD never moves the map;
@@ -23,7 +23,7 @@ How the work flows is in [`DESK.md`](DESK.md). This file keeps what the flow doe
 ## Publishing
 
 - **Web:** GitHub Pages publishes main nightly (11:07 UTC) or on demand (Actions → Pages → Run workflow), at https://jarrodjohnson-gif.github.io/emberisle/. Netlify is frozen until its credits reset.
-- **Jarrod's Mac:** gets updates with a `git pull` and a restart of `npm run night`. The dispatcher's `status/now` lists what merged.
+- **Jarrod's Mac:** gets updates with a `git pull` and a restart of `npm run night`. The dispatch thread's nightly post lists what merged.
 
 ## Media handover
 

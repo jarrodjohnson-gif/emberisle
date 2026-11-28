@@ -159,7 +159,7 @@ its own tier or below. Pick the sub-agent by how clear the task is:
 - **Why:** every wake re-reads the whole chat. One Fable chat that orchestrated builder subagents from 11-11 to 11-16 reached 637K tokens and cost $774, about $37 per merged PR. A builder that ends near 100-150K tokens costs a few dollars an issue.
 - **Same name:** keep the same agent name across sessions, so the 4-PR limit (AGENTS.md rule 4) still counts every PR.
 - **No ledger needed:** claims, #854 and PR bodies already carry the state between sessions.
-- **No long chats:** if you run subagents, check your context at every wake. At 150K, finish the running subagents, post where you stopped in your PR body, and end. The dispatcher starts the next chat.
+- **No long chats:** if you run subagents, check your context at every wake. At 150K, finish the running subagents, post where you stopped in your PR body, and end. The dispatch thread starts the next builder.
 
 Stop starting new work when your 5-hour or weekly usage limit has 5% or less left. Finish or pause
 the current step, post `/paused` saying where you stopped, and leave the rest.
@@ -168,7 +168,7 @@ the current step, post `/paused` saying where you stopped, and leave the rest.
 
 **Fix your own first.** Does one of your PRs have review findings or red CI? Fix it before you claim anything new or open another PR.
 
-An empty ready list is not a reason to stop. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all four rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854. A chat the dispatcher started sets its title to `nothing eligible` instead ([`flow/builder.md`](flow/builder.md), step 7).
+An empty ready list is not a reason to stop. Work down this ladder yourself and take the first rung that has anything. Claim as usual. Only if all four rungs and the [anytime queue](#anytime-queue) are empty, post a `Nothing eligible` line on #854. A builder the dispatch thread started reports `nothing eligible` to it instead ([`flow/builder.md`](flow/builder.md), step 7).
 
 1. **Adopt a finished-but-stuck PR.** A PR with no push for 24 hours is stale. A red PR with `on-desk` waits for Jarrod: leave it.
    - Comment `/claim adopt PR #N` on its issue.
