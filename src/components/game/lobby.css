@@ -367,6 +367,15 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { animation: lobby-ba
 @media (max-height: 600px) and (orientation: landscape) {
   html .lobby-layout { --pad: 8px; }
   html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { grid-template-rows: max-content max-content minmax(min-content, 1fr) max-content; }
+  /* #1709, look decision A (PR #1905, 2026-11-28): every short landscape screen uses the 44 px seat rows 667x375 already has,
+     so the caption line fits beside six seats or a two-row header. Above 100% text the rows still grow with it. */
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(18px, 1.125rem) max(18px, 1.125rem); --seat-row: max(18px, 1.125rem); }
+  /* An 18 px name line can't hold a seat bubble: while one shows, it is centred on the whole seat and the status keeps to its column. */
+  @container seats (min-width: calc(15.8rem + 8px)) {
+    html .lobby-player:has(> .lobby-bubble [data-seat-bubble]) > .lobby-bubble { grid-row: 1 / 3; }
+    html .lobby-player:has(> .lobby-bubble [data-seat-bubble]) > .lobby-player-status { grid-column: 2; }
+  }
 }
 @media (max-width: 700px) and (orientation: landscape) {
   html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
@@ -435,7 +444,10 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-he
   @container not style(--lobby-big: 1) {
     html .lobby-layout .lobby-layout-cover > .lobby-rules { flex-wrap: wrap; height: auto; min-height: 44px; row-gap: 4px; }
     html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status { flex: 1 0 100%; height: auto; min-height: 0; padding-left: 0; }
-    html .lobby-layout .lm button:last-child { width: auto; white-space: nowrap; }
+    /* "Play games" is one line where the row holds it. With a wider system font (DejaVu) it wraps to two lines, as today,
+       so How to play never drops to a second row: the tablist breaks the line at its narrowest and grows back to one line. */
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lm { flex: 1 1 0; max-width: max-content; }
+    html .lobby-layout .lm button:last-child { flex: 0 1 auto; width: auto; white-space: normal; }
     html .lobby-layout .lm button:last-child span { max-width: none; }
   }
   /* Play games keeps today's fixed rows except this one, so the caption line has room there too. */
