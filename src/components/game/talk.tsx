@@ -151,7 +151,7 @@ export function EmojiRow({ keys, dense }: { keys?: boolean; dense?: boolean }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [keys]);
   return (
-    <div role="group" aria-label="Send a reaction" data-testid="emoji-row" className="grid shrink-0 grid-cols-6 gap-1">
+    <div role="group" aria-label="Send a reaction" data-testid="emoji-row" className="grid shrink-0 grid-cols-6 gap-0.5">
       {QUICK_REACTIONS.map(({ emoji, label }, index) => (
         <button
           key={emoji}
