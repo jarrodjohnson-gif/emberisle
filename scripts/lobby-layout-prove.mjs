@@ -366,6 +366,25 @@ async function startState(page, disabled, reason) {
   assert.equal(await start.evaluate(el => document.getElementById(el.getAttribute("aria-describedby"))?.textContent), reason, "the reason resolves to the live status");
 }
 
+// #1709, look decision C (PR #1905): at 844x390 "Wayfarer on" reads whole on its own line under the tabs, and Table, Play games
+// and How to play are one line each, all the same height.
+async function wayfarerLineFits(page, label) {
+  await page.evaluate(() => document.fonts.ready);
+  const m = await page.evaluate(() => {
+    const lines = el => { const r = document.createRange(); r.selectNodeContents(el); return new Set([...r.getClientRects()].filter(x => x.width > 0).map(x => Math.round(x.top))).size; };
+    const caption = document.querySelector('[data-testid="lobby-caption"]');
+    const c = caption.getBoundingClientRect();
+    const tabs = [...document.querySelectorAll('.lobby-rules [role="tab"], .lobby-rules > button')].map(el => ({ name: el.textContent.trim(), height: el.getBoundingClientRect().height, bottom: el.getBoundingClientRect().bottom, lines: lines(el) }));
+    return { text: caption.textContent, width: c.width, scrollWidth: caption.scrollWidth, clientWidth: caption.clientWidth, top: c.top, tabs };
+  });
+  assert.ok(/^Wayfarer (on|off)$/.test(m.text) && m.width > 0 && m.scrollWidth <= m.clientWidth, `${label}: the Wayfarer caption reads whole ${JSON.stringify(m)}`);
+  assert.equal(m.tabs.length, 3, `${label}: three buttons in the tab row`);
+  assert.ok(m.tabs.every(t => t.lines === 1), `${label}: Table, Play games and How to play are one line each ${JSON.stringify(m.tabs)}`);
+  assert.ok(Math.max(...m.tabs.map(t => t.height)) - Math.min(...m.tabs.map(t => t.height)) <= .5, `${label}: the three tabs are the same height ${JSON.stringify(m.tabs)}`);
+  assert.ok(m.tabs.every(t => m.top >= t.bottom - .5), `${label}: the caption sits on its own line under the tabs ${JSON.stringify(m)}`);
+  console.log(`${label}: "${m.text}" reads whole under the tabs; three one-line tabs, ${m.tabs[0].height}px each`);
+}
+
 async function howToPlayFits(page, label) {
   await page.evaluate(() => document.fonts.ready);
   const m = await page.getByRole("button", { name: "How to play", exact: true }).evaluate(el => {
@@ -446,6 +465,7 @@ try {
     await centred(page, `${width}x${height}`);
     if (width === 1280) await safeArea(page, `${width}x${height}`, { top: 47, bottom: 34, left: 59 });
     if (width === 844) {
+      await wayfarerLineFits(page, `${width}x${height}`);
       await page.setViewportSize({ width: 667, height: 375 });
       try {
         await safeArea(page, "667x375", { top: 47, right: 21, bottom: 34, left: 59 });

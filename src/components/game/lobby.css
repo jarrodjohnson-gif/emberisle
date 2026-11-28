@@ -367,6 +367,15 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-actions { animation: lobby-ba
 @media (max-height: 600px) and (orientation: landscape) {
   html .lobby-layout { --pad: 8px; }
   html .lobby-layout .lobby-layout-cover:not(:has(> .ly)) { grid-template-rows: max-content max-content minmax(min-content, 1fr) max-content; }
+  /* #1709, look decision A (PR #1905, 2026-11-28): every short landscape screen uses the 44 px seat rows 667x375 already has,
+     so the caption line fits beside six seats or a two-row header. Above 100% text the rows still grow with it. */
+  html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
+  html .lobby-player { grid-template-rows: max(18px, 1.125rem) max(18px, 1.125rem); --seat-row: max(18px, 1.125rem); }
+  /* An 18 px name line can't hold a seat bubble: while one shows, it is centred on the whole seat and the status keeps to its column. */
+  @container seats (min-width: calc(15.8rem + 8px)) {
+    html .lobby-player:has(> .lobby-bubble [data-seat-bubble]) > .lobby-bubble { grid-row: 1 / 3; }
+    html .lobby-player:has(> .lobby-bubble [data-seat-bubble]) > .lobby-player-status { grid-column: 2; }
+  }
 }
 @media (max-width: 700px) and (orientation: landscape) {
   html .lobby-players { grid-auto-rows: max(44px, 2.75rem); }
@@ -427,4 +436,30 @@ html .lobby-layout-cover:not(:has(> .ly)) > .lobby-header { height: auto; min-he
    At 100% it keeps today's single row, cut where it must be ("as today", answer A). */
 @container style(--lobby-big: 1) {
   html .lobby-layout-cover:not(:has(> .ly)) > .lobby-rules > .lobby-rule-status { flex: 1 0 auto; }
+}
+/* #1709, look decision C (PR #1905, 2026-11-28): on a short landscape screen the tab row can't hold "Wayfarer on" beside a
+   one-line "Play games", so the caption takes its own line under the tabs, uncut, on both tabs. At 100% text only; above it
+   #1750's wrap already does this. Portrait and desktop are untouched. */
+@media (max-height: 600px) and (orientation: landscape) {
+  @container not style(--lobby-big: 1) {
+    html .lobby-layout .lobby-layout-cover > .lobby-rules { flex-wrap: wrap; height: auto; min-height: 44px; row-gap: 4px; }
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status { flex: 1 0 100%; height: auto; min-height: 0; padding-left: 0; }
+    /* The connection status shares the caption's line, so the line stays 18 px; only when both can't fit does each give up width. */
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status:has(> [data-testid="connection-status"]) { flex-direction: row; align-items: baseline; justify-content: flex-start; column-gap: 8px; }
+    html .lobby-layout .lobby-layout-cover > .lobby-rules > .lobby-rule-status > * { flex: 0 1 auto; }
+    /* "Play games" is one line (look decision A). */
+    html .lobby-layout .lm button:last-child { width: auto; white-space: nowrap; }
+    html .lobby-layout .lm button:last-child span { max-width: none; }
+  }
+  /* Play games keeps today's fixed rows except this one, so the caption line has room there too. */
+  html .lobby-layout .lobby-layout-cover:has(> .ly) { grid-template-rows: 44px max-content minmax(0, 1fr) 44px; }
+}
+/* At 100% text the three one-line tabs need about 305 px with a wider system font (DejaVu, as on CI), more than 36fr gives at
+   844x390, so the left column takes 38fr there and up. 8 px gaps and 8 px text padding stay. 700 px and below keep 44fr / 56fr. */
+@media (min-width: 701px) and (max-height: 600px) and (orientation: landscape) {
+  @container not style(--lobby-big: 1) {
+    html .lobby-layout .lobby-layout-cover, html .lobby-actions { grid-template-columns: minmax(0, 38fr) minmax(0, 58fr); }
+    /* The label box is as tall as its text, so with any font it measures as the one line it shows. */
+    html .lobby-layout .lm button:last-child span { line-height: normal; }
+  }
 }
