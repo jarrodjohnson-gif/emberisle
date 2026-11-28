@@ -69,7 +69,8 @@ const vite = await createServer({
       load(id) {
         if (id === "\0mock-sound") {
           return `export const haptics = {}; export function play() {} export function playLater() {} export function playTradePlease() {}
-            export function stop() {} export function resetTradePlease() {} export function yourTurn() {}`;
+            export function stop() {} export function resetTradePlease() {} export function yourTurn() {}
+            export function playForeground() {} export function cancelForeground() {} export function afterOutcome() {} export const foregroundScope = 0;`;
         }
         if (id === "\0mock-table") {
           return `export function hostUrl() { return "wss://emberisle.example/"; }

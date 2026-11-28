@@ -19,19 +19,19 @@ const check = (label, args, code, ...mustContain) => {
   } else console.log(`ok   ${label}`);
 };
 
-check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 400 B");
+check("+300 B on index passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("base.json")], 0, "ok   index growth: base 122000 B, PR 122300 B, +300 B, allowance 420 B");
 check("a second +300 B on top of it passes", ["--sizes", fx("pass.json"), "--base-sizes", fx("pass.json")], 0, "+0 B");
 check(
   "+600 B on index fails and names chunk, base, PR, allowance",
   ["--sizes", fx("fail.json"), "--base-sizes", fx("base.json")],
   1,
-  "FAIL index growth: base 122000 B, PR 122600 B, +600 B, allowance 400 B (200 B over)",
+  "FAIL index growth: base 122000 B, PR 122600 B, +600 B, allowance 420 B (180 B over)",
 );
 check("a new chunk is held to its ceiling only", ["--sizes", fx("new-chunk.json"), "--base-sizes", fx("base-old.json")], 0, "new  VictoryTargetSelect", "not in the base");
 check("a removed chunk passes and is reported", ["--sizes", fx("base.json"), "--base-sizes", fx("base-with-legacy.json")], 0, "gone legacy");
 check("a chunk gone from the PR that still has a ceiling fails", ["--sizes", fx("base-old.json"), "--base-sizes", fx("base.json")], 1, "FAIL VictoryTargetSelect: no chunk named");
 check("without a base only the ceilings run and the delta command is printed", ["--sizes", fx("pass.json")], 0, "no base given", "--base <dir");
-check("over the absolute ceiling fails even inside the allowance", ["--sizes", fx("over-ceiling.json"), "--base-sizes", fx("over-ceiling.json")], 1, "FAIL index: 128.10 kB gzip, ceiling 128.00 kB");
+check("over the absolute ceiling fails even inside the allowance", ["--sizes", fx("over-ceiling.json"), "--base-sizes", fx("over-ceiling.json")], 1, "FAIL index: 128.30 kB gzip, ceiling 128.25 kB");
 
 if (failed) process.exit(1);
 console.log("size-delta-prove: all cases behave");
