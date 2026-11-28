@@ -25,7 +25,7 @@ import { play } from "@/lib/sound";
 
 
 type Client = ReturnType<typeof createProfileClient>;
-type Form = Record<"displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase" | "color" | "backupColor", string>;
+type Form = Record<"displayName" | "login" | "pin" | "newPin" | "pinConfirm" | "catchphrase" | "color" | "backupColor" | "winSongId", string>;
 // What the sheet hands its forms chunk: its state and its fields. The forms send their own requests, so a wrong current PIN
 // can be refused beside that field.
 export interface FormsUi {
@@ -86,7 +86,7 @@ export function ProfileSheet({ onClose, opener }: { onClose: () => void; opener:
   const [keep, setKeep] = useState(true);
   const [form, setForm] = useState<Form>(() => {
     const s = useGame.getState();
-    return { displayName: s.name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: s.color ?? PLAYER_COLORS[0], backupColor: "" };
+    return { displayName: s.name.trim(), login: "", pin: "", newPin: "", pinConfirm: "", catchphrase: "", color: s.color ?? PLAYER_COLORS[0], backupColor: "", winSongId: "" };
   });
   const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const profile = snap.profile;

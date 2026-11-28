@@ -17,6 +17,7 @@ export interface ProfileFields {
   color: string;
   backupColor?: string | null;
   catchphrase?: string;
+  winSongId?: string | null;
 }
 // #767: the owner's committed record, a page of their own history, and a page of the group Wins board. The host derives every
 // number from counted results; the client only shows them. Win rate is null before the first counted game.
@@ -247,7 +248,7 @@ export function createProfileClient(initialHost: string, options: {
   };
   const fieldsOf = (f: Partial<ProfileFields>) => {
     const out: Record<string, unknown> = {};
-    for (const key of ["displayName", "login", "color", "backupColor", "catchphrase"] as const) if (Object.hasOwn(f, key)) out[key] = f[key];
+    for (const key of ["displayName", "login", "color", "backupColor", "catchphrase", "winSongId"] as const) if (Object.hasOwn(f, key)) out[key] = f[key];
     return out;
   };
   return {

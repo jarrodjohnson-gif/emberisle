@@ -492,6 +492,42 @@ try {
   await sheet(coral).getByText("Login: reef-user").waitFor();
   ok("the old login is refused after a rename; edits persist across a resume");
 
+  // #1351: the win-song selector starts on Default (null); only an explicit pick sets a catalogue ID, an edit that leaves it
+  // alone sends no song, and Default clears it. A rename (above) kept it null, and the pick survives a later rename-free edit.
+  const songLabel = "Win song (optional)";
+  const songBox = () => editForm.getByLabel(songLabel);
+  const editSongs = async () => (await sent(coral, "profileEdit")).map((f) => f.m);
+  await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
+  await editForm.waitFor();
+  assert.equal(await songBox().inputValue(), "", "a profile that never chose a song shows Default");
+  assert.deepEqual(await songBox().locator("option").allInnerTexts(), ["Default", "Isaac win music"], "the selector lists Default and the shared catalogue only");
+  assert.ok((await songBox().boundingBox()).height >= 44, "the selector is at least 44 px tall");
+  await shots(coral, "win-song-default");
+  await songBox().selectOption("isaac-win");
+  await shots(coral, "win-song-chosen");
+  await editForm.getByRole("button", { name: "Save" }).click();
+  await sheet(coral).getByText("Login: reef-user").waitFor();
+  await returned(coral, "edit", "saving a song returns the focus to Edit profile");
+  assert.equal((await editSongs()).at(-1).winSongId, "isaac-win", "an explicit pick sends the catalogue ID");
+  await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
+  assert.equal(await songBox().inputValue(), "isaac-win", "the host's saved choice is shown again");
+  await editForm.getByLabel("Catchphrase (optional)").fill("Still here.");
+  await editForm.getByRole("button", { name: "Save" }).click();
+  await sheet(coral).getByText("“Still here.”").waitFor();
+  assert.ok(!Object.hasOwn((await editSongs()).at(-1), "winSongId"), "an edit that leaves the song alone sends none");
+  await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
+  assert.equal(await songBox().inputValue(), "isaac-win", "the song survives an edit that did not touch it");
+  await songBox().selectOption("");
+  await editForm.getByRole("button", { name: "Save" }).click();
+  await sheet(coral).getByText("“Still here.”").waitFor();
+  await returned(coral, "edit", "clearing a song returns the focus to Edit profile");
+  assert.strictEqual((await editSongs()).at(-1).winSongId, null, "Default sends null");
+  await sheet(coral).getByRole("button", { name: "Edit profile" }).click();
+  assert.equal(await songBox().inputValue(), "", "a cleared song shows Default");
+  await editForm.getByRole("button", { name: "Cancel" }).click();
+  await returned(coral, "edit", "Cancel returns the focus to Edit profile");
+  ok("win song: starts on Default, an explicit pick sends only the catalogue ID with the owner's credential, an untouched song is not sent, Default clears it");
+
   // Change PIN: a mismatch and a wrong current PIN are refused beside their fields; the change keeps this device remembered
   // under a new credential and signs the other device out.
   await sheet(coral).getByRole("button", { name: "Change PIN" }).click();
