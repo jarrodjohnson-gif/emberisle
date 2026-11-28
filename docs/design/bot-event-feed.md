@@ -92,6 +92,7 @@ The running number also sends an ask exactly once, even when its seq equals `fro
 - A push with no commits (the extension microtask, [host.mjs:1064](../../server/host.mjs#L1064)): `fromSeq === toSeq`, no events.
 - A forced 65-event gap: `complete: false`, no events. The next push is complete again.
 - A client without the capability: the `state` bytes equal today's for the same fixture.
+- A bot ask right after a person's action, with `fromSeq === toSeq` and one ask event: the ask line plays once. A resend of the same envelope plays nothing.
 - A stale intent between two bot slices: the resend carries the missing events, and the next push does not repeat them.
 - Two watchers at the same watermark: one serialization. A watcher who joined late gets its own baseline.
 
@@ -130,7 +131,7 @@ Bot asks were left out. An ask ends a slice early, so this overcounts.
 | 1 person, 5 bots, expanded | 200 | 18,164 | 5.88 | 21 | 24 | 27 |
 
 Counts vary slightly between runs. An earlier run of the same script gave a maximum of 28 for the expanded table.
-64 is more than twice the largest slice seen. The script is in the appendix. Leaf 1 turns it into a proof assertion.
+The table counts commits, not events. A commit makes at most two events, so the largest slice seen needs at most 54. 64 still covers it. The script is in the appendix. Leaf 1 turns it into a proof assertion.
 
 ### What changes in rat-robbery.md's envelope
 
@@ -191,7 +192,7 @@ The state note gains `feed`, taken from the `state` message in `applyState` ([st
 1. **Baseline.** `first`, no `gameId` yet, a new `gameId`, or `fromSeq === null`: start a new epoch. Set `gameId`, the watermark to `toSeq`, and `base` to the state. Emit nothing.
 2. **No envelope.** An old host or a client without the capability: keep today's `observeSnapshot` path.
 3. **Stale.** `toSeq` below the watermark: ignore the state's events. This matches today's `after.seq <= lastSeq` check ([bot-moments.ts:267](../../src/lib/game/bot-moments.ts#L267)).
-4. **Repeat.** `fromSeq` and `toSeq` both equal the watermark: nothing new. Emit nothing.
+4. **Repeat.** `fromSeq` and `toSeq` both equal the watermark, and `events` is empty: nothing new. Emit nothing. When `events` is not empty, go on to step 5. A bot ask opens with no commit before it ([host.mjs:945-948](../../server/host.mjs#L945)), so the push after a person's action can carry an ask with `fromSeq === toSeq`. The seen set in step 8 stops a resent ask from playing twice.
 5. **Gap or mismatch.** `fromSeq` differs from the watermark, or `toSeq` differs from `game.seq`: reject the whole envelope.
 6. **Incomplete.** `complete: false`: reject the whole envelope.
 7. **Malformed.** Reject the whole envelope when any event:
