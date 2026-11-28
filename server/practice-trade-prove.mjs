@@ -464,5 +464,42 @@ assert.equal(sent.length, 3);
 s().goTitle();
 console.log("V ok: online command forwarding preserves exact ids/terms; watcher sends nothing");
 
+// W. Incoming online counters go through the store's own handlers (table.ts parses the socket messages). They land
+// on their own offer, keep their order when two events arrive back to back, and one for a closed offer is dropped.
+{
+  const sockets = [];
+  globalThis.WebSocket = class { constructor() { this.readyState = 1; sockets.push(this); } send() {} close() {} };
+  globalThis.window = { location: { href: "http://127.0.0.1/?host=ws%3A%2F%2F127.0.0.1%3A1" }, addEventListener() {}, removeEventListener() {} };
+  s().goTitle();
+  s().joinTable("ABCD");
+  for (const t0 = performance.now(); !sockets.length && performance.now() - t0 < 10000;) await new Promise((r) => setImmediate(r));
+  assert.equal(sockets.length, 1, "the store dialed the table");
+  const deliver = async (msg) => { sockets[0].onmessage({ data: JSON.stringify(msg) }); for (let i = 0; i < 20; i++) await Promise.resolve(); };
+  const terms = { give: { ore: 1 }, want: { grain: 2 } };
+  const c = (tradeId, counterId, by) => ({ type: "tradeCounter", tradeId, counterId, by, name: by, ...terms });
+  useGame.setState({ localId: "p0" });
+  await deliver({ type: "tradeOffer", tradeId: "t1", from: "p0", give: { grain: 1 }, want: { timber: 1 }, seconds: null, counter: true });
+  await deliver(c("other-offer", "x-c1", "p1"));
+  assert.equal(s().counters.length, 0, "a counter for another offer is not shown");
+  await deliver(c("t1", "t1-c1", "p1"));
+  await deliver(c("t1", "t1-c1", "p1"));
+  assert.deepEqual(s().counters.map((x) => x.counterId), ["t1-c1"]);
+  assert.deepEqual(s().counterUsed, ["p1"]);
+  // Back to back: a counter and its close reach the store in the order sent (reversed, the close finds nothing and the counter stays).
+  sockets[0].onmessage({ data: JSON.stringify(c("t1", "t1-c2", "p2")) });
+  sockets[0].onmessage({ data: JSON.stringify({ type: "tradeCounterClosed", tradeId: "t1", counterId: "t1-c2", why: "no" }) });
+  for (let i = 0; i < 20; i++) await Promise.resolve();
+  assert.deepEqual(s().counters.map((x) => x.counterId), ["t1-c1"]);
+  assert.deepEqual(s().counterClosed, { tradeId: "t1", counterId: "t1-c2", by: "p2", why: "no" });
+  await deliver(c("t1", "t1-c3", "p3"));
+  assert.deepEqual(s().counters.map((x) => x.counterId), ["t1-c1", "t1-c3"]);
+  await deliver({ type: "tradeClosed", tradeId: "t1" });
+  assert.equal(s().offer, null); assert.equal(s().counters.length, 0);
+  await deliver(c("t1", "t1-c4", "p2"));
+  assert.equal(s().counters.length, 0, "a counter arriving after its offer closed is dropped");
+  s().goTitle();
+}
+console.log("W ok: incoming online counters land on their offer, keep order, and a late one is dropped");
+
 mock.timers.reset();
 console.log("practice trade prove ok");
