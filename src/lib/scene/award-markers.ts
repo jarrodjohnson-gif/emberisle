@@ -5,6 +5,7 @@
 import type * as THREE from "three";
 import { roadWitness } from "@/lib/game/rules";
 import type { GameState } from "@/lib/game/types";
+import { RIM } from "@/lib/scene/palette";
 
 // A player has 15 paths; a larger network is malformed, and the banner is left off rather than searched.
 export const MAX_STRIPS = 15;
@@ -16,10 +17,10 @@ export const STRIP_LIFT = 0.045; // above the resting path's top
 export const POLE_H = 0.18;
 export const PENNANT_W = 0.15;
 const PENNANT_H = 0.09;
-// #1893, owner answer B: a cream face for every seat, so the banner never matches the path under it. The seat shows in a
-// band around the face, inside the pieces' dark rim (RIM in palette.ts), so pale and dark seats both read.
-const EDGE = "#1c1916";
-export const FACE = "#fff6e8";
+// #1893, owner answer B: the banner's face contrasts with the path under it, cream (RIM.light) on a dark seat and dark
+// (RIM.dark) on a pale one. The seat shows in a band around the face, inside the pieces' dark rim, so every seat reads.
+const EDGE = RIM.dark;
+export const FACE = RIM.light;
 const BAND = 0.005;
 
 export type AwardThree = Pick<
