@@ -327,7 +327,9 @@ async function guardCases(page, tag) {
     const bots = base.players.filter((p) => p.kind === "bot");
     const table = (role) => {
       const st = structuredClone(base);
-      Object.assign(st, { phase: "main", current: me, role, primary: role === "primary" ? me : bots[0].id, trade: null });
+      // A bot says No to an asker who leads the table on public points (shouldAcceptTrade); a person who has built since the
+      // deal would lead it, and no bot would take any offer. The first bot holds both bonuses, so the asker never leads.
+      Object.assign(st, { phase: "main", current: me, role, primary: role === "primary" ? me : bots[0].id, trade: null, longestRoad: bots[0].id, largestArmy: bots[0].id });
       for (const p of st.players) p.resources = p.id === me ? { timber: 2, clay: 2, wool: 2, grain: 2, ore: 2 } : { timber: 1, clay: 1, wool: 1, grain: 1, ore: 0 };
       return st;
     };
