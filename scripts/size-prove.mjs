@@ -41,7 +41,15 @@ const CEILINGS = [
   // start from the Play page; index measured 127,203 B.
   // #1044, 2026-11-27: raised from 128,000 B to 128,250 B by the owner (q1892-size-limit A): one long clip at a time.
   { name: "index", gzipBytes: 128250 },
-  { name: "IslandCanvas", gzipBytes: 205500 }, // #1877, 2026-11-24: raised from 204,500 B to 205,500 B (was #1857, 2026-11-22)
+  // #1857, 2026-11-28: three.js split to three.core; measured 132,485 B. Set by the dispatcher under the 2026-11-28 standing delegation (DECISIONS).
+  // (Earlier: #1877, 2026-11-24, raised from 204,500 B to 205,500 B.)
+  { name: "IslandCanvas", gzipBytes: 140000 },
+  // #1857, 2026-11-28: the soft shadows (SSAOPass, SimplexNoise, SSAOShader) load after the first frame; measured 5,078 B gzip.
+  // New chunk only; ceiling is measured plus about 10%. Owner chose A (shadows may arrive a moment later) on #1857.
+  { name: "ssao-attach", gzipBytes: 5600 },
+  // #1857, 2026-11-28: three.js, split out of IslandCanvas because ssao-attach shares it; measured 69,569 B gzip and preloaded
+  // beside the island. New chunk only; ceiling is measured plus about 10%. Island plus three.core is no bigger in raw bytes.
+  { name: "three.core", gzipBytes: 76500 },
   // #759: lazy Classic land builder; measured 18,015 B (7f3fa6f). Opus per owner delegation 2026-11-06.
   { name: "classic-board", gzipBytes: 19500 },
   // #759, 2026-11-17: the land look's build-and-swap and the shore hand-off, split out of IslandCanvas (desk answer A on #1341)
@@ -146,9 +154,8 @@ const CEILINGS = [
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
 const ALLOWANCE = {
-  // #1044, 2026-11-27: the one-long-clip owner may grow index by up to 420 B, for this change only (owner, q1892-size-limit, A).
-  // Put back to 400 B after #1892 merges.
-  index: 420,
+  // index is 400 B. #1892 (q1892-size-limit, A) had 420 B for that change only; it merged 2026-11-28, so this is back to 400 B.
+  index: 400,
   // hex-jelly is 600 B per owner decision card q1255-size (2026-11-12).
   "hex-jelly": 600,
   // #1595, 2026-11-13: the tray polish may grow losses by up to 300 B, for this change only (owner, q1597-losses-size, A).

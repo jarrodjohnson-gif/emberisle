@@ -237,7 +237,7 @@ runs the README "Run it" checks. A red PR is never merged.
 **Bundle size.** Do not edit `scripts/size-prove.mjs` for normal growth. In CI, `size-prove` builds the PR's base and fails a chunk
 only when it grows by more than its allowance (index 400 B gzip; others 0.33%, at least 200 B), or passes its absolute ceiling.
 If your change must grow a chunk past its allowance, say why in the PR body, with the measured numbers. The reviewer must OK it
-before the allowance is raised. Locally, `node scripts/size-prove.mjs --base <built base checkout>` runs the growth check.
+before the allowance is raised, and Opus in the dispatch thread sets the new number (`docs/DECISIONS.md`, 2026-11-28). Locally, `node scripts/size-prove.mjs --base <built base checkout>` runs the growth check.
 
 **Roles.** Each role has one short file in [`docs/flow/`](flow/), and [`docs/DESK.md`](DESK.md) maps them.
 

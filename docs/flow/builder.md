@@ -25,7 +25,7 @@ One chat takes one issue, or one batch of up to three PRs it is told to finish. 
 
 - Add and remove labels one at a time. Never send a PR's or an issue's whole label list: that wipes the others (#1341).
 - Never touch a `signal:` label. `scripts/pr-signal.mjs` sets it.
-- Never add `owner-ok` or `owner-merge`. Only the clerk adds them, carrying Jarrod's tap.
+- Never add `owner-ok` or `owner-merge`. Only the clerk adds them, carrying Jarrod's tap. The project dispatch thread may also add `owner-merge` under his 2026-11-28 standing delegation ([`../DECISIONS.md`](../DECISIONS.md)).
 
 ## When you need Jarrod
 

@@ -47,7 +47,7 @@ A draft PR gets no signal.
 
 - Add and remove labels one at a time. Never send a whole label list (#1341).
 - Never touch a `signal:` label.
-- Only the clerk adds `owner-ok` or `owner-merge`, carrying Jarrod's tap.
+- Only the clerk adds `owner-ok` or `owner-merge`, carrying Jarrod's tap. The project dispatch thread may also add `owner-merge` under his 2026-11-28 standing delegation ([`DECISIONS.md`](DECISIONS.md)).
 
 ## Keep it cheap
 
