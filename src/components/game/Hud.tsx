@@ -128,7 +128,7 @@ function LossesFailed({ message, onRetry }: { message: string; onRetry: () => vo
       <button
         type="button"
         onClick={onRetry}
-        className="rounded-[10px] bg-zinc-900 px-3 py-1 font-medium text-white hover:bg-zinc-800"
+        className="min-h-11 whitespace-nowrap rounded-[10px] bg-zinc-900 px-3 py-1 font-medium text-white hover:bg-zinc-800"
       >
         Try again
       </button>
