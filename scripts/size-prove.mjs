@@ -146,9 +146,8 @@ const CEILINGS = [
 
 // Growth allowance against the base, in gzip bytes. index is fixed at 400 B; the others take 0.33% of the base size, at least 200 B.
 const ALLOWANCE = {
-  // #1044, 2026-11-27: the one-long-clip owner may grow index by up to 420 B, for this change only (owner, q1892-size-limit, A).
-  // Put back to 400 B after #1892 merges.
-  index: 420,
+  // index is 400 B. #1892 (q1892-size-limit, A) had 420 B for that change only; it merged 2026-11-28, so this is back to 400 B.
+  index: 400,
   // hex-jelly is 600 B per owner decision card q1255-size (2026-11-12).
   "hex-jelly": 600,
   // #1595, 2026-11-13: the tray polish may grow losses by up to 300 B, for this change only (owner, q1597-losses-size, A).
